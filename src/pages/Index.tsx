@@ -29,6 +29,9 @@ function useLocalStorage<T>(key: string, initialValue: T) {
   return [value, setValue] as const;
 }
 
+type DailyReportEntry = { metricId: string; value: number };
+type DailyReport = { id: string; date: string; createdAt: string; notes?: string; entries: DailyReportEntry[] };
+
 type Kid = {
   id: string;
   name: string;
@@ -36,6 +39,7 @@ type Kid = {
   goal: number;
   color: string; // hsl string token name or purpose only
   createdAt: string;
+  reports?: DailyReport[];
 };
 
 const pastelHues = [
@@ -237,6 +241,27 @@ function KidCard({ kid, onAdd, onSetGoal, onReset }: { kid: Kid; onAdd: (delta: 
             </Link>
           </Button>
         </div>
+
+        {(() => {
+          const recent = [...(kid.reports ?? [])]
+            .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+            .slice(0, 7);
+          if (recent.length === 0) return null;
+          const totalFor = (r: DailyReport) => r.entries.reduce((s, e) => s + (e.value || 0), 0);
+          return (
+            <div className="mt-4">
+              <h4 className="text-sm font-semibold text-muted-foreground mb-1">Recent reports</h4>
+              <ul className="text-xs text-muted-foreground space-y-1">
+                {recent.map((r) => (
+                  <li key={r.id} className="flex items-center justify-between">
+                    <span>{r.date}</span>
+                    <span>Total: {totalFor(r)}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          );
+        })()}
       </CardContent>
     </Card>
   );

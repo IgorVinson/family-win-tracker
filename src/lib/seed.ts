@@ -31,6 +31,20 @@ const kids = [
   (() => {
     const g1 = { id: crypto.randomUUID(), name: "Reading Goals", type: "goal" as const };
     const g2 = { id: crypto.randomUUID(), name: "Chores Project", type: "project" as const };
+    const m1 = makeMetric("Reading", 30, "min", g1.id);
+    const m2 = makeMetric("Chores", 2, undefined, g2.id);
+    const reports = [
+      {
+        id: crypto.randomUUID(),
+        date: new Date().toISOString().slice(0, 10),
+        createdAt: now,
+        notes: "Great reading session and light chores.",
+        entries: [
+          { metricId: m1.id, value: 25 },
+          { metricId: m2.id, value: 1 },
+        ],
+      },
+    ];
     return {
       id: crypto.randomUUID(),
       name: "Alex",
@@ -40,15 +54,27 @@ const kids = [
       createdAt: now,
       notes: "Loves reading mystery books.",
       groups: [g1, g2],
-      metrics: [
-        makeMetric("Reading", 30, "min", g1.id),
-        makeMetric("Chores", 2, undefined, g2.id),
-      ],
+      metrics: [m1, m2],
+      reports,
     };
   })(),
   (() => {
     const g1 = { id: crypto.randomUUID(), name: "Practice", type: "project" as const };
     const g2 = { id: crypto.randomUUID(), name: "Goals", type: "goal" as const };
+    const m1 = makeMetric("Practice Piano", 20, "min", g1.id);
+    const m2 = makeMetric("Chores", 3, undefined, g2.id);
+    const reports = [
+      {
+        id: crypto.randomUUID(),
+        date: new Date().toISOString().slice(0, 10),
+        createdAt: now,
+        notes: "Solid practice and helpful chores.",
+        entries: [
+          { metricId: m1.id, value: 30 },
+          { metricId: m2.id, value: 2 },
+        ],
+      },
+    ];
     return {
       id: crypto.randomUUID(),
       name: "Sam",
@@ -58,14 +84,26 @@ const kids = [
       createdAt: now,
       notes: "Great helper with dishes.",
       groups: [g1, g2],
-      metrics: [
-        makeMetric("Practice Piano", 20, "min", g1.id),
-        makeMetric("Chores", 3, undefined, g2.id),
-      ],
+      metrics: [m1, m2],
+      reports,
     };
   })(),
   (() => {
     const g1 = { id: crypto.randomUUID(), name: "Kindness", type: "goal" as const };
+    const m1 = makeMetric("Kindness Stars", 1, undefined, g1.id);
+    const m2 = makeMetric("Reading", 10, "min");
+    const reports = [
+      {
+        id: crypto.randomUUID(),
+        date: new Date().toISOString().slice(0, 10),
+        createdAt: now,
+        notes: "Kind gestures and a bit of reading.",
+        entries: [
+          { metricId: m1.id, value: 2 },
+          { metricId: m2.id, value: 15 },
+        ],
+      },
+    ];
     return {
       id: crypto.randomUUID(),
       name: "Mia",
@@ -75,10 +113,8 @@ const kids = [
       createdAt: now,
       notes: "Working on kindness stars.",
       groups: [g1],
-      metrics: [
-        makeMetric("Kindness Stars", 1, undefined, g1.id),
-        makeMetric("Reading", 10, "min"),
-      ],
+      metrics: [m1, m2],
+      reports,
     };
   })(),
 ];

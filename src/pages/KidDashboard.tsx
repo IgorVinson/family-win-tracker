@@ -11,10 +11,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "@/hooks/use-toast";
 import { ArrowLeft, Minus, Plus, Save } from "lucide-react";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
-
+import DailyReportForm from "@/components/kid/DailyReportForm";
 // Types mirrored from Index page, extended with optional notes and metrics
 export type Metric = { id: string; name: string; value: number; unit?: string; groupId?: string };
 export type Group = { id: string; name: string; type: "project" | "goal" };
+export type DailyReportEntry = { metricId: string; value: number };
+export type DailyReport = { id: string; date: string; createdAt: string; notes?: string; entries: DailyReportEntry[] };
 export type Kid = {
   id: string;
   name: string;
@@ -25,6 +27,7 @@ export type Kid = {
   notes?: string;
   metrics?: Metric[];
   groups?: Group[];
+  reports?: DailyReport[];
 };
 
 const KidDashboard = () => {
@@ -142,7 +145,7 @@ const sections = useMemo(() => {
       <header className="mb-6 flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Kid Dashboard: {kid.name}</h1>
-          <p className="text-muted-foreground mt-1">Track custom metrics and keep notes.</p>
+          <p className="text-muted-foreground mt-1">Track custom metrics, daily reports, and keep notes.</p>
         </div>
         <Button asChild variant="outline">
           <Link to="/">
@@ -259,6 +262,18 @@ const sections = useMemo(() => {
             <div className="mt-3 flex justify-end">
               <Button onClick={saveNotes}><Save className="mr-2 h-4 w-4" /> Save Notes</Button>
             </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Daily Report</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <DailyReportForm
+              kid={{ id: kid.id, name: kid.name, metrics: metrics.map(({ id, name, unit, groupId }) => ({ id, name, unit, groupId })), groups }}
+              onSave={(report) => updateKid((k) => ({ ...k, reports: [...(k.reports ?? []), report] }))}
+            />
           </CardContent>
         </Card>
       </section>
