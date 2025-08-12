@@ -19,15 +19,19 @@ export function seedMockDataIfEmpty() {
     "28 92% 54%",  // orange
   ];
 
-  const makeMetric = (name: string, value: number, unit?: string) => ({
-    id: crypto.randomUUID(),
-    name,
-    value,
-    unit,
-  });
+const makeMetric = (name: string, value: number, unit?: string, groupId?: string) => ({
+  id: crypto.randomUUID(),
+  name,
+  value,
+  unit,
+  groupId,
+});
 
-  const kids = [
-    {
+const kids = [
+  (() => {
+    const g1 = { id: crypto.randomUUID(), name: "Reading Goals", type: "goal" as const };
+    const g2 = { id: crypto.randomUUID(), name: "Chores Project", type: "project" as const };
+    return {
       id: crypto.randomUUID(),
       name: "Alex",
       points: 15,
@@ -35,12 +39,17 @@ export function seedMockDataIfEmpty() {
       color: hues[0],
       createdAt: now,
       notes: "Loves reading mystery books.",
+      groups: [g1, g2],
       metrics: [
-        makeMetric("Reading", 30, "min"),
-        makeMetric("Chores", 2),
+        makeMetric("Reading", 30, "min", g1.id),
+        makeMetric("Chores", 2, undefined, g2.id),
       ],
-    },
-    {
+    };
+  })(),
+  (() => {
+    const g1 = { id: crypto.randomUUID(), name: "Practice", type: "project" as const };
+    const g2 = { id: crypto.randomUUID(), name: "Goals", type: "goal" as const };
+    return {
       id: crypto.randomUUID(),
       name: "Sam",
       points: 22,
@@ -48,12 +57,16 @@ export function seedMockDataIfEmpty() {
       color: hues[1],
       createdAt: now,
       notes: "Great helper with dishes.",
+      groups: [g1, g2],
       metrics: [
-        makeMetric("Practice Piano", 20, "min"),
-        makeMetric("Chores", 3),
+        makeMetric("Practice Piano", 20, "min", g1.id),
+        makeMetric("Chores", 3, undefined, g2.id),
       ],
-    },
-    {
+    };
+  })(),
+  (() => {
+    const g1 = { id: crypto.randomUUID(), name: "Kindness", type: "goal" as const };
+    return {
       id: crypto.randomUUID(),
       name: "Mia",
       points: 5,
@@ -61,12 +74,14 @@ export function seedMockDataIfEmpty() {
       color: hues[2],
       createdAt: now,
       notes: "Working on kindness stars.",
+      groups: [g1],
       metrics: [
-        makeMetric("Kindness Stars", 1),
+        makeMetric("Kindness Stars", 1, undefined, g1.id),
         makeMetric("Reading", 10, "min"),
       ],
-    },
-  ];
+    };
+  })(),
+];
 
   try {
     window.localStorage.setItem("family-kids", JSON.stringify(kids));

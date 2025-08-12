@@ -7,12 +7,14 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "@/hooks/use-toast";
 import { ArrowLeft, Minus, Plus, Save } from "lucide-react";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
 
 // Types mirrored from Index page, extended with optional notes and metrics
-export type Metric = { id: string; name: string; value: number; unit?: string };
+export type Metric = { id: string; name: string; value: number; unit?: string; groupId?: string };
+export type Group = { id: string; name: string; type: "project" | "goal" };
 export type Kid = {
   id: string;
   name: string;
@@ -22,6 +24,7 @@ export type Kid = {
   createdAt: string;
   notes?: string;
   metrics?: Metric[];
+  groups?: Group[];
 };
 
 const KidDashboard = () => {
@@ -30,10 +33,13 @@ const KidDashboard = () => {
   const kid = useMemo(() => kids.find((k) => k.id === id), [kids, id]);
 
   const [noteDraft, setNoteDraft] = useState<string>(kid?.notes ?? "");
-  const [metricName, setMetricName] = useState("");
-  const [metricUnit, setMetricUnit] = useState("");
+const [metricName, setMetricName] = useState("");
+const [metricUnit, setMetricUnit] = useState("");
+const [groupName, setGroupName] = useState("");
+const [groupType, setGroupType] = useState<"project" | "goal">("project");
+const [metricGroupId, setMetricGroupId] = useState<string>("");
 
-  useEffect(() => {
+useEffect(() => {
     document.title = kid ? `${kid.name} Dashboard – Kids Tracker` : "Kid Dashboard – Kids Tracker";
   }, [kid]);
 
@@ -52,26 +58,48 @@ const KidDashboard = () => {
     toast({ title: "Notes saved", description: "Your notes were saved for this kid." });
   };
 
-  const addMetric = () => {
-    const name = metricName.trim();
-    if (!name) return;
-    updateKid((k) => ({
-      ...k,
-      metrics: [
-        ...(k.metrics ?? []),
-        { id: crypto.randomUUID(), name, value: 0, unit: metricUnit.trim() || undefined },
-      ],
-    }));
-    setMetricName("");
-    setMetricUnit("");
-  };
+const addGroup = () => {
+  const name = groupName.trim();
+  if (!name) return;
+  updateKid((k) => ({
+    ...k,
+    groups: [
+      ...(k.groups ?? []),
+      { id: crypto.randomUUID(), name, type: groupType },
+    ],
+  }));
+  setGroupName("");
+  setGroupType("project");
+};
 
-  const changeMetric = (mid: string, delta: number) => {
-    updateKid((k) => ({
-      ...k,
-      metrics: (k.metrics ?? []).map((m) => (m.id === mid ? { ...m, value: Math.max(0, m.value + delta) } : m)),
-    }));
-  };
+const addMetric = () => {
+  const name = metricName.trim();
+  if (!name) return;
+  updateKid((k) => ({
+    ...k,
+    metrics: [
+      ...(k.metrics ?? []),
+      { id: crypto.randomUUID(), name, value: 0, unit: metricUnit.trim() || undefined, groupId: metricGroupId || undefined },
+    ],
+  }));
+  setMetricName("");
+  setMetricUnit("");
+  setMetricGroupId("");
+};
+
+const changeMetric = (mid: string, delta: number) => {
+  updateKid((k) => ({
+    ...k,
+    metrics: (k.metrics ?? []).map((m) => (m.id === mid ? { ...m, value: Math.max(0, m.value + delta) } : m)),
+  }));
+};
+
+const changeMetricGroup = (mid: string, gid: string | "") => {
+  updateKid((k) => ({
+    ...k,
+    metrics: (k.metrics ?? []).map((m) => (m.id === mid ? { ...m, groupId: gid || undefined } : m)),
+  }));
+};
 
   const removeMetric = (mid: string) => {
     updateKid((k) => ({ ...k, metrics: (k.metrics ?? []).filter((m) => m.id !== mid) }));
@@ -97,8 +125,18 @@ const KidDashboard = () => {
     );
   }
 
-  const metrics = kid.metrics ?? [];
-
+const metrics = kid.metrics ?? [];
+const groups = kid.groups ?? [];
+const sections = useMemo(() => {
+  const ungrouped = (metrics).filter((m) => !m.groupId);
+  const result = [] as { id: string; title: string; items: typeof metrics }[];
+  if (ungrouped.length > 0) result.push({ id: "__ungrouped__", title: "Ungrouped", items: ungrouped });
+  for (const g of groups) {
+    const items = metrics.filter((m) => m.groupId === g.id);
+    if (items.length > 0) result.push({ id: g.id, title: `${g.name} (${g.type})`, items });
+  }
+  return result;
+}, [metrics, groups]);
   return (
     <main className="container py-8">
       <header className="mb-6 flex items-center justify-between">
@@ -119,50 +157,96 @@ const KidDashboard = () => {
             <CardTitle>Metrics</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="flex flex-wrap gap-3 mb-4">
-              <div className="grid gap-2">
-                <Label htmlFor="m-name">Metric name</Label>
-                <Input id="m-name" value={metricName} onChange={(e) => setMetricName(e.target.value)} placeholder="e.g., Reading minutes" className="w-56" />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="m-unit">Unit (optional)</Label>
-                <Input id="m-unit" value={metricUnit} onChange={(e) => setMetricUnit(e.target.value)} placeholder="e.g., min, pages" className="w-40" />
-              </div>
-              <div className="self-end">
-                <Button onClick={addMetric}><Plus className="mr-2 h-4 w-4" /> Add metric</Button>
-              </div>
-            </div>
+<div className="flex flex-wrap gap-3 mb-4 items-end">
+  <div className="grid gap-2">
+    <Label htmlFor="m-name">Metric name</Label>
+    <Input id="m-name" value={metricName} onChange={(e) => setMetricName(e.target.value)} placeholder="e.g., Reading minutes" className="w-56" />
+  </div>
+  <div className="grid gap-2">
+    <Label htmlFor="m-unit">Unit (optional)</Label>
+    <Input id="m-unit" value={metricUnit} onChange={(e) => setMetricUnit(e.target.value)} placeholder="e.g., min, pages" className="w-40" />
+  </div>
+  <div className="grid gap-2">
+    <Label>Group</Label>
+    <Select value={metricGroupId || "none"} onValueChange={(v) => setMetricGroupId(v === "none" ? "" : v)}>
+      <SelectTrigger className="w-44"><SelectValue placeholder="None" /></SelectTrigger>
+      <SelectContent>
+        <SelectItem value="none">None</SelectItem>
+        {groups.map((g) => (
+          <SelectItem key={g.id} value={g.id}>{g.name}</SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  </div>
+  <div className="self-end">
+    <Button onClick={addMetric}><Plus className="mr-2 h-4 w-4" /> Add metric</Button>
+  </div>
+  <Separator orientation="vertical" className="h-8" />
+  <div className="grid gap-2">
+    <Label htmlFor="g-name">New group</Label>
+    <Input id="g-name" value={groupName} onChange={(e) => setGroupName(e.target.value)} placeholder="e.g., Reading Goals" className="w-56" />
+  </div>
+  <div className="grid gap-2">
+    <Label>Type</Label>
+    <Select value={groupType} onValueChange={(v) => setGroupType(v as any)}>
+      <SelectTrigger className="w-32"><SelectValue /></SelectTrigger>
+      <SelectContent>
+        <SelectItem value="project">Project</SelectItem>
+        <SelectItem value="goal">Goal</SelectItem>
+      </SelectContent>
+    </Select>
+  </div>
+  <div className="self-end">
+    <Button variant="secondary" onClick={addGroup}><Plus className="mr-2 h-4 w-4" /> Add group</Button>
+  </div>
+</div>
 
-            {metrics.length === 0 ? (
-              <p className="text-muted-foreground">No metrics yet. Add your first custom metric above.</p>
-            ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Name</TableHead>
-                    <TableHead className="w-32">Value</TableHead>
-                    <TableHead className="w-24">Unit</TableHead>
-                    <TableHead className="w-56">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {metrics.map((m) => (
-                    <TableRow key={m.id}>
-                      <TableCell className="font-medium">{m.name}</TableCell>
-                      <TableCell>{m.value}</TableCell>
-                      <TableCell>{m.unit ?? "-"}</TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <Button size="sm" variant="secondary" onClick={() => changeMetric(m.id, -1)}><Minus className="h-4 w-4" /></Button>
-                          <Button size="sm" onClick={() => changeMetric(m.id, +1)}><Plus className="h-4 w-4" /></Button>
-                          <Button size="sm" variant="outline" onClick={() => removeMetric(m.id)}>Remove</Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            )}
+{metrics.length === 0 ? (
+  <p className="text-muted-foreground">No metrics yet. Add your first custom metric above.</p>
+) : (
+  <div className="space-y-6">
+    {sections.map((section) => (
+      <div key={section.id}>
+        <h3 className="text-sm font-semibold text-muted-foreground mb-2">{section.title}</h3>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Name</TableHead>
+              <TableHead className="w-32">Value</TableHead>
+              <TableHead className="w-24">Unit</TableHead>
+              <TableHead className="w-56">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {section.items.map((m) => (
+              <TableRow key={m.id}>
+                <TableCell className="font-medium">{m.name}</TableCell>
+                <TableCell>{m.value}</TableCell>
+                <TableCell>{m.unit ?? "-"}</TableCell>
+                <TableCell>
+                  <div className="flex items-center gap-2">
+                    <Button size="sm" variant="secondary" onClick={() => changeMetric(m.id, -1)}><Minus className="h-4 w-4" /></Button>
+                    <Button size="sm" onClick={() => changeMetric(m.id, +1)}><Plus className="h-4 w-4" /></Button>
+                    <Select value={m.groupId || "none"} onValueChange={(v) => changeMetricGroup(m.id, v === "none" ? "" : v)}>
+                      <SelectTrigger className="h-8 w-40"><SelectValue placeholder="Group" /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">No group</SelectItem>
+                        {groups.map((g) => (
+                          <SelectItem key={g.id} value={g.id}>{g.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Button size="sm" variant="outline" onClick={() => removeMetric(m.id)}>Remove</Button>
+                  </div>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+    ))}
+  </div>
+)}
           </CardContent>
         </Card>
 
