@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -7,8 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "@/hooks/use-toast";
-import { Plus, Target, Trophy, Star, UserRound } from "lucide-react";
-
+import { Plus, Target, Trophy, Star, UserRound, ArrowRight } from "lucide-react";
 // Simple localStorage hook to persist state without backend
 function useLocalStorage<T>(key: string, initialValue: T) {
   const [value, setValue] = useState<T>(() => {
@@ -231,6 +231,11 @@ function KidCard({ kid, onAdd, onSetGoal, onReset }: { kid: Kid; onAdd: (delta: 
             <Button onClick={() => { const v = Number(custom || 0); if (!Number.isNaN(v) && v !== 0) { onAdd(v); setCustom(""); } }}>Add</Button>
           </div>
           <Button variant="outline" onClick={onReset}>Reset</Button>
+          <Button variant="ghost" asChild>
+            <Link to={`/kid/${kid.id}`} aria-label={`Open ${kid.name} dashboard`}>
+              Dashboard <ArrowRight className="ml-1 h-4 w-4" />
+            </Link>
+          </Button>
         </div>
       </CardContent>
     </Card>
