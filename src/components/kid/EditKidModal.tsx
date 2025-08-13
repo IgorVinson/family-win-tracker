@@ -80,37 +80,6 @@ export function EditKidModal({
               <span className="text-lg font-semibold">{currentPoints}</span>
             </div>
 
-            {/* Quick Add/Remove */}
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handleAddPoints(1)}
-                className="flex-1"
-              >
-                <Plus className="h-4 w-4 mr-1" />
-                +1
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handleAddPoints(5)}
-                className="flex-1"
-              >
-                <Plus className="h-4 w-4 mr-1" />
-                +5
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handleAddPoints(-1)}
-                className="flex-1"
-              >
-                <Minus className="h-4 w-4 mr-1" />
-                -1
-              </Button>
-            </div>
-
             {/* Custom Points */}
             <div className="flex gap-2">
               <Input
