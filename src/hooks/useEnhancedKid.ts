@@ -183,14 +183,25 @@ export function useEnhancedKid(kidId: string) {
   };
 
   const updateRedemption = (redemptionId: string, status: PrizeRedemption["status"], notes?: string) => {
-    updateKid(currentKid => ({
-      ...currentKid,
-      prizeRedemptions: currentKid.prizeRedemptions.map(r =>
-        r.id === redemptionId 
-          ? { ...r, status, processedAt: new Date().toISOString(), notes }
-          : r
-      )
-    }));
+    updateKid(currentKid => {
+      const redemption = currentKid.prizeRedemptions.find(r => r.id === redemptionId);
+      const prize = currentKid.availablePrizes.find(p => p.id === redemption?.prizeId);
+      
+      // If rejecting a redemption, return the points to the kid
+      const pointsToReturn = status === "rejected" && redemption?.status === "pending" && prize 
+        ? prize.pointsCost 
+        : 0;
+
+      return {
+        ...currentKid,
+        points: currentKid.points + pointsToReturn,
+        prizeRedemptions: currentKid.prizeRedemptions.map(r =>
+          r.id === redemptionId 
+            ? { ...r, status, processedAt: new Date().toISOString(), notes }
+            : r
+        )
+      };
+    });
   };
 
   const updateMetricScoringRule = (metricId: string, scoringRule: ScoringRule) => {
