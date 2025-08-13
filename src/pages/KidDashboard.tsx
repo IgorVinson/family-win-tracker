@@ -181,6 +181,9 @@ export default function KidDashboard() {
     .filter(report => report.status === "pending")
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
+  // Count pending redemptions for notification badge
+  const pendingRedemptions = kid.prizeRedemptions?.filter(r => r.status === "pending").length || 0;
+
   if (!kid) {
     return (
       <div className="max-w-6xl mx-auto p-6">
@@ -217,8 +220,16 @@ export default function KidDashboard() {
           </div>
         </div>
         <div className="flex gap-2">
-          <Button onClick={() => setShowManagement(true)} variant="outline">
+          <Button onClick={() => setShowManagement(true)} variant="outline" className="relative">
             <Settings className="mr-2 h-4 w-4" /> Manage Prizes
+            {pendingRedemptions > 0 && (
+              <Badge 
+                variant="destructive" 
+                className="absolute -top-2 -right-2 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs animate-pulse"
+              >
+                {pendingRedemptions}
+              </Badge>
+            )}
           </Button>
           <Button onClick={() => setOpenAddGroup(true)} variant="outline">
             <Plus className="mr-2 h-4 w-4" /> Add group
