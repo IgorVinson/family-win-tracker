@@ -45,6 +45,12 @@ export default function KidDashboard() {
   const [planType, setPlanType] = useState<"daily" | "weekly">("daily");
   const [planValue, setPlanValue] = useState("");
   const [metricGroupId, setMetricGroupId] = useState<string>("");
+  
+  // Scoring rule states for new activities
+  const [newBasePointsPerUnit, setNewBasePointsPerUnit] = useState("1");
+  const [newGoalBonusPoints, setNewGoalBonusPoints] = useState("5");
+  const [newStreakBonusPoints, setNewStreakBonusPoints] = useState("2");
+  const [newMaxDailyPoints, setNewMaxDailyPoints] = useState("50");
   const [groupName, setGroupName] = useState("");
   const [groupType, setGroupType] = useState<"project" | "goal">("goal");
   const [showManagement, setShowManagement] = useState(false);
@@ -64,6 +70,8 @@ export default function KidDashboard() {
     if (!kid) return;
     updateKid(updater);
   };
+  
+  const { updateMetricScoringRule } = useEnhancedKid(id || "");
 
   const addMetric = () => {
     if (!metricName.trim()) return;
@@ -76,11 +84,32 @@ export default function KidDashboard() {
       planType,
       planValue: planValue ? parseInt(planValue) : undefined,
     };
+    
+    // Create scoring rule for the new metric
+    const scoringRule = {
+      metricId: metric.id,
+      basePointsPerUnit: Math.max(0, Number(newBasePointsPerUnit) || 1),
+      goalBonusPoints: Math.max(0, Number(newGoalBonusPoints) || 0),
+      streakBonusPoints: Math.max(0, Number(newStreakBonusPoints) || 0),
+      maxDailyPoints: Math.max(1, Number(newMaxDailyPoints) || 50),
+    };
+    
     updateKidLegacy((k) => ({ ...k, metrics: [...(k.metrics ?? []), metric] }));
+    
+    // Add scoring rule to enhanced kid data
+    if (updateMetricScoringRule) {
+      updateMetricScoringRule(metric.id, scoringRule);
+    }
+    
+    // Reset form
     setMetricName("");
     setMetricUnit("");
     setPlanValue("");
     setMetricGroupId("");
+    setNewBasePointsPerUnit("1");
+    setNewGoalBonusPoints("5");
+    setNewStreakBonusPoints("2");
+    setNewMaxDailyPoints("50"); 
     setOpenAddMetric(false);
     toast({ title: "Activity added", description: `${metricName} has been added.` });
   };
@@ -465,8 +494,62 @@ export default function KidDashboard() {
                   {(kid.groups || []).map((g) => (
                     <SelectItem key={g.id} value={g.id}>{g.name}</SelectItem>
                    ))}
-                 </SelectContent>
+                  </SelectContent>
               </Select>
+            </div>
+            
+            <div className="space-y-3 p-4 bg-muted/50 rounded-lg">
+              <h4 className="font-medium text-sm">Scoring Rules</h4>
+              <div className="grid grid-cols-2 gap-3 text-sm">
+                <div>
+                  <Label htmlFor="new-base-points" className="text-xs text-muted-foreground">Base Points per {metricUnit || 'unit'}</Label>
+                  <Input
+                    id="new-base-points"
+                    type="number"
+                    min="0"
+                    value={newBasePointsPerUnit}
+                    onChange={(e) => setNewBasePointsPerUnit(e.target.value)}
+                    className="h-8 text-sm"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="new-goal-bonus" className="text-xs text-muted-foreground">Goal Bonus Points</Label>
+                  <Input
+                    id="new-goal-bonus"
+                    type="number"
+                    min="0"
+                    value={newGoalBonusPoints}
+                    onChange={(e) => setNewGoalBonusPoints(e.target.value)}
+                    className="h-8 text-sm"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="new-streak-bonus" className="text-xs text-muted-foreground">Streak Bonus Points</Label>
+                  <Input
+                    id="new-streak-bonus"
+                    type="number"
+                    min="0"
+                    value={newStreakBonusPoints}
+                    onChange={(e) => setNewStreakBonusPoints(e.target.value)}
+                    className="h-8 text-sm"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="new-max-daily" className="text-xs text-muted-foreground">Max Daily Points</Label>
+                  <Input
+                    id="new-max-daily"
+                    type="number"
+                    min="1"
+                    value={newMaxDailyPoints}
+                    onChange={(e) => setNewMaxDailyPoints(e.target.value)}
+                    className="h-8 text-sm"
+                  />
+                </div>
+              </div>
+              <div className="text-xs text-muted-foreground">
+                Complete your {planType} goal of {planValue} {metricUnit || 'units'} to earn the goal bonus. 
+                Maintain streaks for additional points!
+              </div>
             </div>
           </div>
           <DialogFooter>
