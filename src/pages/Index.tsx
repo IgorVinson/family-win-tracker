@@ -50,7 +50,7 @@ const pastelHues = [
   "330 70% 55%",
 ];
 
-const quickAdds = [1, 5, 10];
+
 
 const Index = () => {
   const [kids, setKids] = useLocalStorage<Kid[]>("family-kids", []);
@@ -221,9 +221,6 @@ function KidCard({ kid, onAdd, onSetGoal, onReset }: { kid: Kid; onAdd: (delta: 
         <Separator className="my-4" />
 
         <div className="flex flex-wrap gap-2">
-          {quickAdds.map((n) => (
-            <Button key={n} variant="secondary" onClick={() => onAdd(n)}>+{n}</Button>
-          ))}
           <div className="flex items-center gap-2">
             <Input
               type="number"
