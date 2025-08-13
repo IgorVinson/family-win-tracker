@@ -218,72 +218,64 @@ export default function KidDashboard() {
         </div>
       </div>
 
+      {/* Overview Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Current Points</CardTitle>
+            <Target className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{kid.points}</div>
+            <p className="text-xs text-muted-foreground">
+              {kid.goal - kid.points} left to goal
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Achievements</CardTitle>
+            <Award className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{kid.achievements?.length || 0}</div>
+            <p className="text-xs text-muted-foreground">Badges earned</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Active Streaks</CardTitle>
+            <BarChart3 className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {Object.values(kid.streaks || {}).filter(s => s > 0).length}
+            </div>
+            <p className="text-xs text-muted-foreground">Current streaks</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Earned</CardTitle>
+            <Calendar className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{kid.totalPointsEarned || 0}</div>
+            <p className="text-xs text-muted-foreground">Lifetime points</p>
+          </CardContent>
+        </Card>
+      </div>
+
       {/* Main Content Tabs */}
-      <Tabs defaultValue="overview" className="w-full">
-        <TabsList className="grid w-full grid-cols-5">
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="scores">Scores</TabsTrigger>
-          <TabsTrigger value="shop">Prize Shop</TabsTrigger>
+      <Tabs defaultValue="metrics" className="w-full">
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="metrics">Activities</TabsTrigger>
           <TabsTrigger value="reports">Reports</TabsTrigger>
+          <TabsTrigger value="shop">Prize Shop</TabsTrigger>
         </TabsList>
-
-        <TabsContent value="overview" className="space-y-6">
-          {/* Overview Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Current Points</CardTitle>
-                <Target className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{kid.points}</div>
-                <p className="text-xs text-muted-foreground">
-                  {kid.goal - kid.points} left to goal
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Achievements</CardTitle>
-                <Award className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{kid.achievements?.length || 0}</div>
-                <p className="text-xs text-muted-foreground">Badges earned</p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Active Streaks</CardTitle>
-                <BarChart3 className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">
-                  {Object.values(kid.streaks || {}).filter(s => s > 0).length}
-                </div>
-                <p className="text-xs text-muted-foreground">Current streaks</p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Total Earned</CardTitle>
-                <Calendar className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{kid.totalPointsEarned || 0}</div>
-                <p className="text-xs text-muted-foreground">Lifetime points</p>
-              </CardContent>
-            </Card>
-          </div>
-        </TabsContent>
-
-        <TabsContent value="scores">
-          <ScoreDashboard kid={kid} />
-        </TabsContent>
 
         <TabsContent value="shop">
           <PrizeShop kid={kid} onRedeemPrize={redeemPrize} />
