@@ -55,6 +55,14 @@ export function EditKidModal({
         </DialogHeader>
         
         <div className="space-y-6 py-4">
+          {/* Current Points - moved to top */}
+          <div className="flex items-center justify-between">
+            <Label>Current Points</Label>
+            <span className="text-lg font-semibold">{currentPoints}</span>
+          </div>
+
+          <Separator />
+
           {/* Goal Setting */}
           <div className="space-y-2">
             <Label htmlFor="goal" className="flex items-center gap-2">
@@ -75,11 +83,6 @@ export function EditKidModal({
 
           {/* Points Management */}
           <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <Label>Current Points</Label>
-              <span className="text-lg font-semibold">{currentPoints}</span>
-            </div>
-
             {/* Custom Points */}
             <div className="flex gap-2">
               <Input
@@ -93,29 +96,27 @@ export function EditKidModal({
                 Add
               </Button>
             </div>
-
-            {/* Reset */}
-            <Button
-              variant="destructive"
-              size="sm"
-              onClick={() => {
-                onReset();
-                onOpenChange(false);
-              }}
-              className="w-full"
-            >
-              Reset Points to 0
-            </Button>
           </div>
         </div>
 
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancel
+        <DialogFooter className="flex justify-between">
+          <Button
+            variant="destructive"
+            onClick={() => {
+              onReset();
+              onOpenChange(false);
+            }}
+          >
+            Reset Points
           </Button>
-          <Button onClick={handleSave}>
-            Save Changes
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => onOpenChange(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleSave}>
+              Save Changes
+            </Button>
+          </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>
