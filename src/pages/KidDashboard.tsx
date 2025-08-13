@@ -63,6 +63,7 @@ export default function KidDashboard() {
     approveReport,
     rejectReport,
     updateReport,
+    deleteReport,
     addPrize,
     updatePrize,
     deletePrize,
@@ -459,7 +460,7 @@ export default function KidDashboard() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              {!kid.reports || kid.reports.length === 0 ? <p className="text-muted-foreground text-center py-4">
+                {!kid.reports || kid.reports.length === 0 ? <p className="text-muted-foreground text-center py-4">
                   No reports yet. Add a report to start tracking daily progress.
                 </p> : <div className="space-y-3">
                   {kid.reports.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).slice(0, 5).map(report => <div key={report.id} className="p-4 border rounded-lg">
@@ -472,9 +473,32 @@ export default function KidDashboard() {
                             <Badge variant="outline">
                               {report.entries.length} metrics
                             </Badge>
+                            <Button
+                              onClick={() => {
+                                const reportToEdit = kid.reports?.find(r => r.id === report.id);
+                                setEditingReport(reportToEdit);
+                              }}
+                              variant="outline"
+                              size="sm"
+                            >
+                              <Edit className="h-3 w-3" />
+                            </Button>
+                            <Button
+                              onClick={() => {
+                                deleteReport(report.id);
+                                toast({
+                                  title: "Report deleted",
+                                  description: "The report has been deleted."
+                                });
+                              }}
+                              variant="outline"
+                              size="sm"
+                            >
+                              <Trash2 className="h-3 w-3" />
+                            </Button>
                           </div>
                         </div>
-                        {report.notes}
+                        {report.notes && <p className="text-sm text-muted-foreground mb-2">{report.notes}</p>}
                         <div className="flex flex-wrap gap-2">
                           {report.entries.map(entry => {
                     const metric = kid.metrics?.find(m => m.id === entry.metricId);
