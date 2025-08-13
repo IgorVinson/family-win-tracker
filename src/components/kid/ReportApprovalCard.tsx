@@ -81,18 +81,18 @@ export function ReportApprovalCard({ report, kid, onApprove, onReject, onEdit }:
             <Button
               onClick={() => onApprove(report.id)}
               size="sm"
-              className="flex-1"
+              className="px-3"
             >
-              <Check className="h-4 w-4 mr-1" />
+              <Check className="h-3 w-3 mr-1" />
               Approve
             </Button>
             <Button
               onClick={() => onReject(report.id)}
               variant="destructive"
               size="sm"
-              className="flex-1"
+              className="px-3"
             >
-              <X className="h-4 w-4 mr-1" />
+              <X className="h-3 w-3 mr-1" />
               Reject
             </Button>
             <Button
