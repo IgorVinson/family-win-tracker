@@ -121,6 +121,32 @@ const EditMetricModal = ({ metric, groups, isOpen, onClose, onSave }: EditMetric
             </Select>
           </div>
 
+          <div className="space-y-3 p-4 bg-muted/50 rounded-lg">
+            <h4 className="font-medium text-sm">Scoring Rules</h4>
+            <div className="grid grid-cols-2 gap-3 text-sm">
+              <div>
+                <Label className="text-xs text-muted-foreground">Base Points</Label>
+                <div className="font-medium">1 per {unit || 'unit'}</div>
+              </div>
+              <div>
+                <Label className="text-xs text-muted-foreground">Goal Bonus</Label>
+                <div className="font-medium">+5 points</div>
+              </div>
+              <div>
+                <Label className="text-xs text-muted-foreground">Streak Bonus</Label>
+                <div className="font-medium">+2 points</div>
+              </div>
+              <div>
+                <Label className="text-xs text-muted-foreground">Daily Max</Label>
+                <div className="font-medium">50 points</div>
+              </div>
+            </div>
+            <div className="text-xs text-muted-foreground">
+              Complete your {planType} goal of {planValue} {unit || 'units'} to earn the goal bonus. 
+              Maintain streaks for additional points!
+            </div>
+          </div>
+
           <div className="flex justify-end gap-2 pt-4">
             <Button variant="outline" onClick={onClose}>
               Cancel

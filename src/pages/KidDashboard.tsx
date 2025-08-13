@@ -299,17 +299,30 @@ export default function KidDashboard() {
                           </Button>
                         )}
                       </div>
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead>Metric</TableHead>
-                            <TableHead>Current</TableHead>
-                            <TableHead>Plan</TableHead>
-                            <TableHead>Actions</TableHead>
-                          </TableRow>
-                        </TableHeader>
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead>Metric</TableHead>
+                              <TableHead>Current</TableHead>
+                              <TableHead>Plan</TableHead>
+                              <TableHead>Points</TableHead>
+                              <TableHead>Actions</TableHead>
+                            </TableRow>
+                          </TableHeader>
                         <TableBody>
-                          {metrics.map((metric) => (
+                          {metrics.map((metric) => {
+                            // Get scoring rule from metric or use default
+                            const scoringRule = metric.scoringRule || {
+                              metricId: metric.id,
+                              basePointsPerUnit: 1,
+                              goalBonusPoints: 5,
+                              streakBonusPoints: 2,
+                              maxDailyPoints: 50
+                            };
+                            
+                            const pointsDisplay = `${scoringRule.basePointsPerUnit}${metric.unit ? ` per ${metric.unit}` : ''} (+${scoringRule.goalBonusPoints} goal)`;
+                            
+                            return (
                             <TableRow key={metric.id}>
                               <TableCell className="font-medium">{metric.name}</TableCell>
                               <TableCell>
@@ -323,6 +336,14 @@ export default function KidDashboard() {
                                 ) : (
                                   <span className="text-muted-foreground">No plan</span>
                                 )}
+                              </TableCell>
+                              <TableCell>
+                                <div className="text-sm">
+                                  <div className="font-medium text-primary">{pointsDisplay}</div>
+                                  <div className="text-xs text-muted-foreground">
+                                    +{scoringRule.streakBonusPoints} streak • max {scoringRule.maxDailyPoints}
+                                  </div>
+                                </div>
                               </TableCell>
                               <TableCell>
                                 <div className="flex gap-1">
@@ -343,7 +364,8 @@ export default function KidDashboard() {
                                 </div>
                               </TableCell>
                             </TableRow>
-                          ))}
+                            );
+                          })}
                         </TableBody>
                       </Table>
                       {group !== groupedMetrics[groupedMetrics.length - 1]?.group && <Separator className="mt-4" />}

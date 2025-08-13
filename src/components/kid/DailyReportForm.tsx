@@ -128,9 +128,32 @@ export function DailyReportForm({ kid, onSave, onSaveRef }: { kid: KidLike; onSa
             <div key={section.id}>
               <h4 className="text-sm font-semibold text-muted-foreground mb-2">{section.title}</h4>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                {section.items.map((m) => (
-                  <div key={m.id} className="grid gap-1">
-                    <Label htmlFor={`metric-${m.id}`}>{m.name} {m.unit ? `(${m.unit})` : ""}</Label>
+                {section.items.map((m) => {
+                  const value = Number(values[m.id] ?? 0);
+                  const scoringRule = {
+                    basePointsPerUnit: 1,
+                    goalBonusPoints: 5,
+                    streakBonusPoints: 2,
+                    maxDailyPoints: 50
+                  };
+                  
+                  const basePoints = Math.floor(value * scoringRule.basePointsPerUnit);
+                  const meetsGoal = value > 0; // Simple check for now
+                  const goalBonus = meetsGoal ? scoringRule.goalBonusPoints : 0;
+                  const expectedPoints = Math.min(basePoints + goalBonus, scoringRule.maxDailyPoints);
+                  
+                  return (
+                  <div key={m.id} className="grid gap-2">
+                    <Label htmlFor={`metric-${m.id}`} className="flex items-center justify-between">
+                      <span>
+                        {m.name} {m.unit ? `(${m.unit})` : ""}
+                      </span>
+                      {value > 0 && (
+                        <span className="text-sm font-medium text-primary">
+                          {expectedPoints} pts
+                        </span>
+                      )}
+                    </Label>
                     <Input
                       id={`metric-${m.id}`}
                       type="number"
@@ -138,8 +161,16 @@ export function DailyReportForm({ kid, onSave, onSaveRef }: { kid: KidLike; onSa
                       value={values[m.id] ?? 0}
                       onChange={(e) => handleChange(m.id, e.target.value)}
                     />
+                    {value > 0 && (
+                      <div className="text-xs text-muted-foreground">
+                        {basePoints} base pts
+                        {meetsGoal && ` + ${goalBonus} goal bonus`}
+                        {` + ${scoringRule.streakBonusPoints} possible streak bonus`}
+                      </div>
+                    )}
                   </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           ))}
