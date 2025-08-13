@@ -50,7 +50,7 @@ export function EditKidModal({
     }
   };
 
-  const progressPercentage = currentGoal > 0 ? Math.min(100, (currentPoints / currentGoal) * 100) : 0;
+  const progressPercentage = goal > 0 ? Math.min(100, (currentPoints / goal) * 100) : 0;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -86,13 +86,16 @@ export function EditKidModal({
                         className="w-20 h-8"
                         min={0}
                       />
-                      <Button size="sm" onClick={() => setIsEditingGoal(false)}>
+                      <Button size="sm" onClick={() => {
+                        onSetGoal(Math.max(0, goal));
+                        setIsEditingGoal(false);
+                      }}>
                         ✓
                       </Button>
                     </div>
                   ) : (
                     <div className="flex items-center gap-2">
-                      <span className="text-muted-foreground">Goal: {currentGoal}</span>
+                      <span className="text-muted-foreground">Goal: {goal}</span>
                       <Button
                         variant="ghost"
                         size="sm"
