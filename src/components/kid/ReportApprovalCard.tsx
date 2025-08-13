@@ -25,7 +25,7 @@ export function ReportApprovalCard({ report, kid, onReview, onEdit }: ReportAppr
   const getStatusBadge = (status: Report["status"]) => {
     switch (status) {
       case "pending":
-        return <Badge variant="secondary">Pending Review</Badge>;
+        return null;
       case "approved":
         return <Badge variant="default">Approved</Badge>;
       case "rejected":
@@ -51,9 +51,6 @@ export function ReportApprovalCard({ report, kid, onReview, onEdit }: ReportAppr
         <h4 className="font-medium">{formatDate(report.date)}</h4>
         <div className="flex gap-2">
           {getStatusBadge(report.status)}
-          <Badge variant="outline">
-            {report.entries.filter(entry => entry.value > 0).length} activities
-          </Badge>
           
           {report.status === "pending" && (
             <Button
