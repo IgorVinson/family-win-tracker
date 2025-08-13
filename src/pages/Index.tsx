@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "@/hooks/use-toast";
-import { Plus, Target, Trophy, Star, UserRound, ArrowRight, Edit } from "lucide-react";
+import { Plus, Target, Trophy, Star, UserRound, ArrowRight, Edit, BarChart3 } from "lucide-react";
 import { EditKidModal } from "@/components/kid/EditKidModal";
 import { ReportViewModal } from "@/components/kid/ReportViewModal";
 // Simple localStorage hook to persist state without backend
@@ -232,9 +232,15 @@ function KidCard({ kid, onAdd, onSetGoal, onReset }: { kid: Kid; onAdd: (delta: 
         <Separator className="my-4" />
 
         <div className="flex justify-center">
-          <Button variant="ghost" asChild>
+          <Button 
+            variant="secondary" 
+            asChild 
+            className="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white border-0 shadow-md hover:shadow-lg transition-all duration-200"
+          >
             <Link to={`/kid/${kid.id}`} aria-label={`Open ${kid.name} dashboard`}>
-              Dashboard <ArrowRight className="ml-1 h-4 w-4" />
+              <BarChart3 className="mr-2 h-4 w-4" />
+              View Dashboard
+              <ArrowRight className="ml-2 h-4 w-4" />
             </Link>
           </Button>
         </div>
