@@ -8,6 +8,7 @@ import { Separator } from "@/components/ui/separator";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "@/hooks/use-toast";
 import { ArrowLeft, Plus, Save, Edit, Trash } from "lucide-react";
@@ -49,6 +50,7 @@ const KidDashboard = () => {
   const [metricGroupId, setMetricGroupId] = useState<string>("");
   const [editingMetric, setEditingMetric] = useState<Metric | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [openAddGroup, setOpenAddGroup] = useState(false);
 
   useEffect(() => {
     document.title = kid ? `${kid.name} Dashboard – Kids Tracker` : "Kid Dashboard – Kids Tracker";
@@ -220,22 +222,36 @@ const KidDashboard = () => {
                 <Button onClick={addMetric}><Plus className="mr-2 h-4 w-4" /> Add metric</Button>
               </div>
               <Separator orientation="vertical" className="h-8" />
-              <div className="grid gap-2">
-                <Label htmlFor="g-name">New group</Label>
-                <Input id="g-name" value={groupName} onChange={(e) => setGroupName(e.target.value)} placeholder="e.g., Reading Goals" className="w-56" />
-              </div>
-              <div className="grid gap-2">
-                <Label>Type</Label>
-                <Select value={groupType} onValueChange={(v) => setGroupType(v as any)}>
-                  <SelectTrigger className="w-32"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="project">Project</SelectItem>
-                    <SelectItem value="goal">Goal</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
               <div className="self-end">
-                <Button variant="secondary" onClick={addGroup}><Plus className="mr-2 h-4 w-4" /> Add group</Button>
+                <Dialog open={openAddGroup} onOpenChange={setOpenAddGroup}>
+                  <DialogTrigger asChild>
+                    <Button variant="secondary"><Plus className="mr-2 h-4 w-4" /> Add group</Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Add Group</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4 py-2">
+                      <div className="grid gap-2">
+                        <Label htmlFor="g-name">Name</Label>
+                        <Input id="g-name" value={groupName} onChange={(e) => setGroupName(e.target.value)} placeholder="e.g., Reading Goals" />
+                      </div>
+                      <div className="grid gap-2">
+                        <Label>Type</Label>
+                        <Select value={groupType} onValueChange={(v) => setGroupType(v as any)}>
+                          <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="project">Project</SelectItem>
+                            <SelectItem value="goal">Goal</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                    <DialogFooter>
+                      <Button onClick={() => { if (!groupName.trim()) { toast({ title: "Please enter a group name" }); return; } addGroup(); setOpenAddGroup(false); }}>Save</Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
               </div>
             </div>
 
