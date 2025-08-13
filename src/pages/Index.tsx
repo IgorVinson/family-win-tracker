@@ -32,7 +32,14 @@ function useLocalStorage<T>(key: string, initialValue: T) {
 }
 
 type DailyReportEntry = { metricId: string; value: number };
-type DailyReport = { id: string; date: string; createdAt: string; notes?: string; entries: DailyReportEntry[] };
+type DailyReport = { 
+  id: string; 
+  date: string; 
+  createdAt: string; 
+  notes?: string; 
+  entries: DailyReportEntry[];
+  status?: "pending" | "approved" | "rejected";
+};
 type Metric = { id: string; name: string; unit?: string; groupId?: string };
 type PrizeRedemption = { 
   id: string; 
@@ -212,6 +219,9 @@ function KidCard({ kid, onAdd, onSetGoal, onReset }: { kid: Kid; onAdd: (delta: 
 
   // Count pending redemptions for notification
   const pendingRedemptions = kid.prizeRedemptions?.filter(r => r.status === "pending").length || 0;
+  
+  // Count pending reports for notification  
+  const pendingReports = kid.reports?.filter(r => r.status === "pending").length || 0;
 
   return (
     <Card className="card-elevated overflow-hidden">
@@ -292,6 +302,21 @@ function KidCard({ kid, onAdd, onSetGoal, onReset }: { kid: Kid; onAdd: (delta: 
                 <p className="font-semibold">Parent Review Needed</p>
                 <p className="text-orange-600">
                   {pendingRedemptions} prize redemption{pendingRedemptions > 1 ? 's' : ''} awaiting approval
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Report Review Notification */}
+        {pendingReports > 0 && (
+          <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+            <div className="flex items-center gap-2 text-blue-700">
+              <AlertCircle className="h-4 w-4 flex-shrink-0" />
+              <div className="text-xs">
+                <p className="font-semibold">Report Review Needed</p>
+                <p className="text-blue-600">
+                  {pendingReports} daily report{pendingReports > 1 ? 's' : ''} awaiting approval
                 </p>
               </div>
             </div>
