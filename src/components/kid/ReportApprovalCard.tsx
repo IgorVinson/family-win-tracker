@@ -1,8 +1,6 @@
-import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Check, X, Edit, Calendar, Eye } from "lucide-react";
+import { Edit, Eye } from "lucide-react";
 import { EnhancedKid } from "@/types/scoreSystem";
 
 interface Report {
@@ -19,14 +17,11 @@ interface Report {
 interface ReportApprovalCardProps {
   report: Report;
   kid: EnhancedKid;
-  onApprove: (reportId: string) => void;
-  onReject: (reportId: string) => void;
+  onReview: (reportId: string) => void;
   onEdit: (reportId: string) => void;
 }
 
-export function ReportApprovalCard({ report, kid, onApprove, onReject, onEdit }: ReportApprovalCardProps) {
-  const [showReviewActions, setShowReviewActions] = useState(false);
-
+export function ReportApprovalCard({ report, kid, onReview, onEdit }: ReportApprovalCardProps) {
   const getStatusBadge = (status: Report["status"]) => {
     switch (status) {
       case "pending":
@@ -60,43 +55,16 @@ export function ReportApprovalCard({ report, kid, onApprove, onReject, onEdit }:
             {report.entries.filter(entry => entry.value > 0).length} activities
           </Badge>
           
-          {report.status === "pending" && !showReviewActions && (
+          {report.status === "pending" && (
             <Button
-              variant="outline"
+              variant="default"
               size="sm"
-              onClick={() => setShowReviewActions(true)}
+              onClick={() => onReview(report.id)}
+              className="bg-orange-500 hover:bg-orange-600 text-white"
             >
               <Eye className="h-3 w-3 mr-1" />
               Review
             </Button>
-          )}
-          
-          {report.status === "pending" && showReviewActions && (
-            <>
-              <Button
-                onClick={() => {
-                  onApprove(report.id);
-                  setShowReviewActions(false);
-                }}
-                size="sm"
-                className="px-3"
-              >
-                <Check className="h-3 w-3 mr-1" />
-                Approve
-              </Button>
-              <Button
-                onClick={() => {
-                  onReject(report.id);
-                  setShowReviewActions(false);
-                }}
-                variant="destructive"
-                size="sm"
-                className="px-3"
-              >
-                <X className="h-3 w-3 mr-1" />
-                Reject
-              </Button>
-            </>
           )}
           
           <Button

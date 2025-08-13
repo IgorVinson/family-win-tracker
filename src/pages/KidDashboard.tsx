@@ -18,6 +18,7 @@ import DailyReportForm from "@/components/kid/DailyReportForm";
 import EditMetricModal from "@/components/kid/EditMetricModal";
 import { ReportApprovalCard } from "@/components/kid/ReportApprovalCard";
 import { EditReportModal } from "@/components/kid/EditReportModal";
+import { ReviewReportModal } from "@/components/kid/ReviewReportModal";
 import { ScoreDashboard } from "@/components/score/ScoreDashboard";
 import { PrizeShop } from "@/components/prize/PrizeShop";
 import { PrizeManagement } from "@/components/prize/PrizeManagement";
@@ -62,6 +63,7 @@ export default function KidDashboard() {
   const [showManagement, setShowManagement] = useState(false);
   const [editingMetric, setEditingMetric] = useState<any>(null);
   const [editingReport, setEditingReport] = useState<any>(null);
+  const [reviewingReport, setReviewingReport] = useState<any>(null);
   const [deletingReport, setDeletingReport] = useState<any>(null);
 
   const [openAddGroup, setOpenAddGroup] = useState(false);
@@ -438,8 +440,10 @@ export default function KidDashboard() {
                       key={report.id}
                       report={report}
                       kid={kid}
-                      onApprove={approveReport}
-                      onReject={rejectReport}
+                      onReview={(reportId) => {
+                        const report = kid.reports?.find(r => r.id === reportId);
+                        setReviewingReport(report);
+                      }}
                       onEdit={(reportId) => {
                         const report = kid.reports?.find(r => r.id === reportId);
                         setEditingReport(report);
@@ -692,6 +696,25 @@ export default function KidDashboard() {
         onClose={() => setEditingMetric(null)}
         onSave={updateMetric}
         kidId={id || ""}
+      />
+
+      {/* Review Report Modal */}
+      <ReviewReportModal
+        report={reviewingReport}
+        kid={kid}
+        isOpen={!!reviewingReport}
+        onClose={() => setReviewingReport(null)}
+        onApprove={(reportId, updates) => {
+          if (updates) {
+            updateReport(reportId, updates);
+          }
+          approveReport(reportId);
+          setReviewingReport(null);
+        }}
+        onReject={(reportId) => {
+          rejectReport(reportId);
+          setReviewingReport(null);
+        }}
       />
 
       {/* Edit Report Modal */}
