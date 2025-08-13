@@ -240,7 +240,6 @@ function KidCard({ kid, onAdd, onSetGoal, onReset }: { kid: Kid; onAdd: (delta: 
             <Link to={`/kid/${kid.id}`} aria-label={`Open ${kid.name} dashboard`}>
               <BarChart3 className="mr-2 h-4 w-4" />
               View Dashboard
-              <ArrowRight className="ml-2 h-4 w-4" />
             </Link>
           </Button>
         </div>
