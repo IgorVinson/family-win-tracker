@@ -19,7 +19,6 @@ import EditMetricModal from "@/components/kid/EditMetricModal";
 import { ReportApprovalCard } from "@/components/kid/ReportApprovalCard";
 import { EditReportModal } from "@/components/kid/EditReportModal";
 import { ReviewReportModal } from "@/components/kid/ReviewReportModal";
-import { EditGoalModal } from "@/components/kid/EditGoalModal";
 import { ScoreDashboard } from "@/components/score/ScoreDashboard";
 import { PrizeShop } from "@/components/prize/PrizeShop";
 import { PrizeManagement } from "@/components/prize/PrizeManagement";
@@ -50,6 +49,8 @@ export default function KidDashboard() {
 
   const [metricName, setMetricName] = useState("");
   const [metricUnit, setMetricUnit] = useState("");
+  const [planType, setPlanType] = useState<"daily" | "weekly">("daily");
+  const [planValue, setPlanValue] = useState("");
   const [metricGroupId, setMetricGroupId] = useState<string>("");
   
   // Scoring rule states for new activities
@@ -61,7 +62,6 @@ export default function KidDashboard() {
   const [groupType, setGroupType] = useState<"project" | "goal">("goal");
   const [showManagement, setShowManagement] = useState(false);
   const [editingMetric, setEditingMetric] = useState<any>(null);
-  const [editingGoal, setEditingGoal] = useState<any>(null);
   const [editingReport, setEditingReport] = useState<any>(null);
   const [reviewingReport, setReviewingReport] = useState<any>(null);
   const [deletingReport, setDeletingReport] = useState<any>(null);
@@ -91,6 +91,8 @@ export default function KidDashboard() {
       value: 0,
       unit: metricUnit || undefined,
       groupId: metricGroupId || undefined,
+      planType,
+      planValue: planValue ? parseInt(planValue) : undefined,
     };
     
     // Create scoring rule for the new metric
@@ -112,6 +114,7 @@ export default function KidDashboard() {
     // Reset form
     setMetricName("");
     setMetricUnit("");
+    setPlanValue("");
     setMetricGroupId("");
     setNewBasePointsPerUnit("1");
     setNewGoalBonusPoints("5");
@@ -119,25 +122,6 @@ export default function KidDashboard() {
     setNewMaxDailyPoints("50"); 
     setOpenAddMetric(false);
     toast({ title: "Activity added", description: `${metricName} has been added.` });
-  };
-
-  const updateGoalAndValue = (metricId: string, updates: { planValue?: number; planType?: "daily" | "weekly"; value?: number }) => {
-    updateKidLegacy((k) => ({
-      ...k,
-      metrics: k.metrics?.map((m) => 
-        m.id === metricId 
-          ? { 
-              ...m, 
-              ...(updates.planValue !== undefined ? { planValue: updates.planValue } : {}),
-              ...(updates.planType !== undefined ? { planType: updates.planType } : {}),
-              ...(updates.value !== undefined ? { value: updates.value } : {})
-            }
-          : m
-      ),
-    }));
-    
-    const metricName = kid?.metrics?.find((m) => m.id === metricId)?.name || "";
-    toast({ title: "Updated", description: `${metricName} has been updated.` });
   };
 
   const updateMetric = (updatedMetric: any) => {
@@ -384,17 +368,7 @@ export default function KidDashboard() {
                             <TableRow key={metric.id}>
                               <TableCell className="font-medium">{metric.name}</TableCell>
                               <TableCell>
-                                <div className="flex items-center gap-2">
-                                  <span>{metric.value} {metric.unit || ""}</span>
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() => setEditingGoal(metric)}
-                                    className="h-6 w-6 p-0"
-                                  >
-                                    <Edit className="h-3 w-3" />
-                                  </Button>
-                                </div>
+                                {metric.value} {metric.unit || ""}
                               </TableCell>
                               <TableCell>
                                 {metric.planValue ? (
@@ -562,6 +536,20 @@ export default function KidDashboard() {
               <Input id="m-unit" value={metricUnit} onChange={(e) => setMetricUnit(e.target.value)} placeholder="e.g., min, pages" />
             </div>
             <div className="grid gap-2">
+              <Label>Plan type</Label>
+              <Select value={planType} onValueChange={(v) => setPlanType(v as any)}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="daily">Daily</SelectItem>
+                  <SelectItem value="weekly">Weekly</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="m-plan">Plan value</Label>
+              <Input id="m-plan" type="number" min={0} value={planValue} onChange={(e) => setPlanValue(e.target.value)} placeholder="e.g., 30" />
+            </div>
+            <div className="grid gap-2">
               <Label>Group</Label>
               <Select value={metricGroupId || "none"} onValueChange={(v) => setMetricGroupId(v === "none" ? "" : v)}>
                 <SelectTrigger><SelectValue placeholder="None" /></SelectTrigger>
@@ -623,7 +611,8 @@ export default function KidDashboard() {
                 </div>
               </div>
               <div className="text-xs text-muted-foreground">
-                Configure how points are earned for this activity. Goals can be set later by clicking the edit icon next to current values.
+                Complete your {planType} goal of {planValue} {metricUnit || 'units'} to earn the goal bonus. 
+                Maintain streaks for additional points!
               </div>
             </div>
           </div>
@@ -723,14 +712,6 @@ export default function KidDashboard() {
           updateReport(reportId, updates);
           setReviewingReport(null);
         }}
-      />
-
-      {/* Edit Goal Modal */}
-      <EditGoalModal
-        metric={editingGoal}
-        isOpen={!!editingGoal}
-        onClose={() => setEditingGoal(null)}
-        onSave={updateGoalAndValue}
       />
 
       {/* Edit Report Modal */}
