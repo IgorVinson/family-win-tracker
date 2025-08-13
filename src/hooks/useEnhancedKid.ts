@@ -179,6 +179,15 @@ export function useEnhancedKid(kidId: string) {
     }));
   };
 
+  const deleteReport = (reportId: string) => {
+    if (!kid) return;
+
+    updateKid(currentKid => ({
+      ...currentKid,
+      reports: currentKid.reports?.filter(r => r.id !== reportId) || []
+    }));
+  };
+
   const addPrize = (prizeData: Omit<Prize, "id" | "createdAt">) => {
     const prize: Prize = {
       ...prizeData,
@@ -268,6 +277,7 @@ export function useEnhancedKid(kidId: string) {
     approveReport,
     rejectReport,
     updateReport,
+    deleteReport,
     addPrize,
     updatePrize,
     deletePrize,

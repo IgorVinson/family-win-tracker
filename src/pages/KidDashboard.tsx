@@ -37,6 +37,7 @@ export default function KidDashboard() {
     approveReport,
     rejectReport,
     updateReport,
+    deleteReport,
     addPrize, 
     updatePrize, 
     deletePrize, 
@@ -61,6 +62,7 @@ export default function KidDashboard() {
   const [showManagement, setShowManagement] = useState(false);
   const [editingMetric, setEditingMetric] = useState<any>(null);
   const [editingReport, setEditingReport] = useState<any>(null);
+  const [deletingReport, setDeletingReport] = useState<any>(null);
 
   const [openAddGroup, setOpenAddGroup] = useState(false);
   const [openAddMetric, setOpenAddMetric] = useState(false);
@@ -482,6 +484,20 @@ export default function KidDashboard() {
                             <Badge variant="outline">
                               {report.entries.length} metrics
                             </Badge>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setEditingReport(report)}
+                            >
+                              <Edit className="h-3 w-3" />
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setDeletingReport(report)}
+                            >
+                              <Trash2 className="h-3 w-3" />
+                            </Button>
                           </div>
                         </div>
                         {report.notes && (
@@ -686,6 +702,34 @@ export default function KidDashboard() {
         onClose={() => setEditingReport(null)}
         onSave={updateReport}
       />
+
+      {/* Delete Report Confirmation Dialog */}
+      <Dialog open={!!deletingReport} onOpenChange={() => setDeletingReport(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete Report</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete this report from {deletingReport?.date}? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeletingReport(null)}>
+              Cancel
+            </Button>
+            <Button 
+              variant="destructive" 
+              onClick={() => {
+                if (deletingReport) {
+                  deleteReport(deletingReport.id);
+                  setDeletingReport(null);
+                }
+              }}
+            >
+              Delete Report
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Prize Management Dialog */}
       <Dialog open={showManagement} onOpenChange={setShowManagement}>
