@@ -132,10 +132,22 @@ export function PrizeShop({ kid, onRedeemPrize }: PrizeShopProps) {
 
         <Tabs defaultValue="privileges" className="w-full bg-card border rounded-lg p-6">
           <TabsList className="grid w-full grid-cols-4 bg-transparent border-0 mb-6">
-            <TabsTrigger value="privileges">Privileges</TabsTrigger>
-            <TabsTrigger value="treats">Treats</TabsTrigger>
-            <TabsTrigger value="activities">Activities</TabsTrigger>
-            <TabsTrigger value="items">Items</TabsTrigger>
+            <TabsTrigger value="privileges" className="flex items-center gap-2 text-sm font-medium">
+              <Gift className="h-4 w-4" />
+              Privileges
+            </TabsTrigger>
+            <TabsTrigger value="treats" className="flex items-center gap-2 text-sm font-medium">
+              <Star className="h-4 w-4" />
+              Treats
+            </TabsTrigger>
+            <TabsTrigger value="activities" className="flex items-center gap-2 text-sm font-medium">
+              <Clock className="h-4 w-4" />
+              Activities
+            </TabsTrigger>
+            <TabsTrigger value="items" className="flex items-center gap-2 text-sm font-medium">
+              <CheckCircle className="h-4 w-4" />
+              Items
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="privileges">
