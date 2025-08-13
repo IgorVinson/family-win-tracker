@@ -5,18 +5,29 @@ import { Calendar, FileText, Target } from "lucide-react";
 
 type DailyReportEntry = { metricId: string; value: number };
 type DailyReport = { id: string; date: string; createdAt: string; notes?: string; entries: DailyReportEntry[] };
+type Metric = { id: string; name: string; unit?: string; groupId?: string };
 
 interface ReportViewModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   report: DailyReport | null;
   kidName: string;
+  metrics?: Metric[];
 }
 
-export function ReportViewModal({ open, onOpenChange, report, kidName }: ReportViewModalProps) {
+export function ReportViewModal({ open, onOpenChange, report, kidName, metrics = [] }: ReportViewModalProps) {
   if (!report) return null;
 
   const totalPoints = report.entries.reduce((sum, entry) => sum + (entry.value || 0), 0);
+  
+  const getMetricName = (metricId: string) => {
+    return metrics.find(m => m.id === metricId)?.name || `Activity ${metricId}`;
+  };
+
+  const getMetricUnit = (metricId: string) => {
+    return metrics.find(m => m.id === metricId)?.unit || '';
+  };
+
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleDateString('en-US', { 
@@ -77,7 +88,10 @@ export function ReportViewModal({ open, onOpenChange, report, kidName }: ReportV
                     <div key={index} className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
                       <div className="flex items-center gap-2">
                         <div className="h-2 w-2 bg-primary rounded-full" />
-                        <span className="font-medium">Activity {entry.metricId}</span>
+                        <span className="font-medium">{getMetricName(entry.metricId)}</span>
+                        {getMetricUnit(entry.metricId) && (
+                          <span className="text-xs text-muted-foreground">({getMetricUnit(entry.metricId)})</span>
+                        )}
                       </div>
                       <Badge variant="outline">
                         {entry.value > 0 ? '+' : ''}{entry.value} pts

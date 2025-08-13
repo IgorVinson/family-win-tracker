@@ -33,6 +33,7 @@ function useLocalStorage<T>(key: string, initialValue: T) {
 
 type DailyReportEntry = { metricId: string; value: number };
 type DailyReport = { id: string; date: string; createdAt: string; notes?: string; entries: DailyReportEntry[] };
+type Metric = { id: string; name: string; unit?: string; groupId?: string };
 
 type Kid = {
   id: string;
@@ -42,6 +43,7 @@ type Kid = {
   color: string; // hsl string token name or purpose only
   createdAt: string;
   reports?: DailyReport[];
+  metrics?: Metric[];
 };
 
 const pastelHues = [
@@ -279,6 +281,7 @@ function KidCard({ kid, onAdd, onSetGoal, onReset }: { kid: Kid; onAdd: (delta: 
         onOpenChange={setShowReportModal}
         report={selectedReport}
         kidName={kid.name}
+        metrics={kid.metrics || []}
       />
     </Card>
   );
