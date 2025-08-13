@@ -17,13 +17,11 @@ interface Report {
 interface ReportApprovalCardProps {
   report: Report;
   kid: EnhancedKid;
-  onReview?: (reportId: string) => void;
-  onApprove?: (reportId: string) => void;
-  onReject?: (reportId: string) => void;
+  onReview: (reportId: string) => void;
   onEdit: (reportId: string) => void;
 }
 
-export function ReportApprovalCard({ report, kid, onReview, onApprove, onReject, onEdit }: ReportApprovalCardProps) {
+export function ReportApprovalCard({ report, kid, onReview, onEdit }: ReportApprovalCardProps) {
   const getStatusBadge = (status: Report["status"]) => {
     switch (status) {
       case "pending":
@@ -57,7 +55,7 @@ export function ReportApprovalCard({ report, kid, onReview, onApprove, onReject,
             {report.entries.filter(entry => entry.value > 0).length} activities
           </Badge>
           
-          {report.status === "pending" && onReview && (
+          {report.status === "pending" && (
             <Button
               variant="default"
               size="sm"
