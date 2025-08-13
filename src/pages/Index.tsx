@@ -186,6 +186,9 @@ const Index = () => {
 
 function KidCard({ kid, onAdd, onSetGoal, onReset }: { kid: Kid; onAdd: (delta: number) => void; onSetGoal: (goal: number) => void; onReset: () => void; }) {
   const [custom, setCustom] = useState<string>("");
+  const [showAddConfirm, setShowAddConfirm] = useState(false);
+  const [showResetConfirm, setShowResetConfirm] = useState(false);
+  const [pendingAddValue, setPendingAddValue] = useState<number>(0);
   const pct = Math.min(100, kid.goal > 0 ? Math.round((kid.points / kid.goal) * 100) : 0);
 
   return (
@@ -229,9 +232,15 @@ function KidCard({ kid, onAdd, onSetGoal, onReset }: { kid: Kid; onAdd: (delta: 
               onChange={(e) => setCustom(e.target.value)}
               className="w-24"
             />
-            <Button onClick={() => { const v = Number(custom || 0); if (!Number.isNaN(v) && v !== 0) { onAdd(v); setCustom(""); } }}>Add</Button>
+            <Button onClick={() => { 
+              const v = Number(custom || 0); 
+              if (!Number.isNaN(v) && v !== 0) { 
+                setPendingAddValue(v); 
+                setShowAddConfirm(true); 
+              } 
+            }}>Add</Button>
           </div>
-          <Button variant="outline" onClick={onReset}>Reset</Button>
+          <Button variant="outline" onClick={() => setShowResetConfirm(true)}>Reset</Button>
           <Button variant="ghost" asChild>
             <Link to={`/kid/${kid.id}`} aria-label={`Open ${kid.name} dashboard`}>
               Dashboard <ArrowRight className="ml-1 h-4 w-4" />
@@ -260,6 +269,63 @@ function KidCard({ kid, onAdd, onSetGoal, onReset }: { kid: Kid; onAdd: (delta: 
           );
         })()}
       </CardContent>
+
+      {/* Manual Score Confirmation Dialog */}
+      <Dialog open={showAddConfirm} onOpenChange={setShowAddConfirm}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirm Manual Score Addition</DialogTitle>
+          </DialogHeader>
+          <div className="py-4">
+            <p className="text-muted-foreground">
+              Are you sure you want to manually add <strong>{pendingAddValue > 0 ? '+' : ''}{pendingAddValue}</strong> points to <strong>{kid.name}</strong>?
+            </p>
+            <p className="text-sm text-muted-foreground mt-2">
+              This will {pendingAddValue > 0 ? 'increase' : 'decrease'} their total from <strong>{kid.points}</strong> to <strong>{kid.points + pendingAddValue}</strong> points.
+            </p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowAddConfirm(false)}>
+              Cancel
+            </Button>
+            <Button onClick={() => {
+              onAdd(pendingAddValue);
+              setCustom("");
+              setShowAddConfirm(false);
+            }}>
+              Confirm
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Reset Confirmation Dialog */}
+      <Dialog open={showResetConfirm} onOpenChange={setShowResetConfirm}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirm Reset</DialogTitle>
+          </DialogHeader>
+          <div className="py-4">
+            <p className="text-muted-foreground">
+              Are you sure you want to reset <strong>{kid.name}</strong>'s points to zero?
+            </p>
+            <p className="text-sm text-muted-foreground mt-2">
+              This will permanently remove their current <strong>{kid.points}</strong> points. This action cannot be undone.
+            </p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowResetConfirm(false)}>
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={() => {
+              onReset();
+              setShowResetConfirm(false);
+            }}>
+              Reset Points
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 }
