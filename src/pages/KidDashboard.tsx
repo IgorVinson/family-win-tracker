@@ -9,11 +9,11 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "@/hooks/use-toast";
-import { ArrowLeft, Minus, Plus, Save } from "lucide-react";
+import { ArrowLeft, Plus, Save } from "lucide-react";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
 import DailyReportForm from "@/components/kid/DailyReportForm";
 // Types mirrored from Index page, extended with optional notes and metrics
-export type Metric = { id: string; name: string; value: number; unit?: string; groupId?: string };
+export type Metric = { id: string; name: string; value: number; unit?: string; groupId?: string; planType?: "daily" | "weekly"; planValue?: number };
 export type Group = { id: string; name: string; type: "project" | "goal" };
 export type DailyReportEntry = { metricId: string; value: number };
 export type DailyReport = { id: string; date: string; createdAt: string; notes?: string; entries: DailyReportEntry[] };
@@ -38,10 +38,11 @@ const KidDashboard = () => {
   const [noteDraft, setNoteDraft] = useState<string>(kid?.notes ?? "");
 const [metricName, setMetricName] = useState("");
 const [metricUnit, setMetricUnit] = useState("");
+const [metricPlanType, setMetricPlanType] = useState<"" | "daily" | "weekly">("");
+const [metricPlanValue, setMetricPlanValue] = useState<string>("");
 const [groupName, setGroupName] = useState("");
 const [groupType, setGroupType] = useState<"project" | "goal">("project");
 const [metricGroupId, setMetricGroupId] = useState<string>("");
-
 useEffect(() => {
     document.title = kid ? `${kid.name} Dashboard – Kids Tracker` : "Kid Dashboard – Kids Tracker";
   }, [kid]);
@@ -78,24 +79,29 @@ const addGroup = () => {
 const addMetric = () => {
   const name = metricName.trim();
   if (!name) return;
+  const planValNum = Number(metricPlanValue);
   updateKid((k) => ({
     ...k,
     metrics: [
       ...(k.metrics ?? []),
-      { id: crypto.randomUUID(), name, value: 0, unit: metricUnit.trim() || undefined, groupId: metricGroupId || undefined },
+      {
+        id: crypto.randomUUID(),
+        name,
+        value: 0,
+        unit: metricUnit.trim() || undefined,
+        groupId: metricGroupId || undefined,
+        planType: metricPlanType || undefined,
+        planValue: Number.isFinite(planValNum) && planValNum > 0 ? planValNum : undefined,
+      },
     ],
   }));
   setMetricName("");
   setMetricUnit("");
+  setMetricPlanType("");
+  setMetricPlanValue("");
   setMetricGroupId("");
 };
 
-const changeMetric = (mid: string, delta: number) => {
-  updateKid((k) => ({
-    ...k,
-    metrics: (k.metrics ?? []).map((m) => (m.id === mid ? { ...m, value: Math.max(0, m.value + delta) } : m)),
-  }));
-};
 
 const changeMetricGroup = (mid: string, gid: string | "") => {
   updateKid((k) => ({
@@ -170,6 +176,21 @@ const sections = useMemo(() => {
     <Input id="m-unit" value={metricUnit} onChange={(e) => setMetricUnit(e.target.value)} placeholder="e.g., min, pages" className="w-40" />
   </div>
   <div className="grid gap-2">
+    <Label>Plan type</Label>
+    <Select value={metricPlanType || "none"} onValueChange={(v) => setMetricPlanType(v === "none" ? "" : (v as any))}>
+      <SelectTrigger className="w-32"><SelectValue placeholder="None" /></SelectTrigger>
+      <SelectContent>
+        <SelectItem value="none">None</SelectItem>
+        <SelectItem value="daily">Daily</SelectItem>
+        <SelectItem value="weekly">Weekly</SelectItem>
+      </SelectContent>
+    </Select>
+  </div>
+  <div className="grid gap-2">
+    <Label htmlFor="m-plan">Plan value</Label>
+    <Input id="m-plan" type="number" min={0} value={metricPlanValue} onChange={(e) => setMetricPlanValue(e.target.value)} placeholder="e.g., 30" className="w-28" />
+  </div>
+  <div className="grid gap-2">
     <Label>Group</Label>
     <Select value={metricGroupId || "none"} onValueChange={(v) => setMetricGroupId(v === "none" ? "" : v)}>
       <SelectTrigger className="w-44"><SelectValue placeholder="None" /></SelectTrigger>
@@ -217,7 +238,8 @@ const sections = useMemo(() => {
               <TableHead>Name</TableHead>
               <TableHead className="w-32">Value</TableHead>
               <TableHead className="w-24">Unit</TableHead>
-              <TableHead className="w-56">Actions</TableHead>
+              <TableHead className="w-28">Plan</TableHead>
+              <TableHead className="w-40">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>

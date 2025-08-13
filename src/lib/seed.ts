@@ -19,20 +19,29 @@ export function seedMockDataIfEmpty() {
     "28 92% 54%",  // orange
   ];
 
-const makeMetric = (name: string, value: number, unit?: string, groupId?: string) => ({
+const makeMetric = (
+  name: string,
+  value: number,
+  unit?: string,
+  groupId?: string,
+  planType?: "daily" | "weekly",
+  planValue?: number
+) => ({
   id: crypto.randomUUID(),
   name,
   value,
   unit,
   groupId,
+  planType,
+  planValue,
 });
 
 const kids = [
   (() => {
     const g1 = { id: crypto.randomUUID(), name: "Reading Goals", type: "goal" as const };
     const g2 = { id: crypto.randomUUID(), name: "Chores Project", type: "project" as const };
-    const m1 = makeMetric("Reading", 30, "min", g1.id);
-    const m2 = makeMetric("Chores", 2, undefined, g2.id);
+const m1 = makeMetric("Reading", 30, "min", g1.id, "daily", 30);
+const m2 = makeMetric("Chores", 2, undefined, g2.id, "daily", 2);
     const reports = [
       {
         id: crypto.randomUUID(),
@@ -61,8 +70,8 @@ const kids = [
   (() => {
     const g1 = { id: crypto.randomUUID(), name: "Practice", type: "project" as const };
     const g2 = { id: crypto.randomUUID(), name: "Goals", type: "goal" as const };
-    const m1 = makeMetric("Practice Piano", 20, "min", g1.id);
-    const m2 = makeMetric("Chores", 3, undefined, g2.id);
+const m1 = makeMetric("Practice Piano", 20, "min", g1.id, "daily", 20);
+const m2 = makeMetric("Chores", 3, undefined, g2.id, "weekly", 10);
     const reports = [
       {
         id: crypto.randomUUID(),
@@ -90,8 +99,8 @@ const kids = [
   })(),
   (() => {
     const g1 = { id: crypto.randomUUID(), name: "Kindness", type: "goal" as const };
-    const m1 = makeMetric("Kindness Stars", 1, undefined, g1.id);
-    const m2 = makeMetric("Reading", 10, "min");
+const m1 = makeMetric("Kindness Stars", 1, undefined, g1.id, "weekly", 5);
+const m2 = makeMetric("Reading", 10, "min", undefined, "daily", 15);
     const reports = [
       {
         id: crypto.randomUUID(),
