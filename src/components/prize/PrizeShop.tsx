@@ -130,8 +130,8 @@ export function PrizeShop({ kid, onRedeemPrize }: PrizeShopProps) {
           </CardContent>
         </Card>
 
-        <Tabs defaultValue="privileges" className="w-full">
-          <TabsList className="grid w-full grid-cols-4">
+        <Tabs defaultValue="privileges" className="w-full bg-card border rounded-lg p-6">
+          <TabsList className="grid w-full grid-cols-4 bg-transparent border-0 mb-6">
             <TabsTrigger value="privileges">Privileges</TabsTrigger>
             <TabsTrigger value="treats">Treats</TabsTrigger>
             <TabsTrigger value="activities">Activities</TabsTrigger>
