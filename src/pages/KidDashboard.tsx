@@ -248,10 +248,9 @@ const sections = useMemo(() => {
                 <TableCell className="font-medium">{m.name}</TableCell>
                 <TableCell>{m.value}</TableCell>
                 <TableCell>{m.unit ?? "-"}</TableCell>
+                <TableCell>{m.planValue && m.planType ? `${m.planValue}/${m.planType === "daily" ? "day" : "week"}` : "—"}</TableCell>
                 <TableCell>
                   <div className="flex items-center gap-2">
-                    <Button size="sm" variant="secondary" onClick={() => changeMetric(m.id, -1)}><Minus className="h-4 w-4" /></Button>
-                    <Button size="sm" onClick={() => changeMetric(m.id, +1)}><Plus className="h-4 w-4" /></Button>
                     <Select value={m.groupId || "none"} onValueChange={(v) => changeMetricGroup(m.id, v === "none" ? "" : v)}>
                       <SelectTrigger className="h-8 w-40"><SelectValue placeholder="Group" /></SelectTrigger>
                       <SelectContent>
