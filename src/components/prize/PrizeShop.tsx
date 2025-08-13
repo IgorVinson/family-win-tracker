@@ -132,19 +132,19 @@ export function PrizeShop({ kid, onRedeemPrize }: PrizeShopProps) {
 
         <Tabs defaultValue="privileges" className="w-full bg-card border rounded-lg p-6">
           <TabsList className="grid w-full grid-cols-4 bg-transparent border-0 mb-6">
-            <TabsTrigger value="privileges" className="flex items-center gap-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground transition-colors">
+            <TabsTrigger value="privileges" className="flex items-center gap-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground transition-colors data-[state=active]:bg-orange-100 data-[state=active]:text-orange-600 data-[state=active]:border-orange-300">
               <Gift className="h-4 w-4" />
               Privileges
             </TabsTrigger>
-            <TabsTrigger value="treats" className="flex items-center gap-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground transition-colors">
+            <TabsTrigger value="treats" className="flex items-center gap-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground transition-colors data-[state=active]:bg-orange-100 data-[state=active]:text-orange-600 data-[state=active]:border-orange-300">
               <Star className="h-4 w-4" />
               Treats
             </TabsTrigger>
-            <TabsTrigger value="activities" className="flex items-center gap-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground transition-colors">
+            <TabsTrigger value="activities" className="flex items-center gap-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground transition-colors data-[state=active]:bg-orange-100 data-[state=active]:text-orange-600 data-[state=active]:border-orange-300">
               <Clock className="h-4 w-4" />
               Activities
             </TabsTrigger>
-            <TabsTrigger value="items" className="flex items-center gap-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground transition-colors">
+            <TabsTrigger value="items" className="flex items-center gap-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground transition-colors data-[state=active]:bg-orange-100 data-[state=active]:text-orange-600 data-[state=active]:border-orange-300">
               <CheckCircle className="h-4 w-4" />
               Items
             </TabsTrigger>
