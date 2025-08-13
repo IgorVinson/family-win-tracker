@@ -221,10 +221,14 @@ export function PrizeManagement({
                           </div>
                         </div>
                         <div className="flex items-center gap-2">
-                          <Badge variant={
-                            redemption.status === "completed" ? "default" : 
-                            redemption.status === "rejected" ? "destructive" : "secondary"
-                          }>
+                          <Badge 
+                            variant={redemption.status === "rejected" ? "destructive" : "secondary"}
+                            className={
+                              redemption.status === "completed" 
+                                ? "bg-green-100 text-green-800 border-green-200 hover:bg-green-200" 
+                                : ""
+                            }
+                          >
                             {redemption.status}
                           </Badge>
                           {redemption.status === "approved" && (
