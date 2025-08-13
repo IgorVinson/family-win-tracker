@@ -82,7 +82,7 @@ export default function KidDashboard() {
     setPlanValue("");
     setMetricGroupId("");
     setOpenAddMetric(false);
-    toast({ title: "Metric added", description: `${metricName} has been added.` });
+    toast({ title: "Activity added", description: `${metricName} has been added.` });
   };
 
   const updateMetric = (updatedMetric: any) => {
@@ -90,13 +90,13 @@ export default function KidDashboard() {
       ...k,
       metrics: k.metrics?.map((m) => (m.id === updatedMetric.id ? updatedMetric : m)),
     }));
-    toast({ title: "Metric updated", description: `${updatedMetric.name} has been updated.` });
+    toast({ title: "Activity updated", description: `${updatedMetric.name} has been updated.` });
   };
 
   const removeMetric = (metricId: string) => {
     const metricName = kid?.metrics?.find((m) => m.id === metricId)?.name || "";
     updateKidLegacy((k) => ({ ...k, metrics: k.metrics?.filter((m) => m.id !== metricId) }));
-    toast({ title: "Metric removed", description: `${metricName} has been removed.` });
+    toast({ title: "Activity removed", description: `${metricName} has been removed.` });
   };
 
   const addGroup = () => {
@@ -181,7 +181,7 @@ export default function KidDashboard() {
             <Plus className="mr-2 h-4 w-4" /> Add group
           </Button>
           <Button onClick={() => setOpenAddMetric(true)} variant="outline">
-            <Plus className="mr-2 h-4 w-4" /> Add metric
+            <Plus className="mr-2 h-4 w-4" /> Add activity
           </Button>
           <Button onClick={() => setOpenAddReport(true)}>
             <Plus className="mr-2 h-4 w-4" /> Add report
@@ -195,7 +195,7 @@ export default function KidDashboard() {
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="scores">Scores</TabsTrigger>
           <TabsTrigger value="shop">Prize Shop</TabsTrigger>
-          <TabsTrigger value="metrics">Metrics</TabsTrigger>
+          <TabsTrigger value="metrics">Activities</TabsTrigger>
           <TabsTrigger value="reports">Reports</TabsTrigger>
         </TabsList>
 
@@ -266,13 +266,13 @@ export default function KidDashboard() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <BarChart3 className="h-5 w-5" />
-                Metrics
+                Activities
               </CardTitle>
             </CardHeader>
             <CardContent>
               {!kid.metrics || kid.metrics.length === 0 ? (
                 <p className="text-muted-foreground text-center py-4">
-                  No metrics configured. Add a metric to start tracking progress.
+                  No activities configured. Add an activity to start tracking progress.
                 </p>
               ) : (
                 <div className="space-y-6">
@@ -302,7 +302,7 @@ export default function KidDashboard() {
                         <Table>
                           <TableHeader>
                             <TableRow>
-                              <TableHead>Metric</TableHead>
+                              <TableHead>Activity</TableHead>
                               <TableHead>Current</TableHead>
                               <TableHead>Plan</TableHead>
                               <TableHead>Points</TableHead>
@@ -431,11 +431,11 @@ export default function KidDashboard() {
       <Dialog open={openAddMetric} onOpenChange={setOpenAddMetric}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Add Metric</DialogTitle>
+            <DialogTitle>Add Activity</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-2">
             <div className="grid gap-2">
-              <Label htmlFor="m-name">Metric name</Label>
+              <Label htmlFor="m-name">Activity name</Label>
               <Input id="m-name" value={metricName} onChange={(e) => setMetricName(e.target.value)} placeholder="e.g., Reading minutes" />
             </div>
             <div className="grid gap-2">
@@ -541,6 +541,7 @@ export default function KidDashboard() {
         isOpen={!!editingMetric}
         onClose={() => setEditingMetric(null)}
         onSave={updateMetric}
+        kidId={id || ""}
       />
 
       {/* Prize Management Dialog */}

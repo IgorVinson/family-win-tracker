@@ -7,21 +7,40 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Save } from "lucide-react";
 import type { Metric, Group } from "@/pages/KidDashboard";
+import { useEnhancedKid } from "@/hooks/useEnhancedKid";
+import type { ScoringRule } from "@/types/scoreSystem";
 
 interface EditMetricModalProps {
   metric: Metric | null;
   groups: Group[];
   isOpen: boolean;
   onClose: () => void;
-  onSave: (updatedMetric: Metric) => void;
+  onSave: (updatedMetric: Metric, scoringRule?: ScoringRule) => void;
+  kidId: string;
 }
 
-const EditMetricModal = ({ metric, groups, isOpen, onClose, onSave }: EditMetricModalProps) => {
+const EditMetricModal = ({ metric, groups, isOpen, onClose, onSave, kidId }: EditMetricModalProps) => {
+  const { kid, updateMetricScoringRule } = useEnhancedKid(kidId);
+  
   const [name, setName] = useState(metric?.name || "");
   const [unit, setUnit] = useState(metric?.unit || "");
   const [planType, setPlanType] = useState<"" | "daily" | "weekly">(metric?.planType || "");
   const [planValue, setPlanValue] = useState(metric?.planValue?.toString() || "");
   const [groupId, setGroupId] = useState(metric?.groupId || "");
+  
+  // Get current scoring rule for this metric
+  const currentScoringRule = kid?.metrics.find(m => m.id === metric?.id)?.scoringRule || {
+    basePointsPerUnit: 1,
+    goalBonusPoints: 5,
+    streakBonusPoints: 2,
+    maxDailyPoints: 50
+  };
+  
+  // Scoring rule states
+  const [basePointsPerUnit, setBasePointsPerUnit] = useState(currentScoringRule.basePointsPerUnit.toString());
+  const [goalBonusPoints, setGoalBonusPoints] = useState(currentScoringRule.goalBonusPoints.toString());
+  const [streakBonusPoints, setStreakBonusPoints] = useState(currentScoringRule.streakBonusPoints.toString());
+  const [maxDailyPoints, setMaxDailyPoints] = useState(currentScoringRule.maxDailyPoints.toString());
 
   // Reset form when metric changes
   useEffect(() => {
@@ -31,8 +50,20 @@ const EditMetricModal = ({ metric, groups, isOpen, onClose, onSave }: EditMetric
       setPlanType(metric.planType || "");
       setPlanValue(metric.planValue?.toString() || "");
       setGroupId(metric.groupId || "");
+      
+      // Reset scoring rule values
+      const scoringRule = kid?.metrics.find(m => m.id === metric.id)?.scoringRule || {
+        basePointsPerUnit: 1,
+        goalBonusPoints: 5,
+        streakBonusPoints: 2,
+        maxDailyPoints: 50
+      };
+      setBasePointsPerUnit(scoringRule.basePointsPerUnit.toString());
+      setGoalBonusPoints(scoringRule.goalBonusPoints.toString());
+      setStreakBonusPoints(scoringRule.streakBonusPoints.toString());
+      setMaxDailyPoints(scoringRule.maxDailyPoints.toString());
     }
-  }, [metric]);
+  }, [metric, kid]);
 
   const handleSave = () => {
     if (!metric || !name.trim()) return;
@@ -47,7 +78,20 @@ const EditMetricModal = ({ metric, groups, isOpen, onClose, onSave }: EditMetric
       groupId: groupId || undefined,
     };
 
-    onSave(updatedMetric);
+    const updatedScoringRule: ScoringRule = {
+      metricId: metric.id,
+      basePointsPerUnit: Math.max(0, Number(basePointsPerUnit) || 1),
+      goalBonusPoints: Math.max(0, Number(goalBonusPoints) || 0),
+      streakBonusPoints: Math.max(0, Number(streakBonusPoints) || 0),
+      maxDailyPoints: Math.max(1, Number(maxDailyPoints) || 50),
+    };
+
+    // Update scoring rule in the enhanced kid data
+    if (updateMetricScoringRule) {
+      updateMetricScoringRule(metric.id, updatedScoringRule);
+    }
+
+    onSave(updatedMetric, updatedScoringRule);
     onClose();
   };
 
@@ -57,11 +101,11 @@ const EditMetricModal = ({ metric, groups, isOpen, onClose, onSave }: EditMetric
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Edit Metric</DialogTitle>
+          <DialogTitle>Edit Activity</DialogTitle>
         </DialogHeader>
         <div className="space-y-4">
           <div className="grid gap-2">
-            <Label htmlFor="edit-name">Metric name</Label>
+            <Label htmlFor="edit-name">Activity name</Label>
             <Input
               id="edit-name"
               value={name}
@@ -125,20 +169,48 @@ const EditMetricModal = ({ metric, groups, isOpen, onClose, onSave }: EditMetric
             <h4 className="font-medium text-sm">Scoring Rules</h4>
             <div className="grid grid-cols-2 gap-3 text-sm">
               <div>
-                <Label className="text-xs text-muted-foreground">Base Points</Label>
-                <div className="font-medium">1 per {unit || 'unit'}</div>
+                <Label htmlFor="base-points" className="text-xs text-muted-foreground">Base Points per {unit || 'unit'}</Label>
+                <Input
+                  id="base-points"
+                  type="number"
+                  min="0"
+                  value={basePointsPerUnit}
+                  onChange={(e) => setBasePointsPerUnit(e.target.value)}
+                  className="h-8 text-sm"
+                />
               </div>
               <div>
-                <Label className="text-xs text-muted-foreground">Goal Bonus</Label>
-                <div className="font-medium">+5 points</div>
+                <Label htmlFor="goal-bonus" className="text-xs text-muted-foreground">Goal Bonus Points</Label>
+                <Input
+                  id="goal-bonus"
+                  type="number"
+                  min="0"
+                  value={goalBonusPoints}
+                  onChange={(e) => setGoalBonusPoints(e.target.value)}
+                  className="h-8 text-sm"
+                />
               </div>
               <div>
-                <Label className="text-xs text-muted-foreground">Streak Bonus</Label>
-                <div className="font-medium">+2 points</div>
+                <Label htmlFor="streak-bonus" className="text-xs text-muted-foreground">Streak Bonus Points</Label>
+                <Input
+                  id="streak-bonus"
+                  type="number"
+                  min="0"
+                  value={streakBonusPoints}
+                  onChange={(e) => setStreakBonusPoints(e.target.value)}
+                  className="h-8 text-sm"
+                />
               </div>
               <div>
-                <Label className="text-xs text-muted-foreground">Daily Max</Label>
-                <div className="font-medium">50 points</div>
+                <Label htmlFor="max-daily" className="text-xs text-muted-foreground">Max Daily Points</Label>
+                <Input
+                  id="max-daily"
+                  type="number"
+                  min="1"
+                  value={maxDailyPoints}
+                  onChange={(e) => setMaxDailyPoints(e.target.value)}
+                  className="h-8 text-sm"
+                />
               </div>
             </div>
             <div className="text-xs text-muted-foreground">
