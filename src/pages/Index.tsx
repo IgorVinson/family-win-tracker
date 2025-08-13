@@ -10,6 +10,7 @@ import { Separator } from "@/components/ui/separator";
 import { toast } from "@/hooks/use-toast";
 import { Plus, Target, Trophy, Star, UserRound, ArrowRight, Edit } from "lucide-react";
 import { EditKidModal } from "@/components/kid/EditKidModal";
+import { ReportViewModal } from "@/components/kid/ReportViewModal";
 // Simple localStorage hook to persist state without backend
 function useLocalStorage<T>(key: string, initialValue: T) {
   const [value, setValue] = useState<T>(() => {
@@ -187,7 +188,14 @@ const Index = () => {
 
 function KidCard({ kid, onAdd, onSetGoal, onReset }: { kid: Kid; onAdd: (delta: number) => void; onSetGoal: (goal: number) => void; onReset: () => void; }) {
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [selectedReport, setSelectedReport] = useState<DailyReport | null>(null);
   const pct = Math.min(100, kid.goal > 0 ? Math.round((kid.points / kid.goal) * 100) : 0);
+
+  const handleReportClick = (report: DailyReport) => {
+    setSelectedReport(report);
+    setShowReportModal(true);
+  };
 
   return (
     <Card className="card-elevated overflow-hidden">
@@ -232,17 +240,21 @@ function KidCard({ kid, onAdd, onSetGoal, onReset }: { kid: Kid; onAdd: (delta: 
         {(() => {
           const recent = [...(kid.reports ?? [])]
             .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-            .slice(0, 7);
+            .slice(0, 3); // Show last 3 days instead of 7
           if (recent.length === 0) return null;
           const totalFor = (r: DailyReport) => r.entries.reduce((s, e) => s + (e.value || 0), 0);
           return (
             <div className="mt-4">
-              <h4 className="text-sm font-semibold text-muted-foreground mb-1">Recent reports</h4>
+              <h4 className="text-sm font-semibold text-muted-foreground mb-2">Recent reports (last 3 days)</h4>
               <ul className="text-xs text-muted-foreground space-y-1">
                 {recent.map((r) => (
-                  <li key={r.id} className="flex items-center justify-between">
-                    <span>{r.date}</span>
-                    <span>Total: {totalFor(r)}</span>
+                  <li 
+                    key={r.id} 
+                    className="flex items-center justify-between p-2 hover:bg-muted/50 rounded cursor-pointer transition-colors"
+                    onClick={() => handleReportClick(r)}
+                  >
+                    <span className="font-medium">{r.date}</span>
+                    <span className="text-primary font-semibold">Total: {totalFor(r)} pts</span>
                   </li>
                 ))}
               </ul>
@@ -260,6 +272,13 @@ function KidCard({ kid, onAdd, onSetGoal, onReset }: { kid: Kid; onAdd: (delta: 
         onAddPoints={onAdd}
         onSetGoal={onSetGoal}
         onReset={onReset}
+      />
+
+      <ReportViewModal
+        open={showReportModal}
+        onOpenChange={setShowReportModal}
+        report={selectedReport}
+        kidName={kid.name}
       />
     </Card>
   );
