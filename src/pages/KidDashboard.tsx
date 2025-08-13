@@ -10,7 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "@/hooks/use-toast";
-import { ArrowLeft, Plus, Save, Edit } from "lucide-react";
+import { ArrowLeft, Plus, Save, Edit, Trash } from "lucide-react";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
 import DailyReportForm from "@/components/kid/DailyReportForm";
 import EditMetricModal from "@/components/kid/EditMetricModal";
@@ -270,7 +270,7 @@ const KidDashboard = () => {
                                 </Button>
                                 <AlertDialog>
                                   <AlertDialogTrigger asChild>
-                                    <Button size="sm" variant="destructive">Delete</Button>
+                                    <Button size="sm" variant="destructive"><Trash className="h-4 w-4" /></Button>
                                   </AlertDialogTrigger>
                                   <AlertDialogContent>
                                     <AlertDialogHeader>
