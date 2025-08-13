@@ -421,19 +421,15 @@ export default function KidDashboard() {
 
         <TabsContent value="reports" className="space-y-6">
           {/* Report Approval */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Calendar className="h-5 w-5" />
-                Report Approval
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {pendingReports.length === 0 ? (
-                <p className="text-muted-foreground text-center py-4">
-                  No reports pending approval.
-                </p>
-              ) : (
+          {pendingReports.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Calendar className="h-5 w-5" />
+                  Report Approval
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
                 <div className="space-y-4">
                   {pendingReports.map((report) => (
                     <ReportApprovalCard
@@ -451,9 +447,9 @@ export default function KidDashboard() {
                     />
                   ))}
                 </div>
-              )}
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Recent Reports */}
           <Card>
@@ -464,13 +460,14 @@ export default function KidDashboard() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              {!kid.reports || kid.reports.length === 0 ? (
+              {!kid.reports || kid.reports.filter(r => r.status !== "pending").length === 0 ? (
                 <p className="text-muted-foreground text-center py-4">
-                  No reports yet. Add a report to start tracking daily progress.
+                  No processed reports yet.
                 </p>
               ) : (
                 <div className="space-y-3">
                   {kid.reports
+                    .filter(report => report.status !== "pending")
                     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
                     .slice(0, 5)
                     .map((report) => (
