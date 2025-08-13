@@ -51,6 +51,7 @@ const KidDashboard = () => {
   const [editingMetric, setEditingMetric] = useState<Metric | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [openAddGroup, setOpenAddGroup] = useState(false);
+  const [openAddMetric, setOpenAddMetric] = useState(false);
 
   useEffect(() => {
     document.title = kid ? `${kid.name} Dashboard – Kids Tracker` : "Kid Dashboard – Kids Tracker";
@@ -183,43 +184,57 @@ const KidDashboard = () => {
           </CardHeader>
           <CardContent>
             <div className="flex flex-wrap gap-3 mb-4 items-end">
-              <div className="grid gap-2">
-                <Label htmlFor="m-name">Metric name</Label>
-                <Input id="m-name" value={metricName} onChange={(e) => setMetricName(e.target.value)} placeholder="e.g., Reading minutes" className="w-56" />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="m-unit">Unit (optional)</Label>
-                <Input id="m-unit" value={metricUnit} onChange={(e) => setMetricUnit(e.target.value)} placeholder="e.g., min, pages" className="w-40" />
-              </div>
-              <div className="grid gap-2">
-                <Label>Plan type</Label>
-                <Select value={metricPlanType || "none"} onValueChange={(v) => setMetricPlanType(v === "none" ? "" : (v as any))}>
-                  <SelectTrigger className="w-32"><SelectValue placeholder="None" /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">None</SelectItem>
-                    <SelectItem value="daily">Daily</SelectItem>
-                    <SelectItem value="weekly">Weekly</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="m-plan">Plan value</Label>
-                <Input id="m-plan" type="number" min={0} value={metricPlanValue} onChange={(e) => setMetricPlanValue(e.target.value)} placeholder="e.g., 30" className="w-28" />
-              </div>
-              <div className="grid gap-2">
-                <Label>Group</Label>
-                <Select value={metricGroupId || "none"} onValueChange={(v) => setMetricGroupId(v === "none" ? "" : v)}>
-                  <SelectTrigger className="w-44"><SelectValue placeholder="None" /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">None</SelectItem>
-                    {groups.map((g) => (
-                      <SelectItem key={g.id} value={g.id}>{g.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
               <div className="self-end">
-                <Button onClick={addMetric}><Plus className="mr-2 h-4 w-4" /> Add metric</Button>
+                <Dialog open={openAddMetric} onOpenChange={setOpenAddMetric}>
+                  <DialogTrigger asChild>
+                    <Button><Plus className="mr-2 h-4 w-4" /> Add metric</Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Add Metric</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4 py-2">
+                      <div className="grid gap-2">
+                        <Label htmlFor="m-name">Metric name</Label>
+                        <Input id="m-name" value={metricName} onChange={(e) => setMetricName(e.target.value)} placeholder="e.g., Reading minutes" />
+                      </div>
+                      <div className="grid gap-2">
+                        <Label htmlFor="m-unit">Unit (optional)</Label>
+                        <Input id="m-unit" value={metricUnit} onChange={(e) => setMetricUnit(e.target.value)} placeholder="e.g., min, pages" />
+                      </div>
+                      <div className="grid gap-2">
+                        <Label>Plan type</Label>
+                        <Select value={metricPlanType || "none"} onValueChange={(v) => setMetricPlanType(v === "none" ? "" : (v as any))}>
+                          <SelectTrigger className="w-40"><SelectValue placeholder="None" /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="none">None</SelectItem>
+                            <SelectItem value="daily">Daily</SelectItem>
+                            <SelectItem value="weekly">Weekly</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="grid gap-2">
+                        <Label htmlFor="m-plan">Plan value</Label>
+                        <Input id="m-plan" type="number" min={0} value={metricPlanValue} onChange={(e) => setMetricPlanValue(e.target.value)} placeholder="e.g., 30" />
+                      </div>
+                      <div className="grid gap-2">
+                        <Label>Group</Label>
+                        <Select value={metricGroupId || "none"} onValueChange={(v) => setMetricGroupId(v === "none" ? "" : v)}>
+                          <SelectTrigger className="w-52"><SelectValue placeholder="None" /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="none">None</SelectItem>
+                            {groups.map((g) => (
+                              <SelectItem key={g.id} value={g.id}>{g.name}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                    <DialogFooter>
+                      <Button onClick={() => { if (!metricName.trim()) { toast({ title: "Please enter a metric name" }); return; } addMetric(); setOpenAddMetric(false); }}>Save</Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
               </div>
               <Separator orientation="vertical" className="h-8" />
               <div className="self-end">
