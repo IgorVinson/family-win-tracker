@@ -52,6 +52,7 @@ const KidDashboard = () => {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [openAddGroup, setOpenAddGroup] = useState(false);
   const [openAddMetric, setOpenAddMetric] = useState(false);
+  const [openAddReport, setOpenAddReport] = useState(false);
 
   useEffect(() => {
     document.title = kid ? `${kid.name} Dashboard – Kids Tracker` : "Kid Dashboard – Kids Tracker";
@@ -236,6 +237,27 @@ const KidDashboard = () => {
                   </DialogContent>
                 </Dialog>
               </div>
+              <div className="self-end">
+                <Dialog open={openAddReport} onOpenChange={setOpenAddReport}>
+                  <DialogTrigger asChild>
+                    <Button variant="outline"><Plus className="mr-2 h-4 w-4" /> Add report</Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-2xl">
+                    <DialogHeader>
+                      <DialogTitle>Add Daily Report</DialogTitle>
+                    </DialogHeader>
+                    <div className="py-2">
+                      <DailyReportForm
+                        kid={{ id: kid.id, name: kid.name, metrics: metrics.map(({ id, name, unit, groupId }) => ({ id, name, unit, groupId })), groups }}
+                        onSave={(report) => {
+                          updateKid((k) => ({ ...k, reports: [...(k.reports ?? []), report] }));
+                          setOpenAddReport(false);
+                        }}
+                      />
+                    </div>
+                  </DialogContent>
+                </Dialog>
+              </div>
               <Separator orientation="vertical" className="h-8" />
               <div className="self-end">
                 <Dialog open={openAddGroup} onOpenChange={setOpenAddGroup}>
@@ -343,13 +365,23 @@ const KidDashboard = () => {
 
         <Card>
           <CardHeader>
-            <CardTitle>Daily Report</CardTitle>
+            <CardTitle>Recent Reports</CardTitle>
           </CardHeader>
           <CardContent>
-            <DailyReportForm
-              kid={{ id: kid.id, name: kid.name, metrics: metrics.map(({ id, name, unit, groupId }) => ({ id, name, unit, groupId })), groups }}
-              onSave={(report) => updateKid((k) => ({ ...k, reports: [...(k.reports ?? []), report] }))}
-            />
+            {kid.reports && kid.reports.length > 0 ? (
+              <div className="space-y-2">
+                {kid.reports.slice(-3).reverse().map((report) => (
+                  <div key={report.id} className="p-3 bg-muted rounded-lg">
+                    <div className="text-sm font-medium">{new Date(report.date).toLocaleDateString()}</div>
+                    <div className="text-xs text-muted-foreground mt-1">
+                      {report.entries.length} metrics recorded
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-muted-foreground">No reports yet. Click "Add report" to create your first daily report.</p>
+            )}
           </CardContent>
         </Card>
       </section>
