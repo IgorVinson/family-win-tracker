@@ -396,7 +396,7 @@ export default function KidDashboard() {
                           })}
                         </div>
                       </div>
-                    )))}
+                    ))}
                 </div>
               )}
             </CardContent>
@@ -442,8 +442,8 @@ export default function KidDashboard() {
                   <SelectItem value="none">None</SelectItem>
                   {(kid.groups || []).map((g) => (
                     <SelectItem key={g.id} value={g.id}>{g.name}</SelectItem>
-                  ))}
-                </SelectContent>
+                   ))}
+                 </SelectContent>
               </Select>
             </div>
           </div>
