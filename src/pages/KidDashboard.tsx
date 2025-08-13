@@ -474,20 +474,16 @@ export default function KidDashboard() {
                     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
                     .slice(0, 5)
                     .map((report) => (
-                      <div key={report.id} className="p-4 border rounded-lg">
+                      <div key={report.id} className={`p-4 border rounded-lg ${report.status === "pending" ? "bg-muted/30" : ""}`}>
                         <div className="flex items-center justify-between mb-2">
                           <h4 className="font-medium">{report.date}</h4>
                           <div className="flex gap-2">
-                            <Badge variant={
-                              report.status === "approved" ? "default" :
-                              report.status === "rejected" ? "destructive" :
-                              "secondary"
-                            }>
-                              {report.status}
-                            </Badge>
-                            <Badge variant="outline">
-                              {report.entries.length} metrics
-                            </Badge>
+                            {report.status === "approved" && (
+                              <Badge variant="default">approved</Badge>
+                            )}
+                            {report.status === "rejected" && (
+                              <Badge variant="destructive">rejected</Badge>
+                            )}
                             <Button
                               variant="outline"
                               size="sm"
