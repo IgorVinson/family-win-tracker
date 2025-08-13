@@ -281,11 +281,10 @@ export default function KidDashboard() {
 
       {/* Main Content Tabs */}
       <Tabs defaultValue="metrics" className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="metrics">Activities</TabsTrigger>
-          <TabsTrigger value="reports">Reports</TabsTrigger>
-          <TabsTrigger value="approval">
-            Approval
+          <TabsTrigger value="reports">
+            Reports
             {pendingReports.length > 0 && (
               <Badge variant="destructive" className="ml-1 text-xs">
                 {pendingReports.length}
@@ -417,6 +416,39 @@ export default function KidDashboard() {
         </TabsContent>
 
         <TabsContent value="reports" className="space-y-6">
+          {/* Report Approval */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Calendar className="h-5 w-5" />
+                Report Approval
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {pendingReports.length === 0 ? (
+                <p className="text-muted-foreground text-center py-4">
+                  No reports pending approval.
+                </p>
+              ) : (
+                <div className="space-y-4">
+                  {pendingReports.map((report) => (
+                    <ReportApprovalCard
+                      key={report.id}
+                      report={report}
+                      kid={kid}
+                      onApprove={approveReport}
+                      onReject={rejectReport}
+                      onEdit={(reportId) => {
+                        const report = kid.reports?.find(r => r.id === reportId);
+                        setEditingReport(report);
+                      }}
+                    />
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
           {/* Recent Reports */}
           <Card>
             <CardHeader>
@@ -467,41 +499,6 @@ export default function KidDashboard() {
                         </div>
                       </div>
                     ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="approval" className="space-y-6">
-          {/* Report Approval */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Calendar className="h-5 w-5" />
-                Report Approval
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {pendingReports.length === 0 ? (
-                <p className="text-muted-foreground text-center py-4">
-                  No reports pending approval.
-                </p>
-              ) : (
-                <div className="space-y-4">
-                  {pendingReports.map((report) => (
-                    <ReportApprovalCard
-                      key={report.id}
-                      report={report}
-                      kid={kid}
-                      onApprove={approveReport}
-                      onReject={rejectReport}
-                      onEdit={(reportId) => {
-                        const report = kid.reports?.find(r => r.id === reportId);
-                        setEditingReport(report);
-                      }}
-                    />
-                  ))}
                 </div>
               )}
             </CardContent>
