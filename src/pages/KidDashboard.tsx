@@ -122,12 +122,6 @@ const KidDashboard = () => {
     setIsEditModalOpen(true);
   };
 
-  const changeMetricGroup = (mid: string, gid: string | "") => {
-    updateKid((k) => ({
-      ...k,
-      metrics: (k.metrics ?? []).map((m) => (m.id === mid ? { ...m, groupId: gid || undefined } : m)),
-    }));
-  };
 
   const removeMetric = (mid: string) => {
     updateKid((k) => ({ ...k, metrics: (k.metrics ?? []).filter((m) => m.id !== mid) }));
@@ -259,7 +253,7 @@ const KidDashboard = () => {
                           <TableHead className="w-32">Value</TableHead>
                           <TableHead className="w-24">Unit</TableHead>
                           <TableHead className="w-28">Plan</TableHead>
-                          <TableHead className="w-52">Actions</TableHead>
+                          <TableHead className="w-40">Actions</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -274,15 +268,6 @@ const KidDashboard = () => {
                                 <Button size="sm" variant="outline" onClick={() => editMetric(m)}>
                                   <Edit className="h-4 w-4" />
                                 </Button>
-                                <Select value={m.groupId || "none"} onValueChange={(v) => changeMetricGroup(m.id, v === "none" ? "" : v)}>
-                                  <SelectTrigger className="h-8 w-40"><SelectValue placeholder="Group" /></SelectTrigger>
-                                  <SelectContent>
-                                    <SelectItem value="none">No group</SelectItem>
-                                    {groups.map((g) => (
-                                      <SelectItem key={g.id} value={g.id}>{g.name}</SelectItem>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
                                 <AlertDialog>
                                   <AlertDialogTrigger asChild>
                                     <Button size="sm" variant="destructive">Delete</Button>
