@@ -37,6 +37,7 @@ const KidDashboard = () => {
   const { id } = useParams();
   const [kids, setKids] = useLocalStorage<Kid[]>("family-kids", []);
   const kid = useMemo(() => kids.find((k) => k.id === id), [kids, id]);
+  console.log("KidDashboard render", { routeId: id, kidFound: !!kid, metrics: kid?.metrics?.length ?? 0, groups: kid?.groups?.length ?? 0 });
 
   const [noteDraft, setNoteDraft] = useState<string>(kid?.notes ?? "");
   const [metricName, setMetricName] = useState("");
