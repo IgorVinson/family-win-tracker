@@ -33,6 +33,11 @@ interface ReviewReportModalProps {
     entries?: Array<{ metricId: string; value: number }>;
   }) => void;
   onReject: (reportId: string) => void;
+  onSave: (reportId: string, updates: {
+    date?: string;
+    notes?: string;
+    entries?: Array<{ metricId: string; value: number }>;
+  }) => void;
 }
 
 function formatYMD(d: Date) {
@@ -42,7 +47,7 @@ function formatYMD(d: Date) {
   return `${y}-${m}-${da}`;
 }
 
-export function ReviewReportModal({ report, kid, isOpen, onClose, onApprove, onReject }: ReviewReportModalProps) {
+export function ReviewReportModal({ report, kid, isOpen, onClose, onApprove, onReject, onSave }: ReviewReportModalProps) {
   const [date, setDate] = useState<Date>(new Date());
   const [notes, setNotes] = useState("");
   const [values, setValues] = useState<Record<string, number>>({});
@@ -101,6 +106,26 @@ export function ReviewReportModal({ report, kid, isOpen, onClose, onApprove, onR
     toast({ 
       title: "Report approved", 
       description: `${kid.name}'s report has been approved and points awarded.` 
+    });
+    onClose();
+  };
+
+  const handleSave = () => {
+    if (!report) return;
+
+    const updates = {
+      date: formatYMD(date),
+      notes: notes.trim() || undefined,
+      entries: (kid.metrics ?? []).map((m) => ({ 
+        metricId: m.id, 
+        value: Number(values[m.id] ?? 0) 
+      })),
+    };
+    
+    onSave(report.id, updates);
+    toast({ 
+      title: "Report saved", 
+      description: `${kid.name}'s report has been saved.` 
     });
     onClose();
   };
@@ -212,8 +237,8 @@ export function ReviewReportModal({ report, kid, isOpen, onClose, onApprove, onR
         </div>
 
         <DialogFooter className="gap-2">
-          <Button variant="outline" onClick={onClose}>
-            Cancel
+          <Button variant="outline" onClick={handleSave}>
+            Save
           </Button>
           <Button 
             variant="destructive" 

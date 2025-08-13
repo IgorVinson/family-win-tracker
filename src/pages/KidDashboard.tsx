@@ -711,6 +711,10 @@ export default function KidDashboard() {
           rejectReport(reportId);
           setReviewingReport(null);
         }}
+        onSave={(reportId, updates) => {
+          updateReport(reportId, updates);
+          setReviewingReport(null);
+        }}
       />
 
       {/* Edit Report Modal */}
