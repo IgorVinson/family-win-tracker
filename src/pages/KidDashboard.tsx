@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
 import { Link, useParams } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -53,6 +53,7 @@ const KidDashboard = () => {
   const [openAddGroup, setOpenAddGroup] = useState(false);
   const [openAddMetric, setOpenAddMetric] = useState(false);
   const [openAddReport, setOpenAddReport] = useState(false);
+  const reportSaveRef = useRef<(() => void) | null>(null);
 
   useEffect(() => {
     document.title = kid ? `${kid.name} Dashboard – Kids Tracker` : "Kid Dashboard – Kids Tracker";
@@ -253,8 +254,12 @@ const KidDashboard = () => {
                           updateKid((k) => ({ ...k, reports: [...(k.reports ?? []), report] }));
                           setOpenAddReport(false);
                         }}
+                        onSaveRef={reportSaveRef}
                       />
                     </div>
+                    <DialogFooter>
+                      <Button onClick={() => reportSaveRef.current?.()}><Save className="mr-2 h-4 w-4" /> Save Report</Button>
+                    </DialogFooter>
                   </DialogContent>
                 </Dialog>
               </div>

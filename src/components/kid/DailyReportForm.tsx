@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -37,7 +37,7 @@ function formatYMD(d: Date) {
   return `${y}-${m}-${da}`;
 }
 
-export function DailyReportForm({ kid, onSave }: { kid: KidLike; onSave: (report: DailyReport) => void }) {
+export function DailyReportForm({ kid, onSave, onSaveRef }: { kid: KidLike; onSave: (report: DailyReport) => void; onSaveRef?: React.MutableRefObject<(() => void) | null> }) {
   const [date, setDate] = useState<Date>(new Date());
   const [notes, setNotes] = useState("");
   const [values, setValues] = useState<Record<string, number>>(() => {
@@ -84,6 +84,12 @@ export function DailyReportForm({ kid, onSave }: { kid: KidLike; onSave: (report
     });
   };
 
+  useEffect(() => {
+    if (onSaveRef) {
+      onSaveRef.current = handleSave;
+    }
+  }, [onSaveRef, handleSave]);
+
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-end gap-3">
@@ -109,9 +115,6 @@ export function DailyReportForm({ kid, onSave }: { kid: KidLike; onSave: (report
               />
             </PopoverContent>
           </Popover>
-        </div>
-        <div className="ml-auto">
-          <Button onClick={handleSave}><Save className="mr-2 h-4 w-4" /> Save report</Button>
         </div>
       </div>
 
