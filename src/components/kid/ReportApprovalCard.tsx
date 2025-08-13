@@ -1,7 +1,8 @@
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Check, X, Edit, Calendar } from "lucide-react";
+import { Check, X, Edit, Calendar, Eye } from "lucide-react";
 import { EnhancedKid } from "@/types/scoreSystem";
 
 interface Report {
@@ -24,6 +25,8 @@ interface ReportApprovalCardProps {
 }
 
 export function ReportApprovalCard({ report, kid, onApprove, onReject, onEdit }: ReportApprovalCardProps) {
+  const [showReviewActions, setShowReviewActions] = useState(false);
+
   const getStatusBadge = (status: Report["status"]) => {
     switch (status) {
       case "pending":
@@ -48,82 +51,81 @@ export function ReportApprovalCard({ report, kid, onApprove, onReject, onEdit }:
   };
 
   return (
-    <Card className="w-full">
-      <CardHeader className="pb-3">
-        <div className="flex items-center justify-between">
-          <CardTitle className="text-base flex items-center gap-2">
-            <Calendar className="h-4 w-4" />
-            {formatDate(report.date)}
-          </CardTitle>
+    <div className="p-4 border rounded-lg">
+      <div className="flex items-center justify-between mb-2">
+        <h4 className="font-medium">{formatDate(report.date)}</h4>
+        <div className="flex gap-2">
           {getStatusBadge(report.status)}
-        </div>
-        {report.notes && (
-          <p className="text-sm text-muted-foreground">{report.notes}</p>
-        )}
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="space-y-2">
-          <h4 className="text-sm font-medium">Activities Reported:</h4>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-            {report.entries.filter(entry => entry.value > 0).map((entry) => (
-              <div key={entry.metricId} className="flex justify-between items-center text-sm">
-                <span>{getMetricName(entry.metricId)}</span>
-                <span className="font-medium">
-                  {entry.value} {getMetricUnit(entry.metricId)}
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {report.status === "pending" && (
-          <div className="flex gap-2 pt-2">
+          <Badge variant="outline">
+            {report.entries.filter(entry => entry.value > 0).length} activities
+          </Badge>
+          
+          {report.status === "pending" && !showReviewActions && (
             <Button
-              onClick={() => onApprove(report.id)}
-              size="sm"
-              className="px-3"
-            >
-              <Check className="h-3 w-3 mr-1" />
-              Approve
-            </Button>
-            <Button
-              onClick={() => onReject(report.id)}
-              variant="destructive"
-              size="sm"
-              className="px-3"
-            >
-              <X className="h-3 w-3 mr-1" />
-              Reject
-            </Button>
-            <Button
-              onClick={() => onEdit(report.id)}
               variant="outline"
               size="sm"
+              onClick={() => setShowReviewActions(true)}
             >
-              <Edit className="h-4 w-4" />
+              <Eye className="h-3 w-3 mr-1" />
+              Review
             </Button>
-          </div>
-        )}
+          )}
+          
+          {report.status === "pending" && showReviewActions && (
+            <>
+              <Button
+                onClick={() => {
+                  onApprove(report.id);
+                  setShowReviewActions(false);
+                }}
+                size="sm"
+                className="px-3"
+              >
+                <Check className="h-3 w-3 mr-1" />
+                Approve
+              </Button>
+              <Button
+                onClick={() => {
+                  onReject(report.id);
+                  setShowReviewActions(false);
+                }}
+                variant="destructive"
+                size="sm"
+                className="px-3"
+              >
+                <X className="h-3 w-3 mr-1" />
+                Reject
+              </Button>
+            </>
+          )}
+          
+          <Button
+            onClick={() => onEdit(report.id)}
+            variant="outline"
+            size="sm"
+          >
+            <Edit className="h-3 w-3" />
+          </Button>
+        </div>
+      </div>
+      
+      {report.notes && (
+        <p className="text-sm text-muted-foreground mb-2">{report.notes}</p>
+      )}
+      
+      <div className="flex flex-wrap gap-2">
+        {report.entries.filter(entry => entry.value > 0).map((entry) => (
+          <Badge key={entry.metricId} variant="secondary">
+            {getMetricName(entry.metricId)}: {entry.value} {getMetricUnit(entry.metricId)}
+          </Badge>
+        ))}
+      </div>
 
-        {report.status !== "pending" && (
-          <div className="flex gap-2 pt-2">
-            <Button
-              onClick={() => onEdit(report.id)}
-              variant="outline"
-              size="sm"
-            >
-              <Edit className="h-4 w-4 mr-1" />
-              Edit
-            </Button>
-          </div>
-        )}
-
-        {report.processedAt && (
-          <div className="text-xs text-muted-foreground">
-            {report.status === "approved" ? "Approved" : "Rejected"} on {formatDate(report.processedAt)}
-          </div>
-        )}
-      </CardContent>
-    </Card>
+      {report.processedAt && (
+        <div className="text-xs text-muted-foreground mt-2">
+          {report.status === "approved" ? "Approved" : "Rejected"} on {formatDate(report.processedAt)}
+        </div>
+      )}
+    </div>
   );
 }
