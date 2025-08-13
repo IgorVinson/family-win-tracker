@@ -182,7 +182,7 @@ export default function KidDashboard() {
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
   // Count pending redemptions for notification badge
-  const pendingRedemptions = kid.prizeRedemptions?.filter(r => r.status === "pending").length || 0;
+  const pendingRedemptions = kid?.prizeRedemptions?.filter(r => r.status === "pending").length || 0;
 
   if (!kid) {
     return (
