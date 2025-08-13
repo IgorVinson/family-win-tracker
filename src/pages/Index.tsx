@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "@/hooks/use-toast";
-import { Plus, Target, Trophy, Star, UserRound, ArrowRight, Edit, BarChart3 } from "lucide-react";
+import { Plus, Target, Trophy, Star, UserRound, ArrowRight, Edit, BarChart3, AlertCircle } from "lucide-react";
 import { EditKidModal } from "@/components/kid/EditKidModal";
 import { ReportViewModal } from "@/components/kid/ReportViewModal";
 // Simple localStorage hook to persist state without backend
@@ -34,6 +34,16 @@ function useLocalStorage<T>(key: string, initialValue: T) {
 type DailyReportEntry = { metricId: string; value: number };
 type DailyReport = { id: string; date: string; createdAt: string; notes?: string; entries: DailyReportEntry[] };
 type Metric = { id: string; name: string; unit?: string; groupId?: string };
+type PrizeRedemption = { 
+  id: string; 
+  prizeId: string; 
+  prizeName: string; 
+  pointsCost: number; 
+  status: "pending" | "approved" | "rejected" | "completed"; 
+  requestedAt: string; 
+  processedAt?: string; 
+  notes?: string; 
+};
 
 type Kid = {
   id: string;
@@ -44,6 +54,7 @@ type Kid = {
   createdAt: string;
   reports?: DailyReport[];
   metrics?: Metric[];
+  prizeRedemptions?: PrizeRedemption[];
 };
 
 const pastelHues = [
@@ -199,6 +210,9 @@ function KidCard({ kid, onAdd, onSetGoal, onReset }: { kid: Kid; onAdd: (delta: 
     setShowReportModal(true);
   };
 
+  // Count pending redemptions for notification
+  const pendingRedemptions = kid.prizeRedemptions?.filter(r => r.status === "pending").length || 0;
+
   return (
     <Card className="card-elevated overflow-hidden">
       <CardHeader>
@@ -268,6 +282,21 @@ function KidCard({ kid, onAdd, onSetGoal, onReset }: { kid: Kid; onAdd: (delta: 
             </div>
           );
         })()}
+
+        {/* Prize Redemption Notification */}
+        {pendingRedemptions > 0 && (
+          <div className="mt-4 p-3 bg-orange-50 border border-orange-200 rounded-lg">
+            <div className="flex items-center gap-2 text-orange-700">
+              <AlertCircle className="h-4 w-4 flex-shrink-0" />
+              <div className="text-xs">
+                <p className="font-semibold">Parent Review Needed</p>
+                <p className="text-orange-600">
+                  {pendingRedemptions} prize redemption{pendingRedemptions > 1 ? 's' : ''} awaiting approval
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
       </CardContent>
 
       <EditKidModal
