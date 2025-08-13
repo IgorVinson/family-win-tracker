@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -24,7 +24,7 @@ const EditMetricModal = ({ metric, groups, isOpen, onClose, onSave }: EditMetric
   const [groupId, setGroupId] = useState(metric?.groupId || "");
 
   // Reset form when metric changes
-  React.useEffect(() => {
+  useEffect(() => {
     if (metric) {
       setName(metric.name);
       setUnit(metric.unit || "");
