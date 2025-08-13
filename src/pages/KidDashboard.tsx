@@ -16,6 +16,8 @@ import { useToast } from "@/hooks/use-toast";
 import { useEnhancedKid } from "@/hooks/useEnhancedKid";
 import DailyReportForm from "@/components/kid/DailyReportForm";
 import EditMetricModal from "@/components/kid/EditMetricModal";
+import { ReportApprovalCard } from "@/components/kid/ReportApprovalCard";
+import { EditReportModal } from "@/components/kid/EditReportModal";
 import { ScoreDashboard } from "@/components/score/ScoreDashboard";
 import { PrizeShop } from "@/components/prize/PrizeShop";
 import { PrizeManagement } from "@/components/prize/PrizeManagement";
@@ -32,6 +34,9 @@ export default function KidDashboard() {
   const { 
     kid, 
     addReport, 
+    approveReport,
+    rejectReport,
+    updateReport,
     addPrize, 
     updatePrize, 
     deletePrize, 
@@ -55,6 +60,7 @@ export default function KidDashboard() {
   const [groupType, setGroupType] = useState<"project" | "goal">("goal");
   const [showManagement, setShowManagement] = useState(false);
   const [editingMetric, setEditingMetric] = useState<any>(null);
+  const [editingReport, setEditingReport] = useState<any>(null);
 
   const [openAddGroup, setOpenAddGroup] = useState(false);
   const [openAddMetric, setOpenAddMetric] = useState(false);
@@ -167,6 +173,10 @@ export default function KidDashboard() {
     return result;
   }, [kid?.metrics, kid?.groups]);
 
+  const pendingReports = (kid?.reports || [])
+    .filter(report => report.status === "pending")
+    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
   if (!kid) {
     return (
       <div className="max-w-6xl mx-auto p-6">
@@ -259,21 +269,29 @@ export default function KidDashboard() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Earned</CardTitle>
+            <CardTitle className="text-sm font-medium">Pending Reports</CardTitle>
             <Calendar className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{kid.totalPointsEarned || 0}</div>
-            <p className="text-xs text-muted-foreground">Lifetime points</p>
+            <div className="text-2xl font-bold">{pendingReports.length}</div>
+            <p className="text-xs text-muted-foreground">Awaiting approval</p>
           </CardContent>
         </Card>
       </div>
 
       {/* Main Content Tabs */}
       <Tabs defaultValue="metrics" className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="metrics">Activities</TabsTrigger>
           <TabsTrigger value="reports">Reports</TabsTrigger>
+          <TabsTrigger value="approval">
+            Approval
+            {pendingReports.length > 0 && (
+              <Badge variant="destructive" className="ml-1 text-xs">
+                {pendingReports.length}
+              </Badge>
+            )}
+          </TabsTrigger>
           <TabsTrigger value="shop">Prize Shop</TabsTrigger>
         </TabsList>
 
@@ -421,9 +439,18 @@ export default function KidDashboard() {
                       <div key={report.id} className="p-4 border rounded-lg">
                         <div className="flex items-center justify-between mb-2">
                           <h4 className="font-medium">{report.date}</h4>
-                          <Badge variant="outline">
-                            {report.entries.length} metrics
-                          </Badge>
+                          <div className="flex gap-2">
+                            <Badge variant={
+                              report.status === "approved" ? "default" :
+                              report.status === "rejected" ? "destructive" :
+                              "secondary"
+                            }>
+                              {report.status}
+                            </Badge>
+                            <Badge variant="outline">
+                              {report.entries.length} metrics
+                            </Badge>
+                          </div>
                         </div>
                         {report.notes && (
                           <p className="text-sm text-muted-foreground mb-2">{report.notes}</p>
@@ -440,6 +467,41 @@ export default function KidDashboard() {
                         </div>
                       </div>
                     ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="approval" className="space-y-6">
+          {/* Report Approval */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Calendar className="h-5 w-5" />
+                Report Approval
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {pendingReports.length === 0 ? (
+                <p className="text-muted-foreground text-center py-4">
+                  No reports pending approval.
+                </p>
+              ) : (
+                <div className="space-y-4">
+                  {pendingReports.map((report) => (
+                    <ReportApprovalCard
+                      key={report.id}
+                      report={report}
+                      kid={kid}
+                      onApprove={approveReport}
+                      onReject={rejectReport}
+                      onEdit={(reportId) => {
+                        const report = kid.reports?.find(r => r.id === reportId);
+                        setEditingReport(report);
+                      }}
+                    />
+                  ))}
                 </div>
               )}
             </CardContent>
@@ -617,6 +679,15 @@ export default function KidDashboard() {
         onClose={() => setEditingMetric(null)}
         onSave={updateMetric}
         kidId={id || ""}
+      />
+
+      {/* Edit Report Modal */}
+      <EditReportModal
+        report={editingReport}
+        kid={kid}
+        isOpen={!!editingReport}
+        onClose={() => setEditingReport(null)}
+        onSave={updateReport}
       />
 
       {/* Prize Management Dialog */}

@@ -118,16 +118,64 @@ export function useEnhancedKid(kidId: string) {
       date: reportData.date,
       createdAt: new Date().toISOString(),
       notes: reportData.notes,
-      entries: reportData.entries
+      entries: reportData.entries,
+      status: "pending" as const,
     };
 
-    // Process scoring
-    const scoreUpdates = ScoringEngine.processDailyReport(kid, reportData.date, reportData.entries);
+    // Don't process scoring yet - wait for parent approval
+    updateKid(currentKid => ({
+      ...currentKid,
+      reports: [...(currentKid.reports || []), report]
+    }));
+  };
+
+  const approveReport = (reportId: string) => {
+    if (!kid) return;
+
+    const report = kid.reports?.find(r => r.id === reportId);
+    if (!report || report.status !== "pending") return;
+
+    // Process scoring for approved report
+    const scoreUpdates = ScoringEngine.processDailyReport(kid, report.date, report.entries);
 
     updateKid(currentKid => ({
       ...currentKid,
       ...scoreUpdates,
-      reports: [...(currentKid.reports || []), report]
+      reports: currentKid.reports?.map(r =>
+        r.id === reportId
+          ? { ...r, status: "approved" as const, processedAt: new Date().toISOString(), processedBy: "parent" as const }
+          : r
+      ) || []
+    }));
+  };
+
+  const rejectReport = (reportId: string) => {
+    if (!kid) return;
+
+    updateKid(currentKid => ({
+      ...currentKid,
+      reports: currentKid.reports?.map(r =>
+        r.id === reportId
+          ? { ...r, status: "rejected" as const, processedAt: new Date().toISOString(), processedBy: "parent" as const }
+          : r
+      ) || []
+    }));
+  };
+
+  const updateReport = (reportId: string, updates: {
+    date?: string;
+    notes?: string;
+    entries?: Array<{ metricId: string; value: number }>;
+  }) => {
+    if (!kid) return;
+
+    updateKid(currentKid => ({
+      ...currentKid,
+      reports: currentKid.reports?.map(r =>
+        r.id === reportId
+          ? { ...r, ...updates, status: r.status === "approved" ? "pending" as const : r.status }
+          : r
+      ) || []
     }));
   };
 
@@ -217,6 +265,9 @@ export function useEnhancedKid(kidId: string) {
     kid,
     updateKid,
     addReport,
+    approveReport,
+    rejectReport,
+    updateReport,
     addPrize,
     updatePrize,
     deletePrize,

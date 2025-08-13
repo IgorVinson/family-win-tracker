@@ -82,6 +82,9 @@ export interface EnhancedKid {
     createdAt: string;
     notes?: string;
     entries: Array<{ metricId: string; value: number }>;
+    status: "pending" | "approved" | "rejected";
+    processedAt?: string;
+    processedBy?: "parent" | "system";
   }>;
   scoreHistory: ScoreEntry[];
   availablePrizes: Prize[];
