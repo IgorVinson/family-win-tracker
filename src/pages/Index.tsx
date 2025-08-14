@@ -11,6 +11,7 @@ import { toast } from "@/hooks/use-toast";
 import { Plus, Target, Trophy, Star, UserRound, ArrowRight, Edit, BarChart3, AlertCircle } from "lucide-react";
 import { EditKidModal } from "@/components/kid/EditKidModal";
 import { ReportViewModal } from "@/components/kid/ReportViewModal";
+
 // Simple localStorage hook to persist state without backend
 function useLocalStorage<T>(key: string, initialValue: T) {
   const [value, setValue] = useState<T>(() => {
@@ -72,8 +73,6 @@ const pastelHues = [
   "330 70% 55%",
 ];
 
-
-
 const Index = () => {
   const [kids, setKids] = useLocalStorage<Kid[]>("family-kids", []);
   const [openAddKid, setOpenAddKid] = useState(false);
@@ -134,10 +133,10 @@ const Index = () => {
         <header className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <h1 className="text-4xl sm:text-5xl font-bold tracking-tight">
-              Kids Activity & Responsibility Tracker
+              Watch Your Kids Rise to Every Challenge
             </h1>
             <p className="text-muted-foreground mt-2">
-              Assign points for chores and activities, set goals, and celebrate those family wins.
+              Transform daily chores and activities into exciting achievements. KidsRise helps families set goals, track progress, and celebrate wins together with our fun point-based reward system.
             </p>
           </div>
           <div className="flex gap-3">
