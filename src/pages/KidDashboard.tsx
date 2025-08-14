@@ -11,7 +11,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, Plus, Save, Edit, Trash2, BarChart3, Users, Calendar, Target, Gift, Award, Settings } from "lucide-react";
+import { ArrowLeft, Plus, Save, Edit, Trash2, BarChart3, Users, Calendar, Target, Gift, Award, Coins, FileText } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useEnhancedKid } from "@/hooks/useEnhancedKid";
 import DailyReportForm from "@/components/kid/DailyReportForm";
@@ -220,8 +220,21 @@ export default function KidDashboard() {
           </div>
         </div>
         <div className="flex gap-2">
-          <Button onClick={() => setShowManagement(true)} variant="outline" className="relative">
-            <Settings className="mr-2 h-4 w-4" /> Manage Prizes
+          <Button onClick={() => setOpenAddGroup(true)} variant="outline">
+            <Plus className="mr-2 h-4 w-4" /> Add group
+          </Button>
+          <Button onClick={() => setOpenAddMetric(true)} variant="outline">
+            <Plus className="mr-2 h-4 w-4" /> Add activity
+          </Button>
+          <Button onClick={() => setOpenAddReport(true)} variant="outline">
+            <FileText className="mr-2 h-4 w-4" /> Add report
+          </Button>
+          <Button 
+            onClick={() => setShowManagement(true)} 
+            variant="outline" 
+            className="relative bg-gradient-to-r from-yellow-400 to-yellow-600 hover:from-yellow-500 hover:to-yellow-700 text-white border-0 shadow-md hover:shadow-lg transition-all duration-200"
+          >
+            <Coins className="mr-2 h-4 w-4" /> Manage Prizes
             {pendingRedemptions > 0 && (
               <Badge 
                 variant="destructive" 
@@ -230,15 +243,6 @@ export default function KidDashboard() {
                 {pendingRedemptions}
               </Badge>
             )}
-          </Button>
-          <Button onClick={() => setOpenAddGroup(true)} variant="outline">
-            <Plus className="mr-2 h-4 w-4" /> Add group
-          </Button>
-          <Button onClick={() => setOpenAddMetric(true)} variant="outline">
-            <Plus className="mr-2 h-4 w-4" /> Add activity
-          </Button>
-          <Button onClick={() => setOpenAddReport(true)}>
-            <Plus className="mr-2 h-4 w-4" /> Add report
           </Button>
         </div>
       </div>
