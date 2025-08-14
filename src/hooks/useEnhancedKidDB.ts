@@ -208,11 +208,11 @@ export function useEnhancedKidDB(kidId: string) {
         return;
       }
 
-      // Check if user has access to this kid
-      // Parents can access kids with null user_id (kids they manage)
-      // Kids can only access their own profile (where user_id matches their id)
+      // Access control (frontend safeguard – RLS already enforces this on backend)
+      // Parents: allowed to access any kid they have RLS rights to (family membership / creator)
+      // Kids: only their own profile
       const canAccess =
-        (userRole === "parent" && kidData.user_id === null) ||
+        userRole === "parent" || // allow all parents; rely on RLS for actual authorization
         (userRole === "kid" && kidData.user_id === user?.id);
 
       if (!canAccess) {
