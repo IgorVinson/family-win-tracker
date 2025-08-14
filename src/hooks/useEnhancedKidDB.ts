@@ -1135,11 +1135,21 @@ export function useEnhancedKidDB(kidId: string) {
   const removeActivity = async (activityId: string) => {
     if (!user || !kid) return;
 
-    try {
-      const activity = kid.activities?.find(a => a.id === activityId);
-      if (!activity) return;
+    const prevKid = kid; // for revert on failure
+    const activity = kid.activities?.find(a => a.id === activityId);
+    if (!activity) return;
 
-      // Delete activity (scoring rules will be deleted via CASCADE)
+    // Optimistic update: remove from local state immediately
+    setKid(prev =>
+      prev
+        ? {
+            ...prev,
+            activities: prev.activities?.filter(a => a.id !== activityId) || [],
+          }
+        : prev
+    );
+
+    try {
       const { error } = await supabase
         .from("activities")
         .delete()
@@ -1147,14 +1157,14 @@ export function useEnhancedKidDB(kidId: string) {
 
       if (error) throw error;
 
-      await loadKidData();
-
       toast({
         title: "Activity removed",
         description: `${activity.name} has been removed.`,
       });
     } catch (error) {
       console.error("Error removing activity:", error);
+      // Revert optimistic update
+      setKid(prevKid);
       toast({
         variant: "destructive",
         title: "Failed to remove activity",

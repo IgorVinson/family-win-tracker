@@ -145,6 +145,9 @@ function KidDashboardContent() {
   const [editingReport, setEditingReport] = useState<Report | null>(null);
   const [reviewingReport, setReviewingReport] = useState<Report | null>(null);
   const [deletingReport, setDeletingReport] = useState<Report | null>(null);
+  const [deletingActivity, setDeletingActivity] = useState<Activity | null>(
+    null
+  );
 
   const [openAddGroup, setOpenAddGroup] = useState(false);
   const [openAddActivity, setOpenAddActivity] = useState(false);
@@ -236,12 +239,12 @@ function KidDashboardContent() {
 
   const addGroup = async () => {
     if (!groupName.trim()) return;
-    
+
     await addGroupDB({
       name: groupName,
       type: groupType,
     });
-    
+
     setGroupName("");
     setOpenAddGroup(false);
   };
@@ -536,7 +539,7 @@ function KidDashboardContent() {
                                           variant="outline"
                                           size="sm"
                                           onClick={() =>
-                                            removeActivity(activity.id)
+                                            setDeletingActivity(activity)
                                           }
                                         >
                                           <Trash2 className="h-3 w-3" />
@@ -1010,6 +1013,38 @@ function KidDashboardContent() {
         onClose={() => setEditingReport(null)}
         onSave={updateReport}
       />
+
+      {/* Delete Activity Confirmation Dialog */}
+      <Dialog
+        open={!!deletingActivity}
+        onOpenChange={() => setDeletingActivity(null)}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete Activity</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete the activity "
+              {deletingActivity?.name}"? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeletingActivity(null)}>
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => {
+                if (deletingActivity) {
+                  removeActivity(deletingActivity.id);
+                  setDeletingActivity(null);
+                }
+              }}
+            >
+              Delete Activity
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Delete Report Confirmation Dialog */}
       <Dialog
