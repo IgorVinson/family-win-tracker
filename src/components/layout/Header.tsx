@@ -15,7 +15,7 @@ import { Link } from "react-router-dom";
 
 // A hoverable user menu: opens on hover of avatar and stays while hovering menu
 export function Header() {
-  const { isAuthenticated, user, signOut } = useAuth();
+  const { isAuthenticated, user, signOut, userRole } = useAuth();
   const [open, setOpen] = useState(false);
   const hoverTimeout = useRef<number | null>(null);
 
@@ -49,52 +49,59 @@ export function Header() {
             </Button>
           )}
           {isAuthenticated && (
-            <DropdownMenu open={open} onOpenChange={setOpen}>
-              <DropdownMenuTrigger asChild>
-                <button
-                  onClick={() => setOpen(o => !o)}
+            <>
+              {userRole === 'kid' && (
+                <Link to="/accept-invite" className="text-sm text-muted-foreground hover:text-foreground">
+                  Accept Invite
+                </Link>
+              )}
+              <DropdownMenu open={open} onOpenChange={setOpen}>
+                <DropdownMenuTrigger asChild>
+                  <button
+                    onClick={() => setOpen(o => !o)}
+                    onMouseEnter={handleOpen}
+                    onMouseLeave={handleClose}
+                    className="outline-none"
+                  >
+                    <Avatar className="h-9 w-9 ring-2 ring-transparent hover:ring-primary/40 transition">
+                      <AvatarImage
+                        src={
+                          user?.user_metadata?.avatar_url as string | undefined
+                        }
+                      />
+                      <AvatarFallback>
+                        {(user?.email || "?").slice(0, 2).toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                  align="end"
                   onMouseEnter={handleOpen}
                   onMouseLeave={handleClose}
-                  className="outline-none"
+                  className="w-56"
                 >
-                  <Avatar className="h-9 w-9 ring-2 ring-transparent hover:ring-primary/40 transition">
-                    <AvatarImage
-                      src={
-                        user?.user_metadata?.avatar_url as string | undefined
-                      }
-                    />
-                    <AvatarFallback>
-                      {(user?.email || "?").slice(0, 2).toUpperCase()}
-                    </AvatarFallback>
-                  </Avatar>
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent
-                align="end"
-                onMouseEnter={handleOpen}
-                onMouseLeave={handleClose}
-                className="w-56"
-              >
-                <DropdownMenuLabel className="text-xs font-normal">
-                  <div className="flex flex-col">
-                    <span className="text-muted-foreground">Signed in as</span>
-                    <span className="truncate font-medium text-foreground">
-                      {user?.email}
-                    </span>
-                  </div>
-                </DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  className="cursor-pointer text-red-600 focus:text-red-600"
-                  onClick={() => {
-                    setOpen(false);
-                    void signOut();
-                  }}
-                >
-                  <LogOut className="mr-2 h-4 w-4" /> Sign Out
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+                  <DropdownMenuLabel className="text-xs font-normal">
+                    <div className="flex flex-col">
+                      <span className="text-muted-foreground">Signed in as</span>
+                      <span className="truncate font-medium text-foreground">
+                        {user?.email}
+                      </span>
+                    </div>
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    className="cursor-pointer text-red-600 focus:text-red-600"
+                    onClick={() => {
+                      setOpen(false);
+                      void signOut();
+                    }}
+                  >
+                    <LogOut className="mr-2 h-4 w-4" /> Sign Out
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </>
           )}
         </div>
       </div>

@@ -32,15 +32,16 @@ import {
 } from "lucide-react";
 import { EditKidModal } from "@/components/kid/EditKidModal";
 import { ReportViewModal } from "@/components/kid/ReportViewModal";
+import { CreateKidWithInvite } from "@/components/kid/CreateKidWithInvite";
 
 type DailyReportEntry = { metricId: string; value: number };
 type DailyReport = {
   id: string;
   date: string;
-  createdAt: string;
+  createdAt?: string; // optional to match lite reports
   notes?: string;
-  entries: DailyReportEntry[];
-  status?: "pending" | "approved" | "rejected";
+  entries?: DailyReportEntry[]; // optional because lightweight list query omits entries
+  status?: string; // backend may return other statuses; loosen for dashboard list
 };
 type Metric = { id: string; name: string; unit?: string; groupId?: string };
 type PrizeRedemption = {
@@ -180,6 +181,9 @@ const Index = () => {
                 </Dialog>
               ) : null}
             </div>
+            {isAuthenticated && (
+              <div className="mt-4 max-w-md"><CreateKidWithInvite /></div>
+            )}
           </div>
         </header>
 
@@ -375,13 +379,13 @@ function KidCard({
           const recent = [...(kid.reports ?? [])]
             .sort(
               (a, b) =>
-                new Date(b.createdAt).getTime() -
-                new Date(a.createdAt).getTime()
+                new Date(b.createdAt || b.date).getTime() -
+                new Date(a.createdAt || a.date).getTime()
             )
             .slice(0, 3); // Show last 3 days instead of 7
           if (recent.length === 0) return null;
           const totalFor = (r: DailyReport) =>
-            r.entries.reduce((s, e) => s + (e.value || 0), 0);
+            (r.entries || []).reduce((s, e) => s + (e.value || 0), 0);
           return (
             <div className="mt-4">
               <h4 className="text-sm font-semibold text-muted-foreground mb-2">

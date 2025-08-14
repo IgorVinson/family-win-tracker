@@ -15,3 +15,11 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
     autoRefreshToken: true,
   }
 });
+
+export async function rpcCreateKidWithInvite(name: string, invitedEmail?: string) {
+  return supabase.rpc('create_kid_with_invite', { _name: name, _invited_email: invitedEmail || null });
+}
+
+export async function rpcClaimKidInvitation(token: string) {
+  return supabase.rpc('claim_kid_invitation', { _token: token });
+}

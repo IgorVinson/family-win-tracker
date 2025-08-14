@@ -4,6 +4,17 @@ import { useAuth } from "@/hooks/useAuth";
 import { toast } from "@/hooks/use-toast";
 
 // Simple Kid type for the main dashboard (lightweight)
+export type DailyReportLite = {
+  id: string;
+  date: string;
+  status: string | null;
+  created_at?: string; // raw from DB
+  createdAt?: string; // mapped for UI
+};
+export type GiftRedemptionLite = {
+  id: string;
+  status: string | null;
+};
 export type Kid = {
   id: string;
   name: string;
@@ -11,9 +22,9 @@ export type Kid = {
   goal: number;
   color: string;
   createdAt: string;
-  reports?: any[];
-  metrics?: any[];
-  giftRedemptions?: any[];
+  reports?: DailyReportLite[];
+  metrics?: never[]; // not loaded here
+  giftRedemptions?: GiftRedemptionLite[];
 };
 
 export function useFamilyKids() {
@@ -29,14 +40,13 @@ export function useFamilyKids() {
       return;
     }
 
-    // Don't load data until userRole is available (not null)
     if (userRole === null) {
-      // Keep loading true while waiting for userRole
       setLoading(true);
       return;
     }
 
     loadKidsData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, userRole, isAuthenticated]);
 
   // Return early for non-authenticated users to avoid any database operations
@@ -58,19 +68,15 @@ export function useFamilyKids() {
 
       let query = supabase.from("kids").select(`
         id, name, current_points, monthly_goal, created_at,
-        daily_reports(id, date, status),
+        daily_reports(id, date, status, created_at),
         gift_redemptions(id, status)
       `);
 
       // If user is a kid, only show their own profile
       if (userRole === 'kid') {
         query = query.eq('user_id', user?.id);
-      } else if (userRole === 'parent') {
-        // For parents, show all kids that either:
-        // 1. Don't have a specific user_id (managed by parents)
-        // 2. Or belong to this user's family (for now we'll show all non-user kids)
-        query = query.is('user_id', null);
       }
+      // For parents (and other roles), rely on RLS to scope visibility. Removing previous filter that excluded claimed kid accounts.
 
       const { data: kidsData, error } = await query.order("created_at", { ascending: true });
 
@@ -81,16 +87,27 @@ export function useFamilyKids() {
       }
 
       // Convert database format to Kid format
-      const convertedKids: Kid[] = (kidsData || []).map((kid, index) => ({
-        id: kid.id,
-        name: kid.name,
-        points: kid.current_points || 0,
-        goal: kid.monthly_goal || 50,
-        color: getPastelColor(index),
-        createdAt: kid.created_at,
-        reports: kid.daily_reports || [],
-        giftRedemptions: kid.gift_redemptions || []
-      }));
+      const convertedKids: Kid[] = (kidsData || []).map((kid, index) => {
+        type ReportRow = { id: string; date: string; status: string | null; created_at?: string };
+        type GiftRow = { id: string; status: string | null };
+        const reports: DailyReportLite[] = ((kid.daily_reports || []) as ReportRow[]).map(r => ({
+          id: r.id,
+          date: r.date,
+          status: r.status,
+          created_at: r.created_at,
+          createdAt: r.created_at,
+        }));
+        return {
+          id: kid.id,
+          name: kid.name,
+          points: kid.current_points || 0,
+          goal: kid.monthly_goal || 50,
+          color: getPastelColor(index),
+          createdAt: kid.created_at,
+          reports,
+          giftRedemptions: ((kid.gift_redemptions || []) as GiftRow[]).map(g => ({ id: g.id, status: g.status })),
+        };
+      });
 
       setKids(convertedKids);
     } catch (error) {
@@ -129,7 +146,7 @@ export function useFamilyKids() {
           name: name.trim(),
           monthly_goal: Math.max(0, goal),
           current_points: 0,
-          user_id: userRole === 'kid' ? user.id : undefined // Only set user_id for kid accounts
+          // user_id intentionally not set when parent creates placeholder kid account
         })
         .select()
         .single();

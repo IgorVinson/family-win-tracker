@@ -194,6 +194,7 @@ export type Database = {
           name: string
           updated_at: string
           user_id: string | null
+          created_by: string | null
         }
         Insert: {
           best_streak?: number
@@ -205,6 +206,7 @@ export type Database = {
           name: string
           updated_at?: string
           user_id?: string | null
+          created_by?: string | null
         }
         Update: {
           best_streak?: number
@@ -216,6 +218,7 @@ export type Database = {
           name?: string
           updated_at?: string
           user_id?: string | null
+          created_by?: string | null
         }
         Relationships: [
           {
@@ -223,6 +226,47 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      kid_invitations: {
+        Row: {
+          id: string
+          kid_id: string
+          token: string
+          invited_email: string | null
+          expires_at: string
+          accepted_at: string | null
+          created_at: string
+          created_by: string | null
+        }
+        Insert: {
+          id?: string
+          kid_id: string
+          token: string
+          invited_email?: string | null
+          expires_at?: string
+          accepted_at?: string | null
+          created_at?: string
+          created_by?: string | null
+        }
+        Update: {
+          id?: string
+          kid_id?: string
+          token?: string
+          invited_email?: string | null
+          expires_at?: string
+          accepted_at?: string | null
+          created_at?: string
+          created_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "kid_invitations_kid_id_fkey"
+            columns: ["kid_id"]
+            isOneToOne: false
+            referencedRelation: "kids"
             referencedColumns: ["id"]
           },
         ]
@@ -532,6 +576,14 @@ export type Database = {
       is_family_member: {
         Args: { _user_id: string; _kid_id: string }
         Returns: boolean
+      }
+      create_kid_with_invite: {
+        Args: { _name: string; _invited_email: string | null }
+        Returns: { kid_id: string; token: string }[]
+      }
+      claim_kid_invitation: {
+        Args: { _token: string }
+        Returns: { kid_id: string }[]
       }
     }
     Enums: {

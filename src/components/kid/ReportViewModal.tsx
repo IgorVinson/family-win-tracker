@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Calendar, FileText, Target } from "lucide-react";
 
 type DailyReportEntry = { metricId: string; value: number };
-type DailyReport = { id: string; date: string; createdAt: string; notes?: string; entries: DailyReportEntry[] };
+type DailyReport = { id: string; date: string; createdAt?: string; notes?: string; entries?: DailyReportEntry[] };
 type Metric = { id: string; name: string; unit?: string; groupId?: string };
 
 interface ReportViewModalProps {
@@ -18,7 +18,7 @@ interface ReportViewModalProps {
 export function ReportViewModal({ open, onOpenChange, report, kidName, metrics = [] }: ReportViewModalProps) {
   if (!report) return null;
 
-  const totalPoints = report.entries.reduce((sum, entry) => sum + (entry.value || 0), 0);
+  const totalPoints = (report.entries || []).reduce((sum, entry) => sum + (entry.value || 0), 0);
   
   const getMetricName = (metricId: string) => {
     return metrics.find(m => m.id === metricId)?.name || `Activity ${metricId}`;
@@ -64,7 +64,7 @@ export function ReportViewModal({ open, onOpenChange, report, kidName, metrics =
             </CardHeader>
             <CardContent>
               <div className="text-sm text-muted-foreground">
-                Submitted: {new Date(report.createdAt).toLocaleString()}
+                Submitted: {new Date(report.createdAt || report.date).toLocaleString()}
               </div>
             </CardContent>
           </Card>
@@ -78,13 +78,13 @@ export function ReportViewModal({ open, onOpenChange, report, kidName, metrics =
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-              {report.entries.length === 0 ? (
+              {(!report.entries || report.entries.length === 0) ? (
                 <div className="text-center text-muted-foreground py-4">
                   No activities recorded for this day
                 </div>
               ) : (
                 <div className="space-y-2">
-                  {report.entries.map((entry, index) => (
+                  {(report.entries || []).map((entry, index) => (
                     <div key={index} className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
                       <div className="flex items-center gap-2">
                         <div className="h-2 w-2 bg-primary rounded-full" />

@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { UserRound, Loader2 } from "lucide-react";
 import Index from "./Index";
+import AcceptInvite from "./AcceptInvite";
 
 export default function IndexWrapper() {
   const { loading, isAuthenticated } = useAuth();

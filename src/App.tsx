@@ -9,6 +9,7 @@ import Auth from "./pages/Auth";
 import IndexWrapper from "./pages/IndexWrapper";
 import KidDashboard from "./pages/KidDashboard";
 import NotFound from "./pages/NotFound";
+import AcceptInvite from "./pages/AcceptInvite";
 
 function AppContent() {
   const location = useLocation();
@@ -20,6 +21,7 @@ function AppContent() {
         <Route path="/" element={<IndexWrapper />} />
         <Route path="/auth" element={<Auth />} />
         <Route path="/kid/:id" element={<KidDashboard />} />
+        <Route path="/accept-invite" element={<AcceptInvite />} />
         {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
         <Route path="*" element={<NotFound />} />
       </Routes>
