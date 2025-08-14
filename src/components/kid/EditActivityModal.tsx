@@ -1,35 +1,34 @@
-
-import React, { useEffect, useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { useState, useEffect } from "react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Save } from "lucide-react";
-import type { Metric, Group } from "@/pages/KidDashboard";
+import type { Activity, Group } from "@/pages/KidDashboard";
 import { useEnhancedKid } from "@/hooks/useEnhancedKid";
 import type { ScoringRule } from "@/types/scoreSystem";
 
-interface EditMetricModalProps {
-  metric: Metric | null;
+interface EditActivityModalProps {
+  activity: Activity | null;
   groups: Group[];
   isOpen: boolean;
   onClose: () => void;
-  onSave: (updatedMetric: Metric, scoringRule?: ScoringRule) => void;
+  onSave: (updatedActivity: Activity, scoringRule?: ScoringRule) => void;
   kidId: string;
 }
 
-const EditMetricModal = ({ metric, groups, isOpen, onClose, onSave, kidId }: EditMetricModalProps) => {
-  const { kid, updateMetricScoringRule } = useEnhancedKid(kidId);
+const EditActivityModal = ({ activity, groups, isOpen, onClose, onSave, kidId }: EditActivityModalProps) => {
+  const { kid, updateActivityScoringRule } = useEnhancedKid(kidId);
   
-  const [name, setName] = useState(metric?.name || "");
-  const [unit, setUnit] = useState(metric?.unit || "");
-  const [planType, setPlanType] = useState<"" | "daily" | "weekly">(metric?.planType || "");
-  const [planValue, setPlanValue] = useState(metric?.planValue?.toString() || "");
-  const [groupId, setGroupId] = useState(metric?.groupId || "");
+  const [name, setName] = useState(activity?.name || "");
+  const [unit, setUnit] = useState(activity?.unit || "");
+  const [planType, setPlanType] = useState<"" | "daily" | "weekly">(activity?.planType || "");
+  const [planValue, setPlanValue] = useState(activity?.planValue?.toString() || "");
+  const [groupId, setGroupId] = useState(activity?.groupId || "");
   
-  // Get current scoring rule for this metric
-  const currentScoringRule = kid?.metrics.find(m => m.id === metric?.id)?.scoringRule || {
+  // Get current scoring rule for this activity
+  const currentScoringRule = kid?.activities?.find(m => m.id === activity?.id)?.scoringRule || {
     basePointsPerUnit: 1,
     goalBonusPoints: 5,
     streakBonusPoints: 2,
@@ -42,17 +41,17 @@ const EditMetricModal = ({ metric, groups, isOpen, onClose, onSave, kidId }: Edi
   const [streakBonusPoints, setStreakBonusPoints] = useState(currentScoringRule.streakBonusPoints.toString());
   const [maxDailyPoints, setMaxDailyPoints] = useState(currentScoringRule.maxDailyPoints.toString());
 
-  // Reset form when metric changes
+  // Reset form when activity changes
   useEffect(() => {
-    if (metric) {
-      setName(metric.name);
-      setUnit(metric.unit || "");
-      setPlanType(metric.planType || "");
-      setPlanValue(metric.planValue?.toString() || "");
-      setGroupId(metric.groupId || "");
+    if (activity) {
+      setName(activity.name);
+      setUnit(activity.unit || "");
+      setPlanType(activity.planType || "");
+      setPlanValue(activity.planValue?.toString() || "");
+      setGroupId(activity.groupId || "");
       
       // Reset scoring rule values
-      const scoringRule = kid?.metrics.find(m => m.id === metric.id)?.scoringRule || {
+      const scoringRule = kid?.activities?.find(m => m.id === activity.id)?.scoringRule || {
         basePointsPerUnit: 1,
         goalBonusPoints: 5,
         streakBonusPoints: 2,
@@ -63,14 +62,14 @@ const EditMetricModal = ({ metric, groups, isOpen, onClose, onSave, kidId }: Edi
       setStreakBonusPoints(scoringRule.streakBonusPoints.toString());
       setMaxDailyPoints(scoringRule.maxDailyPoints.toString());
     }
-  }, [metric, kid]);
+  }, [activity, kid]);
 
   const handleSave = () => {
-    if (!metric || !name.trim()) return;
+    if (!activity || !name.trim()) return;
 
     const planValNum = Number(planValue);
-    const updatedMetric: Metric = {
-      ...metric,
+    const updatedActivity: Activity = {
+      ...activity,
       name: name.trim(),
       unit: unit.trim() || undefined,
       planType: planType || undefined,
@@ -79,7 +78,7 @@ const EditMetricModal = ({ metric, groups, isOpen, onClose, onSave, kidId }: Edi
     };
 
     const updatedScoringRule: ScoringRule = {
-      metricId: metric.id,
+      activityId: activity.id,
       basePointsPerUnit: Math.max(0, Number(basePointsPerUnit) || 1),
       goalBonusPoints: Math.max(0, Number(goalBonusPoints) || 0),
       streakBonusPoints: Math.max(0, Number(streakBonusPoints) || 0),
@@ -87,15 +86,15 @@ const EditMetricModal = ({ metric, groups, isOpen, onClose, onSave, kidId }: Edi
     };
 
     // Update scoring rule in the enhanced kid data
-    if (updateMetricScoringRule) {
-      updateMetricScoringRule(metric.id, updatedScoringRule);
+    if (updateActivityScoringRule) {
+      updateActivityScoringRule(activity.id, updatedScoringRule);
     }
 
-    onSave(updatedMetric, updatedScoringRule);
+    onSave(updatedActivity, updatedScoringRule);
     onClose();
   };
 
-  if (!metric) return null;
+  if (!activity) return null;
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -234,4 +233,4 @@ const EditMetricModal = ({ metric, groups, isOpen, onClose, onSave, kidId }: Edi
   );
 };
 
-export default EditMetricModal;
+export default EditActivityModal;

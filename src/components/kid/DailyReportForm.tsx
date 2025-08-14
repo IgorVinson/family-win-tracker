@@ -10,7 +10,7 @@ import { cn } from "@/lib/utils";
 import { toast } from "@/hooks/use-toast";
 
 // Local types mirroring pages for minimal coupling
-export type DailyReportEntry = { metricId: string; value: number };
+export type DailyReportEntry = { activityId: string; value: number };
 export type DailyReport = {
   id: string;
   date: string; // YYYY-MM-DD
@@ -19,13 +19,13 @@ export type DailyReport = {
   entries: DailyReportEntry[];
 };
 
-export type Metric = { id: string; name: string; unit?: string; groupId?: string };
+export type Activity = { id: string; name: string; unit?: string; groupId?: string };
 export type Group = { id: string; name: string; type: "project" | "goal" };
 
 export type KidLike = {
   id: string;
   name: string;
-  metrics?: Metric[];
+  activities?: Activity[];
   groups?: Group[];
   reports?: DailyReport[];
 };
@@ -42,27 +42,27 @@ export function DailyReportForm({ kid, onSave, onSaveRef }: { kid: KidLike; onSa
   const [notes, setNotes] = useState("");
   const [values, setValues] = useState<Record<string, number>>(() => {
     const v: Record<string, number> = {};
-    (kid.metrics ?? []).forEach((m) => (v[m.id] = 0));
+    (kid.activities ?? []).forEach((m) => (v[m.id] = 0));
     return v;
   });
 
-  const metrics = kid.metrics ?? [];
+  const activities = kid.activities ?? [];
   const groups = kid.groups ?? [];
 
   const sections = useMemo(() => {
-    const ungrouped = metrics.filter((m) => !m.groupId);
-    const result: { id: string; title: string; items: typeof metrics }[] = [];
+    const ungrouped = activities.filter((m) => !m.groupId);
+    const result: { id: string; title: string; items: typeof activities }[] = [];
     if (ungrouped.length > 0) result.push({ id: "__ungrouped__", title: "Ungrouped", items: ungrouped });
     for (const g of groups) {
-      const items = metrics.filter((m) => m.groupId === g.id);
+      const items = activities.filter((m) => m.groupId === g.id);
       if (items.length > 0) result.push({ id: g.id, title: `${g.name} (${g.type})`, items });
     }
     return result;
-  }, [metrics, groups]);
+  }, [activities, groups]);
 
-  const handleChange = (metricId: string, val: string) => {
+  const handleChange = (activityId: string, val: string) => {
     const n = Math.max(0, Number(val || 0));
-    setValues((prev) => ({ ...prev, [metricId]: Number.isFinite(n) ? n : 0 }));
+    setValues((prev) => ({ ...prev, [activityId]: Number.isFinite(n) ? n : 0 }));
   };
 
   const handleSave = () => {
@@ -71,7 +71,7 @@ export function DailyReportForm({ kid, onSave, onSaveRef }: { kid: KidLike; onSa
       date: formatYMD(date),
       createdAt: new Date().toISOString(),
       notes: notes.trim() || undefined,
-      entries: metrics.map((m) => ({ metricId: m.id, value: Number(values[m.id] ?? 0) })),
+      entries: activities.map((m) => ({ activityId: m.id, value: Number(values[m.id] ?? 0) })),
     };
     onSave(payload);
     toast({ title: "Report saved", description: `${kid.name}'s daily report was saved.` });
@@ -79,7 +79,7 @@ export function DailyReportForm({ kid, onSave, onSaveRef }: { kid: KidLike; onSa
     setNotes("");
     setValues((prev) => {
       const next: Record<string, number> = {};
-      (kid.metrics ?? []).forEach((m) => (next[m.id] = 0));
+      (kid.activities ?? []).forEach((m) => (next[m.id] = 0));
       return next;
     });
   };
@@ -121,7 +121,7 @@ export function DailyReportForm({ kid, onSave, onSaveRef }: { kid: KidLike; onSa
       <Separator />
 
       {sections.length === 0 ? (
-        <p className="text-muted-foreground text-sm">No metrics configured yet. Add metrics above to start reporting.</p>
+        <p className="text-muted-foreground text-sm">No activities configured yet. Add activities above to start reporting.</p>
       ) : (
         <div className="space-y-6">
           {sections.map((section) => (
@@ -144,7 +144,7 @@ export function DailyReportForm({ kid, onSave, onSaveRef }: { kid: KidLike; onSa
                   
                   return (
                   <div key={m.id} className="grid gap-2">
-                    <Label htmlFor={`metric-${m.id}`} className="flex items-center justify-between">
+                    <Label htmlFor={`activity-${m.id}`} className="flex items-center justify-between">
                       <span>
                         {m.name} {m.unit ? `(${m.unit})` : ""}
                       </span>
@@ -155,7 +155,7 @@ export function DailyReportForm({ kid, onSave, onSaveRef }: { kid: KidLike; onSa
                       )}
                     </Label>
                     <Input
-                      id={`metric-${m.id}`}
+                      id={`activity-${m.id}`}
                       type="number"
                       min={0}
                       value={values[m.id] ?? 0}

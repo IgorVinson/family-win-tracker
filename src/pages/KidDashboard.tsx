@@ -15,7 +15,7 @@ import { ArrowLeft, Plus, Save, Edit, Trash2, BarChart3, Users, Calendar, Target
 import { useToast } from "@/hooks/use-toast";
 import { useEnhancedKid } from "@/hooks/useEnhancedKid";
 import DailyReportForm from "@/components/kid/DailyReportForm";
-import EditMetricModal from "@/components/kid/EditMetricModal";
+import EditActivityModal from "@/components/kid/EditActivityModal";
 import { ReportApprovalCard } from "@/components/kid/ReportApprovalCard";
 import { EditReportModal } from "@/components/kid/EditReportModal";
 import { ReviewReportModal } from "@/components/kid/ReviewReportModal";
@@ -24,9 +24,9 @@ import { PrizeShop } from "@/components/prize/PrizeShop";
 import { PrizeManagement } from "@/components/prize/PrizeManagement";
 
 // Legacy types for compatibility
-export type Metric = { id: string; name: string; value: number; unit?: string; groupId?: string; planType?: "daily" | "weekly"; planValue?: number };
+export type Activity = { id: string; name: string; value: number; unit?: string; groupId?: string; planType?: "daily" | "weekly"; planValue?: number };
 export type Group = { id: string; name: string; type: "project" | "goal" };
-export type DailyReportEntry = { metricId: string; value: number };
+export type DailyReportEntry = { activityId: string; value: number };
 export type DailyReport = { id: string; date: string; createdAt: string; notes?: string; entries: DailyReportEntry[] };
 
 export default function KidDashboard() {
@@ -47,7 +47,7 @@ export default function KidDashboard() {
     updateKid 
   } = useEnhancedKid(id || "");
 
-  const [metricName, setMetricName] = useState("");
+  const [activityName, setActivityName] = useState("");
   const [metricUnit, setMetricUnit] = useState("");
   const [planType, setPlanType] = useState<"daily" | "weekly">("daily");
   const [planValue, setPlanValue] = useState("");

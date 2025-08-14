@@ -3,8 +3,8 @@
 export interface ScoreEntry {
   id: string;
   date: string; // YYYY-MM-DD
-  metricId: string;
-  metricName: string;
+  activityId: string;
+  activityName: string;
   points: number;
   reason: string; // e.g., "Base points", "Bonus: exceeded goal", "Streak bonus"
   createdAt: string;
@@ -33,11 +33,11 @@ export interface PrizeRedemption {
 }
 
 export interface ScoringRule {
-  metricId: string;
-  basePointsPerUnit: number; // Points per unit of metric value
+  activityId: string;
+  basePointsPerUnit: number; // Points per unit of activity value
   goalBonusPoints?: number; // Extra points when meeting planValue
   streakBonusPoints?: number; // Extra points for consecutive days
-  maxDailyPoints?: number; // Cap on points per day for this metric
+  maxDailyPoints?: number; // Cap on points per day for this activity
 }
 
 export interface Achievement {
@@ -81,7 +81,7 @@ export interface EnhancedKid {
     date: string;
     createdAt: string;
     notes?: string;
-    entries: Array<{ metricId: string; value: number }>;
+    entries: Array<{ activityId: string; value: number }>;
     status: "pending" | "approved" | "rejected";
     processedAt?: string;
     processedBy?: "parent" | "system";
@@ -90,5 +90,5 @@ export interface EnhancedKid {
   availablePrizes: Prize[];
   prizeRedemptions: PrizeRedemption[];
   achievements: Achievement[];
-  streaks: Record<string, number>; // metricId -> consecutive days
+  streaks: Record<string, number>; // activityId -> consecutive days
 }
