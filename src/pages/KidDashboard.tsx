@@ -345,10 +345,6 @@ function KidDashboardContent() {
           </Link>
           <div>
             <h1 className="text-3xl font-bold">{kid.name}</h1>
-            <p className="text-muted-foreground">
-              {kid.points} / {kid.goal} points • {kid.totalPointsEarned} total
-              earned
-            </p>
           </div>
         </div>
         <div className="flex gap-2">
