@@ -10,7 +10,7 @@ import { Separator } from "@/components/ui/separator";
 import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { useFamilyKids } from "@/hooks/useFamilyKids";
-import { Plus, Target, Trophy, Star, UserRound, ArrowRight, Edit, BarChart3, AlertCircle, LogOut } from "lucide-react";
+import { Plus, Target, Trophy, Star, UserRound, ArrowRight, Edit, BarChart3, AlertCircle, LogOut, Loader2 } from "lucide-react";
 import { EditKidModal } from "@/components/kid/EditKidModal";
 import { ReportViewModal } from "@/components/kid/ReportViewModal";
 
@@ -93,10 +93,10 @@ const Index = () => {
       <div className="min-h-screen flex items-center justify-center">
         <Card className="card-elevated">
           <CardContent className="flex items-center gap-4 p-8">
-            <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+            <Loader2 className="h-6 w-6 animate-spin" />
             <div>
-              <p className="font-medium">Loading family data...</p>
-              <p className="text-sm text-muted-foreground">Setting up your dashboard</p>
+              <p className="font-medium">Loading...</p>
+              <p className="text-sm text-muted-foreground">Setting up your family dashboard</p>
             </div>
           </CardContent>
         </Card>

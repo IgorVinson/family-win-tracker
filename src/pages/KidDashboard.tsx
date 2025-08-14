@@ -11,9 +11,10 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, Plus, Save, Edit, Trash2, BarChart3, Users, Calendar, Target, Gift, Award, Coins, FileText } from "lucide-react";
+import { ArrowLeft, Plus, Save, Edit, Trash2, BarChart3, Users, Calendar, Target, Gift, Award, Coins, FileText, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useEnhancedKidDB } from "@/hooks/useEnhancedKidDB";
+import { useAuth } from "@/hooks/useAuth";
 import { AuthGuard } from "@/components/auth/AuthGuard";
 import DailyReportForm from "@/components/kid/DailyReportForm";
 import EditActivityModal from "@/components/kid/EditActivityModal";
@@ -53,6 +54,7 @@ export default function KidDashboard() {
 function KidDashboardContent() {
   const { id } = useParams<{ id: string }>();
   const { toast } = useToast();
+  const { loading: authLoading } = useAuth();
   const { 
     kid, 
     loading,
@@ -211,15 +213,21 @@ function KidDashboardContent() {
   // Count pending redemptions for notification badge
   const pendingRedemptions = kid?.prizeRedemptions?.filter(r => r.status === "pending").length || 0;
 
-  if (loading) {
+  console.log("🔧 KidDashboard state:", { loading, authLoading, kid: !!kid });
+
+  // Show loading screen if either auth is loading OR kid data is loading
+  if (loading || authLoading) {
     return (
-      <div className="max-w-6xl mx-auto p-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>Loading...</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p>Loading dashboard data...</p>
+      <div className="min-h-screen flex items-center justify-center">
+        <Card className="card-elevated">
+          <CardContent className="flex items-center gap-4 p-8">
+            <Loader2 className="h-6 w-6 animate-spin" />
+            <div>
+              <p className="font-medium">Loading...</p>
+              <p className="text-sm text-muted-foreground">
+                {authLoading ? "Please wait while we set up your account" : "Loading kid dashboard"}
+              </p>
+            </div>
           </CardContent>
         </Card>
       </div>

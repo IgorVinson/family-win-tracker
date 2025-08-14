@@ -93,7 +93,7 @@ function convertToEnhancedKid(dbKid: any, activities: any[], reports: any[], sco
 export function useEnhancedKidDB(kidId: string) {
   const [kid, setKid] = useState<EnhancedKid | null>(null);
   const [loading, setLoading] = useState(true);
-  const { user, userRole } = useAuth();
+  const { user, userRole, loading: authLoading } = useAuth();
 
   // Load kid data from database
   useEffect(() => {
@@ -103,13 +103,20 @@ export function useEnhancedKidDB(kidId: string) {
       return;
     }
 
+    // Don't load data until userRole is available (not null)
+    if (userRole === null) {
+      // Keep loading true while waiting for userRole
+      setLoading(true);
+      return;
+    }
+
     loadKidData();
   }, [user, kidId, userRole]);
 
   const loadKidData = async () => {
     try {
       setLoading(true);
-
+      
       // First, get the kid data
       const { data: kidData, error: kidError } = await supabase
         .from("kids")
@@ -124,7 +131,10 @@ export function useEnhancedKidDB(kidId: string) {
       }
 
       // Check if user has access to this kid
-      const canAccess = userRole === 'parent' || kidData.user_id === user?.id;
+      // Parents can access kids with null user_id (kids they manage)
+      // Kids can only access their own profile (where user_id matches their id)
+      const canAccess = (userRole === 'parent' && kidData.user_id === null) || 
+                       (userRole === 'kid' && kidData.user_id === user?.id);
       
       if (!canAccess) {
         console.error("User doesn't have access to this kid");
@@ -641,9 +651,12 @@ export function useEnhancedKidDB(kidId: string) {
   // Legacy alias for compatibility
   const updateMetricScoringRule = updateActivityScoringRule;
 
+  // Combined loading state: loading if either auth is loading OR kid data is loading
+  const isLoading = authLoading || loading;
+
   return {
     kid,
-    loading,
+    loading: isLoading,
     updateKid,
     addReport,
     approveReport,

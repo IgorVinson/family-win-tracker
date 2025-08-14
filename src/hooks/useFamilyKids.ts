@@ -19,13 +19,20 @@ export type Kid = {
 export function useFamilyKids() {
   const [kids, setKids] = useState<Kid[]>([]);
   const [loading, setLoading] = useState(true);
-  const { user, userRole, isAuthenticated } = useAuth();
+  const { user, userRole, isAuthenticated, loading: authLoading } = useAuth();
 
   // Load kids data from database
   useEffect(() => {
     if (!isAuthenticated || !user) {
       setKids([]);
       setLoading(false);
+      return;
+    }
+
+    // Don't load data until userRole is available (not null)
+    if (userRole === null) {
+      // Keep loading true while waiting for userRole
+      setLoading(true);
       return;
     }
 
@@ -264,9 +271,12 @@ export function useFamilyKids() {
     }
   };
 
+  // Combined loading state: loading if either auth is loading OR kids data is loading
+  const isLoading = authLoading || loading;
+
   return {
     kids,
-    loading,
+    loading: isLoading,
     addKid,
     updatePoints,
     setGoal,
