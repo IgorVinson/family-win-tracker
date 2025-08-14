@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,29 +9,11 @@ import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
+import { useFamilyKids } from "@/hooks/useFamilyKids";
 import { Plus, Target, Trophy, Star, UserRound, ArrowRight, Edit, BarChart3, AlertCircle, LogOut } from "lucide-react";
 import { EditKidModal } from "@/components/kid/EditKidModal";
 import { ReportViewModal } from "@/components/kid/ReportViewModal";
 
-// Simple localStorage hook to persist state without backend
-function useLocalStorage<T>(key: string, initialValue: T) {
-  const [value, setValue] = useState<T>(() => {
-    try {
-      const item = window.localStorage.getItem(key);
-      return item ? (JSON.parse(item) as T) : initialValue;
-    } catch (e) {
-      return initialValue;
-    }
-  });
-
-  useEffect(() => {
-    try {
-      window.localStorage.setItem(key, JSON.stringify(value));
-    } catch (_) {}
-  }, [key, value]);
-
-  return [value, setValue] as const;
-}
 
 type DailyReportEntry = { metricId: string; value: number };
 type DailyReport = { 
@@ -75,9 +57,22 @@ const pastelHues = [
 ];
 
 const Index = () => {
-  const [kids, setKids] = useLocalStorage<Kid[]>("family-kids", []);
+  const { isAuthenticated, user, signOut, loading: authLoading } = useAuth();
+  
+  // Only use database for authenticated users
+  const {
+    kids,
+    loading: dbLoading,
+    addKid,
+    updatePoints,
+    setGoal,
+    resetKid
+  } = useFamilyKids();
+  
   const [openAddKid, setOpenAddKid] = useState(false);
-  const { isAuthenticated, user, signOut } = useAuth();
+  
+  // Show loading if auth is loading or database is loading for authenticated users
+  const loading = authLoading || (isAuthenticated && dbLoading);
 
   // Signature interaction: spotlight gradient follows pointer
   const handleMouseMove = (e: React.MouseEvent) => {
@@ -87,45 +82,27 @@ const Index = () => {
 
   const totalPoints = useMemo(() => kids.reduce((sum, k) => sum + k.points, 0), [kids]);
 
-  const addKid = (name: string, goal: number) => {
-    const kid: Kid = {
-      id: crypto.randomUUID(),
-      name,
-      points: 0,
-      goal,
-      color: pastelHues[kids.length % pastelHues.length],
-      createdAt: new Date().toISOString(),
-    };
-    setKids((prev) => [...prev, kid]);
-    toast({ title: "Kid added", description: `${name} joined the leaderboard!` });
-  };
-
-  const updatePoints = (id: string, delta: number) => {
-    setKids((prev) => {
-      return prev.map((k) => {
-        if (k.id !== id) return k;
-        const before = k.points;
-        const after = Math.max(0, before + delta);
-        if (before < k.goal && after >= k.goal && k.goal > 0) {
-          toast({ title: "Goal reached!", description: `${k.name} hit their goal of ${k.goal} points 🎉` });
-        }
-        return { ...k, points: after };
-      });
-    });
-  };
-
-  const setGoal = (id: string, goal: number) => {
-    setKids((prev) => prev.map((k) => (k.id === id ? { ...k, goal } : k)));
-  };
-
-  const resetKid = (id: string) => {
-    setKids((prev) => prev.map((k) => (k.id === id ? { ...k, points: 0 } : k)));
-  };
-
   const leaderboard = useMemo(
     () => [...kids].sort((a, b) => b.points - a.points),
     [kids]
   );
+
+  // Show loading state for authenticated users
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Card className="card-elevated">
+          <CardContent className="flex items-center gap-4 p-8">
+            <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+            <div>
+              <p className="font-medium">Loading family data...</p>
+              <p className="text-sm text-muted-foreground">Setting up your dashboard</p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="spotlight-container min-h-screen" onMouseMove={handleMouseMove}>
@@ -177,18 +154,42 @@ const Index = () => {
                   </Link>
                 </Button>
               )}
-              <Dialog open={openAddKid} onOpenChange={setOpenAddKid}>
-                <DialogTrigger asChild>
-                  <Button size="lg"><Plus className="mr-2 h-5 w-5" /> Add Kid</Button>
-                </DialogTrigger>
-                <AddKidDialog onAdd={(n, g) => { addKid(n, g); setOpenAddKid(false); }} />
-              </Dialog>
+              {isAuthenticated ? (
+                <Dialog open={openAddKid} onOpenChange={setOpenAddKid}>
+                  <DialogTrigger asChild>
+                    <Button size="lg"><Plus className="mr-2 h-5 w-5" /> Add Kid</Button>
+                  </DialogTrigger>
+                  <AddKidDialog onAdd={(n, g) => { addKid(n, g); setOpenAddKid(false); }} />
+                </Dialog>
+              ) : (
+                <Button size="lg" disabled>
+                  <Plus className="mr-2 h-5 w-5" /> Add Kid
+                </Button>
+              )}
             </div>
           </div>
         </header>
 
         {/* Dashboard Cards */}
-        {kids.length === 0 ? (
+        {!isAuthenticated ? (
+          <Card className="card-elevated">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2"><Star className="h-5 w-5" /> Sign In to Get Started</CardTitle>
+            </CardHeader>
+            <CardContent className="text-muted-foreground">
+              <p className="mb-4">
+                Sign in to create kid profiles and start tracking points, achievements, and rewards. 
+                Transform daily chores and activities into exciting achievements for your family!
+              </p>
+              <Button asChild>
+                <Link to="/auth">
+                  <UserRound className="mr-2 h-4 w-4" />
+                  Sign In / Sign Up
+                </Link>
+              </Button>
+            </CardContent>
+          </Card>
+        ) : kids.length === 0 ? (
           <Card className="card-elevated">
             <CardHeader>
               <CardTitle className="flex items-center gap-2"><Star className="h-5 w-5" /> Get Started</CardTitle>

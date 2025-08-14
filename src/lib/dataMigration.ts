@@ -344,11 +344,19 @@ export const migrateLocalStorageToSupabase = async (userId: string, userRole: 'p
 export const getUserRole = async (userId: string): Promise<'parent' | 'kid' | null> => {
   try {
     console.log("🔧 getUserRole: Fetching role for user:", userId);
-    const { data, error } = await supabase
+    
+    // Add timeout to prevent infinite hanging
+    const timeoutPromise = new Promise<null>((_, reject) => {
+      setTimeout(() => reject(new Error('getUserRole timeout')), 10000); // 10 second timeout
+    });
+    
+    const queryPromise = supabase
       .from("user_roles")
       .select("role")
       .eq("user_id", userId)
       .maybeSingle(); // Use maybeSingle instead of single to handle 0 rows gracefully
+
+    const { data, error } = await Promise.race([queryPromise, timeoutPromise]);
 
     if (error) {
       console.error("🔧 getUserRole: Error fetching user role:", error);

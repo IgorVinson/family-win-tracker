@@ -66,6 +66,35 @@ const Auth = () => {
       if (error) throw error;
 
       if (data.user) {
+        // Manually create profile and role since trigger doesn't work
+        try {
+          // Insert profile
+          const { error: profileError } = await supabase
+            .from('profiles')
+            .insert({
+              id: data.user.id,
+              display_name: signUpDisplayName
+            });
+
+          if (profileError) {
+            console.error('Profile creation error:', profileError);
+          }
+
+          // Insert user role
+          const { error: roleError } = await supabase
+            .from('user_roles')
+            .insert({
+              user_id: data.user.id,
+              role: signUpRole
+            });
+
+          if (roleError) {
+            console.error('Role creation error:', roleError);
+          }
+        } catch (error) {
+          console.error('Manual signup data creation error:', error);
+        }
+
         toast({
           title: "Account created!",
           description: "Please check your email to confirm your account."

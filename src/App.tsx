@@ -3,8 +3,6 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { useEffect } from "react";
-import { seedMockDataIfEmpty } from "./lib/seed";
 import IndexWrapper from "./pages/IndexWrapper";
 import KidDashboard from "./pages/KidDashboard";
 import Auth from "./pages/Auth";
@@ -13,19 +11,11 @@ import { AuthGuard } from "@/components/auth/AuthGuard";
 
 const queryClient = new QueryClient();
 
-const SeedInitialData = () => {
-  useEffect(() => {
-    seedMockDataIfEmpty();
-  }, []);
-  return null;
-};
-
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <Toaster />
       <Sonner />
-      <SeedInitialData />
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<IndexWrapper />} />

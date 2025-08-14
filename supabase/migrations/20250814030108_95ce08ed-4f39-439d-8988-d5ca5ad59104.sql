@@ -1,8 +1,14 @@
--- Create app roles enum
-CREATE TYPE public.app_role AS ENUM ('parent', 'kid');
+-- Create app roles enum (if not exists)
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'app_role') THEN
+        CREATE TYPE public.app_role AS ENUM ('parent', 'kid');
+    END IF;
+END
+$$;
 
 -- Create profiles table linked to auth.users
-CREATE TABLE public.profiles (
+CREATE TABLE IF NOT EXISTS public.profiles (
   id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
   display_name TEXT,
   avatar_url TEXT,
