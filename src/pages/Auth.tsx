@@ -8,6 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { checkIfMigrationNeeded, migrateLocalStorageToSupabase, getUserRole } from "@/lib/dataMigration";
 import { UserRound, Mail, Lock, Users } from "lucide-react";
 
 const Auth = () => {
@@ -119,6 +120,19 @@ const Auth = () => {
           title: "Welcome back!",
           description: "You have successfully signed in."
         });
+
+        // Check if migration is needed
+        if (checkIfMigrationNeeded()) {
+          const userRole = await getUserRole(data.user.id);
+          if (userRole) {
+            toast({
+              title: "Migrating your data...",
+              description: "Transferring your existing data to your account."
+            });
+            await migrateLocalStorageToSupabase(data.user.id, userRole);
+          }
+        }
+
         navigate("/");
       }
     } catch (error: any) {

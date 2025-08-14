@@ -8,7 +8,8 @@ import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "@/hooks/use-toast";
-import { Plus, Target, Trophy, Star, UserRound, ArrowRight, Edit, BarChart3, AlertCircle } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
+import { Plus, Target, Trophy, Star, UserRound, ArrowRight, Edit, BarChart3, AlertCircle, LogOut } from "lucide-react";
 import { EditKidModal } from "@/components/kid/EditKidModal";
 import { ReportViewModal } from "@/components/kid/ReportViewModal";
 
@@ -76,6 +77,7 @@ const pastelHues = [
 const Index = () => {
   const [kids, setKids] = useLocalStorage<Kid[]>("family-kids", []);
   const [openAddKid, setOpenAddKid] = useState(false);
+  const { isAuthenticated, user, signOut } = useAuth();
 
   // Signature interaction: spotlight gradient follows pointer
   const handleMouseMove = (e: React.MouseEvent) => {
@@ -156,12 +158,25 @@ const Index = () => {
               </div>
             </div>
             <div className="flex gap-3">
-              <Button variant="outline" size="lg" asChild>
-                <Link to="/auth">
-                  <UserRound className="mr-2 h-5 w-5" />
-                  Sign In / Sign Up
-                </Link>
-              </Button>
+              {isAuthenticated ? (
+                <>
+                  <Button variant="outline" size="lg" onClick={signOut}>
+                    <LogOut className="mr-2 h-5 w-5" />
+                    Sign Out
+                  </Button>
+                  <span className="flex items-center gap-2 text-sm text-muted-foreground px-3">
+                    <UserRound className="h-4 w-4" />
+                    {user?.email}
+                  </span>
+                </>
+              ) : (
+                <Button variant="outline" size="lg" asChild>
+                  <Link to="/auth">
+                    <UserRound className="mr-2 h-5 w-5" />
+                    Sign In / Sign Up
+                  </Link>
+                </Button>
+              )}
               <Dialog open={openAddKid} onOpenChange={setOpenAddKid}>
                 <DialogTrigger asChild>
                   <Button size="lg"><Plus className="mr-2 h-5 w-5" /> Add Kid</Button>
