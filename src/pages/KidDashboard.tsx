@@ -226,7 +226,11 @@ export default function KidDashboard() {
           <Button onClick={() => setOpenAddMetric(true)} variant="outline">
             <Plus className="mr-2 h-4 w-4" /> Add activity
           </Button>
-          <Button onClick={() => setOpenAddReport(true)} variant="outline">
+          <Button 
+            onClick={() => setOpenAddReport(true)} 
+            variant="outline"
+            className="bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white border-0 shadow-md hover:shadow-lg transition-all duration-200"
+          >
             <FileText className="mr-2 h-4 w-4" /> Add report
           </Button>
           <Button 
