@@ -11,7 +11,7 @@ type LocalStorageKid = {
   createdAt: string;
   reports?: LocalStorageReport[];
   metrics?: LocalStorageMetric[];
-  prizeRedemptions?: LocalStoragePrizeRedemption[];
+  giftRedemptions?: LocalStorageGiftRedemption[];
 };
 
 type LocalStorageReport = {
@@ -30,10 +30,10 @@ type LocalStorageMetric = {
   groupId?: string;
 };
 
-type LocalStoragePrizeRedemption = {
+type LocalStorageGiftRedemption = {
   id: string;
-  prizeId: string;
-  prizeName: string;
+  giftId: string;
+  giftName: string;
   pointsCost: number;
   status: "pending" | "approved" | "rejected" | "completed";
   requestedAt: string;

@@ -13,7 +13,7 @@ export type Kid = {
   createdAt: string;
   reports?: any[];
   metrics?: any[];
-  prizeRedemptions?: any[];
+  giftRedemptions?: any[];
 };
 
 export function useFamilyKids() {
@@ -59,7 +59,7 @@ export function useFamilyKids() {
       let query = supabase.from("kids").select(`
         id, name, current_points, monthly_goal, created_at,
         daily_reports(id, date, status),
-        prize_redemptions(id, status)
+        gift_redemptions(id, status)
       `);
 
       // If user is a kid, only show their own profile
@@ -89,7 +89,7 @@ export function useFamilyKids() {
         color: getPastelColor(index),
         createdAt: kid.created_at,
         reports: kid.daily_reports || [],
-        prizeRedemptions: kid.prize_redemptions || []
+        giftRedemptions: kid.gift_redemptions || []
       }));
 
       setKids(convertedKids);

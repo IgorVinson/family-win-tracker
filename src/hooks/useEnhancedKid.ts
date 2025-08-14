@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useLocalStorage } from "./useLocalStorage";
-import { EnhancedKid, Prize, PrizeRedemption, ScoringRule } from "@/types/scoreSystem";
+import { EnhancedKid, Gift, GiftRedemption, ScoringRule } from "@/types/scoreSystem";
 import { ScoringEngine } from "@/lib/scoringEngine";
 
 // Convert legacy Kid to EnhancedKid
@@ -9,8 +9,8 @@ function migrateToEnhancedKid(legacyKid: any): EnhancedKid {
     ...legacyKid,
     totalPointsEarned: legacyKid.totalPointsEarned || legacyKid.points || 0,
     scoreHistory: legacyKid.scoreHistory || [],
-    availablePrizes: legacyKid.availablePrizes || getDefaultPrizes(),
-    prizeRedemptions: legacyKid.prizeRedemptions || [],
+    availableGifts: legacyKid.availableGifts || legacyKid.availablePrizes || getDefaultGifts(),
+    giftRedemptions: legacyKid.giftRedemptions || legacyKid.prizeRedemptions || [],
     achievements: legacyKid.achievements || [],
     streaks: legacyKid.streaks || {},
     activities: (legacyKid.metrics || legacyKid.activities || []).map((activity: any) => ({
@@ -20,7 +20,7 @@ function migrateToEnhancedKid(legacyKid: any): EnhancedKid {
   };
 }
 
-function getDefaultPrizes(): Prize[] {
+function getDefaultGifts(): Gift[] {
   return [
     {
       id: crypto.randomUUID(),
@@ -188,71 +188,71 @@ export function useEnhancedKid(kidId: string) {
     }));
   };
 
-  const addPrize = (prizeData: Omit<Prize, "id" | "createdAt">) => {
-    const prize: Prize = {
-      ...prizeData,
+  const addGift = (giftData: Omit<Gift, "id" | "createdAt">) => {
+    const gift: Gift = {
+      ...giftData,
       id: crypto.randomUUID(),
       createdAt: new Date().toISOString()
     };
 
     updateKid(currentKid => ({
       ...currentKid,
-      availablePrizes: [...currentKid.availablePrizes, prize]
+      availableGifts: [...currentKid.availableGifts, gift]
     }));
   };
 
-  const updatePrize = (prizeId: string, updates: Partial<Prize>) => {
+  const updateGift = (giftId: string, updates: Partial<Gift>) => {
     updateKid(currentKid => ({
       ...currentKid,
-      availablePrizes: currentKid.availablePrizes.map(p =>
-        p.id === prizeId ? { ...p, ...updates } : p
+      availableGifts: currentKid.availableGifts.map(p =>
+        p.id === giftId ? { ...p, ...updates } : p
       )
     }));
   };
 
-  const deletePrize = (prizeId: string) => {
+  const deleteGift = (giftId: string) => {
     updateKid(currentKid => ({
       ...currentKid,
-      availablePrizes: currentKid.availablePrizes.filter(p => p.id !== prizeId)
+      availableGifts: currentKid.availableGifts.filter(p => p.id !== giftId)
     }));
   };
 
-  const redeemPrize = (prizeId: string) => {
+  const redeemGift = (giftId: string) => {
     if (!kid) return;
 
-    const prize = kid.availablePrizes.find(p => p.id === prizeId);
-    if (!prize || kid.points < prize.pointsCost) return;
+    const gift = kid.availableGifts.find(p => p.id === giftId);
+    if (!gift || kid.points < gift.pointsCost) return;
 
-    const redemption: PrizeRedemption = {
+    const redemption: GiftRedemption = {
       id: crypto.randomUUID(),
-      prizeId: prize.id,
-      prizeName: prize.name,
-      pointsCost: prize.pointsCost,
+      giftId: gift.id,
+      giftName: gift.name,
+      pointsCost: gift.pointsCost,
       status: "pending",
       requestedAt: new Date().toISOString()
     };
 
     updateKid(currentKid => ({
       ...currentKid,
-      points: currentKid.points - prize.pointsCost,
-      prizeRedemptions: [...currentKid.prizeRedemptions, redemption]
+      points: currentKid.points - gift.pointsCost,
+      giftRedemptions: [...currentKid.giftRedemptions, redemption]
     }));
   };
 
-  const updateRedemption = (redemptionId: string, status: PrizeRedemption["status"], notes?: string) => {
+  const updateRedemption = (redemptionId: string, status: GiftRedemption["status"], notes?: string) => {
     updateKid(currentKid => {
-      const redemption = currentKid.prizeRedemptions.find(r => r.id === redemptionId);
-      const prize = currentKid.availablePrizes.find(p => p.id === redemption?.prizeId);
+      const redemption = currentKid.giftRedemptions.find(r => r.id === redemptionId);
+      const gift = currentKid.availableGifts.find(p => p.id === redemption?.giftId);
       
       // If rejecting a redemption, return the points to the kid
-      const pointsToReturn = status === "rejected" && redemption?.status === "pending" && prize 
-        ? prize.pointsCost 
+      const pointsToReturn = status === "rejected" && redemption?.status === "pending" && gift 
+        ? gift.pointsCost 
         : 0;
 
       return {
         ...currentKid,
         points: currentKid.points + pointsToReturn,
-        prizeRedemptions: currentKid.prizeRedemptions.map(r =>
+        giftRedemptions: currentKid.giftRedemptions.map(r =>
           r.id === redemptionId 
             ? { ...r, status, processedAt: new Date().toISOString(), notes }
             : r
@@ -281,10 +281,10 @@ export function useEnhancedKid(kidId: string) {
     rejectReport,
     updateReport,
     deleteReport,
-    addPrize,
-    updatePrize,
-    deletePrize,
-    redeemPrize,
+    addGift,
+    updateGift,
+    deleteGift,
+    redeemGift,
     updateRedemption,
     updateMetricScoringRule,
     updateActivityScoringRule

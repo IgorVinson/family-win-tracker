@@ -1,35 +1,83 @@
-import { useEffect, useMemo, useState, useRef } from "react";
-import { Link, useParams } from "react-router-dom";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Textarea } from "@/components/ui/textarea";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, Plus, Save, Edit, Trash2, BarChart3, Users, Calendar, Target, Gift, Award, Coins, FileText, Loader2 } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
-import { useEnhancedKidDB } from "@/hooks/useEnhancedKidDB";
-import { useAuth } from "@/hooks/useAuth";
 import { AuthGuard } from "@/components/auth/AuthGuard";
+import { GiftManagement } from "@/components/gift/GiftManagement";
+import { GiftShop } from "@/components/gift/GiftShop";
 import DailyReportForm from "@/components/kid/DailyReportForm";
 import EditActivityModal from "@/components/kid/EditActivityModal";
-import { ReportApprovalCard } from "@/components/kid/ReportApprovalCard";
 import { EditReportModal } from "@/components/kid/EditReportModal";
+import { ReportApprovalCard } from "@/components/kid/ReportApprovalCard";
 import { ReviewReportModal } from "@/components/kid/ReviewReportModal";
-import { ScoreDashboard } from "@/components/score/ScoreDashboard";
-import { PrizeShop } from "@/components/prize/PrizeShop";
-import { PrizeManagement } from "@/components/prize/PrizeManagement";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Separator } from "@/components/ui/separator";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
+import { useEnhancedKidDB } from "@/hooks/useEnhancedKidDB";
+import {
+  ArrowLeft,
+  Award,
+  BarChart3,
+  Calendar,
+  Coins,
+  Edit,
+  FileText,
+  Loader2,
+  Plus,
+  Save,
+  Target,
+  Trash2,
+} from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Link, useParams } from "react-router-dom";
 
 // Legacy types for compatibility (UPDATED FOR ACTIVITIES)
-export type Activity = { id: string; name: string; value: number; unit?: string; groupId?: string; planType?: "daily" | "weekly"; planValue?: number };
+export type Activity = {
+  id: string;
+  name: string;
+  value: number;
+  unit?: string;
+  groupId?: string;
+  planType?: "daily" | "weekly";
+  planValue?: number;
+};
 export type Group = { id: string; name: string; type: "project" | "goal" };
 export type DailyReportEntry = { activityId: string; value: number };
-export type DailyReport = { id: string; date: string; createdAt: string; notes?: string; entries: DailyReportEntry[]; status?: "pending" | "approved" | "rejected"; processedAt?: string; processedBy?: "parent" | "system" };
+export type DailyReport = {
+  id: string;
+  date: string;
+  createdAt: string;
+  notes?: string;
+  entries: DailyReportEntry[];
+  status?: "pending" | "approved" | "rejected";
+  processedAt?: string;
+  processedBy?: "parent" | "system";
+};
 
 // Create a proper Report type alias
 export type Report = {
@@ -55,21 +103,21 @@ function KidDashboardContent() {
   const { id } = useParams<{ id: string }>();
   const { toast } = useToast();
   const { loading: authLoading } = useAuth();
-  const { 
-    kid, 
+  const {
+    kid,
     loading,
-    addReport, 
+    addReport,
     approveReport,
     rejectReport,
     updateReport,
     deleteReport,
-    addPrize, 
-    updatePrize, 
-    deletePrize, 
-    redeemPrize, 
+    addGift,
+    updateGift,
+    deleteGift,
+    redeemGift,
     updateRedemption,
     updateKid,
-    updateActivityScoringRule
+    updateActivityScoringRule,
   } = useEnhancedKidDB(id || "");
 
   const [activityName, setActivityName] = useState("");
@@ -77,7 +125,7 @@ function KidDashboardContent() {
   const [planType, setPlanType] = useState<"daily" | "weekly">("daily");
   const [planValue, setPlanValue] = useState("");
   const [activityGroupId, setActivityGroupId] = useState<string>("");
-  
+
   // Scoring rule states for new activities
   const [newBasePointsPerUnit, setNewBasePointsPerUnit] = useState("1");
   const [newGoalBonusPoints, setNewGoalBonusPoints] = useState("5");
@@ -97,17 +145,19 @@ function KidDashboardContent() {
   const reportSaveRef = useRef<(() => void) | null>(null);
 
   useEffect(() => {
-    document.title = kid ? `${kid.name} Dashboard – Kids Tracker` : "Kid Dashboard – Kids Tracker";
+    document.title = kid
+      ? `${kid.name} Dashboard – Kids Tracker`
+      : "Kid Dashboard – Kids Tracker";
   }, [kid]);
 
   // Keep the legacy updateKid function for existing metric/group operations - now using database
   const updateKidLegacy = async (updater: (k: any) => any) => {
     if (!kid) return;
-    
+
     // For now, activities and groups will be handled locally until we add them to database
     // Since we don't have direct setKid access, we'll use the updateKid function
     const updatedKid = updater(kid);
-    
+
     // Use the database updateKid function to persist changes
     await updateKid(() => updatedKid);
   };
@@ -123,7 +173,7 @@ function KidDashboardContent() {
       planType,
       planValue: planValue ? parseInt(planValue) : undefined,
     };
-    
+
     // Create scoring rule for the new activity
     const scoringRule = {
       activityId: activity.id,
@@ -132,14 +182,17 @@ function KidDashboardContent() {
       streakBonusPoints: Math.max(0, Number(newStreakBonusPoints) || 0),
       maxDailyPoints: Math.max(1, Number(newMaxDailyPoints) || 50),
     };
-    
-    updateKidLegacy((k) => ({ ...k, activities: [...(k.activities ?? []), activity] }));
-    
+
+    updateKidLegacy(k => ({
+      ...k,
+      activities: [...(k.activities ?? []), activity],
+    }));
+
     // Add scoring rule to database
     if (updateActivityScoringRule) {
       await updateActivityScoringRule(activity.id, scoringRule);
     }
-    
+
     // Reset form
     setActivityName("");
     setActivityUnit("");
@@ -148,42 +201,69 @@ function KidDashboardContent() {
     setNewBasePointsPerUnit("1");
     setNewGoalBonusPoints("5");
     setNewStreakBonusPoints("2");
-    setNewMaxDailyPoints("50"); 
+    setNewMaxDailyPoints("50");
     setOpenAddActivity(false);
-    toast({ title: "Activity added", description: `${activityName} has been added.` });
+    toast({
+      title: "Activity added",
+      description: `${activityName} has been added.`,
+    });
   };
 
   const updateActivity = (updatedActivity: any) => {
-    updateKidLegacy((k) => ({
+    updateKidLegacy(k => ({
       ...k,
-      activities: k.activities?.map((a) => (a.id === updatedActivity.id ? updatedActivity : a)),
+      activities: k.activities?.map(a =>
+        a.id === updatedActivity.id ? updatedActivity : a
+      ),
     }));
-    toast({ title: "Activity updated", description: `${updatedActivity.name} has been updated.` });
+    toast({
+      title: "Activity updated",
+      description: `${updatedActivity.name} has been updated.`,
+    });
   };
 
   const removeActivity = (activityId: string) => {
-    const activityName = kid?.activities?.find((a) => a.id === activityId)?.name || "";
-    updateKidLegacy((k) => ({ ...k, activities: k.activities?.filter((a) => a.id !== activityId) }));
-    toast({ title: "Activity removed", description: `${activityName} has been removed.` });
+    const activityName =
+      kid?.activities?.find(a => a.id === activityId)?.name || "";
+    updateKidLegacy(k => ({
+      ...k,
+      activities: k.activities?.filter(a => a.id !== activityId),
+    }));
+    toast({
+      title: "Activity removed",
+      description: `${activityName} has been removed.`,
+    });
   };
 
   const addGroup = () => {
     if (!groupName.trim()) return;
-    const group: any = { id: crypto.randomUUID(), name: groupName, type: groupType };
-    updateKidLegacy((k) => ({ ...k, groups: [...(k.groups ?? []), group] }));
+    const group: any = {
+      id: crypto.randomUUID(),
+      name: groupName,
+      type: groupType,
+    };
+    updateKidLegacy(k => ({ ...k, groups: [...(k.groups ?? []), group] }));
     setGroupName("");
     setOpenAddGroup(false);
-    toast({ title: "Group added", description: `${groupName} group has been added.` });
+    toast({
+      title: "Group added",
+      description: `${groupName} group has been added.`,
+    });
   };
 
   const removeGroup = (groupId: string) => {
-    const groupName = kid?.groups?.find((g) => g.id === groupId)?.name || "";
-    updateKidLegacy((k) => ({
+    const groupName = kid?.groups?.find(g => g.id === groupId)?.name || "";
+    updateKidLegacy(k => ({
       ...k,
-      groups: k.groups?.filter((g) => g.id !== groupId),
-      activities: k.activities?.map((a) => (a.groupId === groupId ? { ...a, groupId: undefined } : a)),
+      groups: k.groups?.filter(g => g.id !== groupId),
+      activities: k.activities?.map(a =>
+        a.groupId === groupId ? { ...a, groupId: undefined } : a
+      ),
     }));
-    toast({ title: "Group removed", description: `${groupName} group has been removed.` });
+    toast({
+      title: "Group removed",
+      description: `${groupName} group has been removed.`,
+    });
   };
 
   const groupedActivities = useMemo(() => {
@@ -191,18 +271,19 @@ function KidDashboardContent() {
     const groups = kid.groups || [];
     const ungrouped = kid.activities.filter(a => !a.groupId);
     const result = [];
-    
+
     if (ungrouped.length > 0) {
       result.push({ group: null, activities: ungrouped });
     }
-    
+
     groups.forEach(group => {
-      const groupActivities = kid.activities?.filter(a => a.groupId === group.id) || [];
+      const groupActivities =
+        kid.activities?.filter(a => a.groupId === group.id) || [];
       if (groupActivities.length > 0) {
         result.push({ group, activities: groupActivities });
       }
     });
-    
+
     return result;
   }, [kid?.activities, kid?.groups]);
 
@@ -211,7 +292,8 @@ function KidDashboardContent() {
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
   // Count pending redemptions for notification badge
-  const pendingRedemptions = kid?.prizeRedemptions?.filter(r => r.status === "pending").length || 0;
+  const pendingRedemptions =
+    kid?.giftRedemptions?.filter(r => r.status === "pending").length || 0;
 
   if (loading) {
     return (
@@ -221,7 +303,9 @@ function KidDashboardContent() {
             <Loader2 className="h-6 w-6 animate-spin" />
             <div>
               <p className="font-medium">Loading...</p>
-              <p className="text-sm text-muted-foreground">Loading kid dashboard</p>
+              <p className="text-sm text-muted-foreground">
+                Loading kid dashboard
+              </p>
             </div>
           </CardContent>
         </Card>
@@ -261,7 +345,10 @@ function KidDashboardContent() {
           </Link>
           <div>
             <h1 className="text-3xl font-bold">{kid.name}</h1>
-            <p className="text-muted-foreground">{kid.points} / {kid.goal} points • {kid.totalPointsEarned} total earned</p>
+            <p className="text-muted-foreground">
+              {kid.points} / {kid.goal} points • {kid.totalPointsEarned} total
+              earned
+            </p>
           </div>
         </div>
         <div className="flex gap-2">
@@ -271,22 +358,22 @@ function KidDashboardContent() {
           <Button onClick={() => setOpenAddActivity(true)} variant="outline">
             <Plus className="mr-2 h-4 w-4" /> Add activity
           </Button>
-          <Button 
-            onClick={() => setOpenAddReport(true)} 
+          <Button
+            onClick={() => setOpenAddReport(true)}
             variant="outline"
             className="bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white border-0 shadow-md hover:shadow-lg transition-all duration-200"
           >
             <FileText className="mr-2 h-4 w-4" /> Add report
           </Button>
-          <Button 
-            onClick={() => setShowManagement(true)} 
-            variant="outline" 
+          <Button
+            onClick={() => setShowManagement(true)}
+            variant="outline"
             className="relative bg-gradient-to-r from-yellow-400 to-yellow-600 hover:from-yellow-500 hover:to-yellow-700 text-white border-0 shadow-md hover:shadow-lg transition-all duration-200"
           >
-            <Coins className="mr-2 h-4 w-4" /> Manage Prizes
+            <Coins className="mr-2 h-4 w-4" /> Manage Gifts
             {pendingRedemptions > 0 && (
-              <Badge 
-                variant="destructive" 
+              <Badge
+                variant="destructive"
                 className="absolute -top-2 -right-2 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs animate-pulse"
               >
                 {pendingRedemptions}
@@ -300,7 +387,9 @@ function KidDashboardContent() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Current Points</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Current Points
+            </CardTitle>
             <Target className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -317,14 +406,18 @@ function KidDashboardContent() {
             <Award className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{kid.achievements?.length || 0}</div>
+            <div className="text-2xl font-bold">
+              {kid.achievements?.length || 0}
+            </div>
             <p className="text-xs text-muted-foreground">Badges earned</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Active Streaks</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Active Streaks
+            </CardTitle>
             <BarChart3 className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -337,7 +430,9 @@ function KidDashboardContent() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Pending Reports</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Pending Reports
+            </CardTitle>
             <Calendar className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -359,11 +454,11 @@ function KidDashboardContent() {
               </Badge>
             )}
           </TabsTrigger>
-          <TabsTrigger value="shop">Prize Shop</TabsTrigger>
+          <TabsTrigger value="shop">Gift Shop</TabsTrigger>
         </TabsList>
 
         <TabsContent value="shop">
-          <PrizeShop kid={kid} onRedeemPrize={redeemPrize} />
+          <GiftShop kid={kid} onRedeemGift={redeemGift} />
         </TabsContent>
 
         <TabsContent value="metrics" className="space-y-6">
@@ -378,7 +473,8 @@ function KidDashboardContent() {
             <CardContent>
               {!kid.activities || kid.activities.length === 0 ? (
                 <p className="text-muted-foreground text-center py-4">
-                  No activities configured. Add an activity to start tracking progress.
+                  No activities configured. Add an activity to start tracking
+                  progress.
                 </p>
               ) : (
                 <div className="space-y-6">
@@ -390,7 +486,11 @@ function KidDashboardContent() {
                             {group?.name || "Ungrouped"}
                           </h3>
                           {group && (
-                            <Badge variant={group.type === "goal" ? "default" : "secondary"}>
+                            <Badge
+                              variant={
+                                group.type === "goal" ? "default" : "secondary"
+                              }
+                            >
                               {group.type}
                             </Badge>
                           )}
@@ -405,76 +505,94 @@ function KidDashboardContent() {
                           </Button>
                         )}
                       </div>
-                        <Table>
-                          <TableHeader>
-                            <TableRow>
-                              <TableHead>Activity</TableHead>
-                              <TableHead>Current</TableHead>
-                              <TableHead>Plan</TableHead>
-                              <TableHead>Points</TableHead>
-                              <TableHead>Actions</TableHead>
-                            </TableRow>
-                          </TableHeader>
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Activity</TableHead>
+                            <TableHead>Current</TableHead>
+                            <TableHead>Plan</TableHead>
+                            <TableHead>Points</TableHead>
+                            <TableHead>Actions</TableHead>
+                          </TableRow>
+                        </TableHeader>
                         <TableBody>
-                          {activities.map((activity) => {
+                          {activities.map(activity => {
                             // Get scoring rule from activity or use default
                             const scoringRule = activity.scoringRule || {
                               activityId: activity.id,
                               basePointsPerUnit: 1,
                               goalBonusPoints: 5,
                               streakBonusPoints: 2,
-                              maxDailyPoints: 50
+                              maxDailyPoints: 50,
                             };
-                            
-                            const pointsDisplay = `${scoringRule.basePointsPerUnit}${activity.unit ? ` per ${activity.unit}` : ''} (+${scoringRule.goalBonusPoints} goal)`;
-                            
+
+                            const pointsDisplay = `${
+                              scoringRule.basePointsPerUnit
+                            }${
+                              activity.unit ? ` per ${activity.unit}` : ""
+                            } (+${scoringRule.goalBonusPoints} goal)`;
+
                             return (
-                            <TableRow key={activity.id}>
-                              <TableCell className="font-medium">{activity.name}</TableCell>
-                              <TableCell>
-                                {activity.value} {activity.unit || ""}
-                              </TableCell>
-                              <TableCell>
-                                {activity.planValue ? (
-                                  <Badge variant="outline">
-                                    {activity.planValue} {activity.unit || ""} {activity.planType}
-                                  </Badge>
-                                ) : (
-                                  <span className="text-muted-foreground">No plan</span>
-                                )}
-                              </TableCell>
-                              <TableCell>
-                                <div className="text-sm">
-                                  <div className="font-medium text-primary">{pointsDisplay}</div>
-                                  <div className="text-xs text-muted-foreground">
-                                    +{scoringRule.streakBonusPoints} streak • max {scoringRule.maxDailyPoints}
+                              <TableRow key={activity.id}>
+                                <TableCell className="font-medium">
+                                  {activity.name}
+                                </TableCell>
+                                <TableCell>
+                                  {activity.value} {activity.unit || ""}
+                                </TableCell>
+                                <TableCell>
+                                  {activity.planValue ? (
+                                    <Badge variant="outline">
+                                      {activity.planValue} {activity.unit || ""}{" "}
+                                      {activity.planType}
+                                    </Badge>
+                                  ) : (
+                                    <span className="text-muted-foreground">
+                                      No plan
+                                    </span>
+                                  )}
+                                </TableCell>
+                                <TableCell>
+                                  <div className="text-sm">
+                                    <div className="font-medium text-primary">
+                                      {pointsDisplay}
+                                    </div>
+                                    <div className="text-xs text-muted-foreground">
+                                      +{scoringRule.streakBonusPoints} streak •
+                                      max {scoringRule.maxDailyPoints}
+                                    </div>
                                   </div>
-                                </div>
-                              </TableCell>
-                              <TableCell>
-                                <div className="flex gap-1">
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => setEditingActivity(activity)}
-                                  >
-                                    <Edit className="h-3 w-3" />
-                                  </Button>
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => removeActivity(activity.id)}
-                                  >
-                                    <Trash2 className="h-3 w-3" />
-                                  </Button>
-                                </div>
-                              </TableCell>
-                            </TableRow>
+                                </TableCell>
+                                <TableCell>
+                                  <div className="flex gap-1">
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() =>
+                                        setEditingActivity(activity)
+                                      }
+                                    >
+                                      <Edit className="h-3 w-3" />
+                                    </Button>
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() =>
+                                        removeActivity(activity.id)
+                                      }
+                                    >
+                                      <Trash2 className="h-3 w-3" />
+                                    </Button>
+                                  </div>
+                                </TableCell>
+                              </TableRow>
                             );
                           })}
                         </TableBody>
                       </Table>
-                      {group !== groupedActivities[groupedActivities.length - 1]?.group && <Separator className="mt-4" />}
+                      {group !==
+                        groupedActivities[groupedActivities.length - 1]
+                          ?.group && <Separator className="mt-4" />}
                     </div>
                   ))}
                 </div>
@@ -495,17 +613,21 @@ function KidDashboardContent() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {pendingReports.map((report) => (
+                  {pendingReports.map(report => (
                     <ReportApprovalCard
                       key={report.id}
                       report={report}
                       kid={kid}
-                      onReview={(reportId) => {
-                        const report = kid.reports?.find(r => r.id === reportId);
+                      onReview={reportId => {
+                        const report = kid.reports?.find(
+                          r => r.id === reportId
+                        );
                         setReviewingReport(report);
                       }}
-                      onEdit={(reportId) => {
-                        const report = kid.reports?.find(r => r.id === reportId);
+                      onEdit={reportId => {
+                        const report = kid.reports?.find(
+                          r => r.id === reportId
+                        );
                         setEditingReport(report);
                       }}
                     />
@@ -524,7 +646,8 @@ function KidDashboardContent() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              {!kid.reports || kid.reports.filter(r => r.status !== "pending").length === 0 ? (
+              {!kid.reports ||
+              kid.reports.filter(r => r.status !== "pending").length === 0 ? (
                 <p className="text-muted-foreground text-center py-4">
                   No processed reports yet.
                 </p>
@@ -532,10 +655,18 @@ function KidDashboardContent() {
                 <div className="space-y-3">
                   {kid.reports
                     .filter(report => report.status !== "pending")
-                    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+                    .sort(
+                      (a, b) =>
+                        new Date(b.date).getTime() - new Date(a.date).getTime()
+                    )
                     .slice(0, 5)
-                    .map((report) => (
-                      <div key={report.id} className={`p-4 border rounded-lg ${report.status === "pending" ? "bg-muted/30" : ""}`}>
+                    .map(report => (
+                      <div
+                        key={report.id}
+                        className={`p-4 border rounded-lg ${
+                          report.status === "pending" ? "bg-muted/30" : ""
+                        }`}
+                      >
                         <div className="flex items-center justify-between mb-2">
                           <h4 className="font-medium">{report.date}</h4>
                           <div className="flex gap-2">
@@ -562,14 +693,19 @@ function KidDashboardContent() {
                           </div>
                         </div>
                         {report.notes && (
-                          <p className="text-sm text-muted-foreground mb-2">{report.notes}</p>
+                          <p className="text-sm text-muted-foreground mb-2">
+                            {report.notes}
+                          </p>
                         )}
                         <div className="flex flex-wrap gap-2">
-                          {report.entries.map((entry) => {
-                            const activity = kid.activities?.find((a) => a.id === entry.activityId);
+                          {report.entries.map(entry => {
+                            const activity = kid.activities?.find(
+                              a => a.id === entry.activityId
+                            );
                             return activity ? (
                               <Badge key={entry.activityId} variant="secondary">
-                                {activity.name}: {entry.value} {activity.unit || ""}
+                                {activity.name}: {entry.value}{" "}
+                                {activity.unit || ""}
                               </Badge>
                             ) : null;
                           })}
@@ -593,16 +729,31 @@ function KidDashboardContent() {
           <div className="space-y-4 py-2">
             <div className="grid gap-2">
               <Label htmlFor="m-name">Activity name</Label>
-              <Input id="m-name" value={activityName} onChange={(e) => setActivityName(e.target.value)} placeholder="e.g., Reading minutes" />
+              <Input
+                id="m-name"
+                value={activityName}
+                onChange={e => setActivityName(e.target.value)}
+                placeholder="e.g., Reading minutes"
+              />
             </div>
             <div className="grid gap-2">
               <Label htmlFor="m-unit">Unit (optional)</Label>
-              <Input id="m-unit" value={activityUnit} onChange={(e) => setActivityUnit(e.target.value)} placeholder="e.g., min, pages" />
+              <Input
+                id="m-unit"
+                value={activityUnit}
+                onChange={e => setActivityUnit(e.target.value)}
+                placeholder="e.g., min, pages"
+              />
             </div>
             <div className="grid gap-2">
               <Label>Plan type</Label>
-              <Select value={planType} onValueChange={(v) => setPlanType(v as any)}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+              <Select
+                value={planType}
+                onValueChange={v => setPlanType(v as any)}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="daily">Daily</SelectItem>
                   <SelectItem value="weekly">Weekly</SelectItem>
@@ -611,72 +762,107 @@ function KidDashboardContent() {
             </div>
             <div className="grid gap-2">
               <Label htmlFor="m-plan">Plan value</Label>
-              <Input id="m-plan" type="number" min={0} value={planValue} onChange={(e) => setPlanValue(e.target.value)} placeholder="e.g., 30" />
+              <Input
+                id="m-plan"
+                type="number"
+                min={0}
+                value={planValue}
+                onChange={e => setPlanValue(e.target.value)}
+                placeholder="e.g., 30"
+              />
             </div>
             <div className="grid gap-2">
               <Label>Group</Label>
-              <Select value={activityGroupId || "none"} onValueChange={(v) => setActivityGroupId(v === "none" ? "" : v)}>
-                <SelectTrigger><SelectValue placeholder="None" /></SelectTrigger>
+              <Select
+                value={activityGroupId || "none"}
+                onValueChange={v => setActivityGroupId(v === "none" ? "" : v)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="None" />
+                </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="none">None</SelectItem>
-                  {(kid.groups || []).map((g) => (
-                    <SelectItem key={g.id} value={g.id}>{g.name}</SelectItem>
-                   ))}
-                  </SelectContent>
+                  {(kid.groups || []).map(g => (
+                    <SelectItem key={g.id} value={g.id}>
+                      {g.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
               </Select>
             </div>
-            
+
             <div className="space-y-3 p-4 bg-muted/50 rounded-lg">
               <h4 className="font-medium text-sm">Scoring Rules</h4>
               <div className="grid grid-cols-2 gap-3 text-sm">
                 <div>
-                  <Label htmlFor="new-base-points" className="text-xs text-muted-foreground">Base Points per {activityUnit || 'unit'}</Label>
+                  <Label
+                    htmlFor="new-base-points"
+                    className="text-xs text-muted-foreground"
+                  >
+                    Base Points per {activityUnit || "unit"}
+                  </Label>
                   <Input
                     id="new-base-points"
                     type="number"
                     min="0"
                     value={newBasePointsPerUnit}
-                    onChange={(e) => setNewBasePointsPerUnit(e.target.value)}
+                    onChange={e => setNewBasePointsPerUnit(e.target.value)}
                     className="h-8 text-sm"
                   />
                 </div>
                 <div>
-                  <Label htmlFor="new-goal-bonus" className="text-xs text-muted-foreground">Goal Bonus Points</Label>
+                  <Label
+                    htmlFor="new-goal-bonus"
+                    className="text-xs text-muted-foreground"
+                  >
+                    Goal Bonus Points
+                  </Label>
                   <Input
                     id="new-goal-bonus"
                     type="number"
                     min="0"
                     value={newGoalBonusPoints}
-                    onChange={(e) => setNewGoalBonusPoints(e.target.value)}
+                    onChange={e => setNewGoalBonusPoints(e.target.value)}
                     className="h-8 text-sm"
                   />
                 </div>
                 <div>
-                  <Label htmlFor="new-streak-bonus" className="text-xs text-muted-foreground">Streak Bonus Points</Label>
+                  <Label
+                    htmlFor="new-streak-bonus"
+                    className="text-xs text-muted-foreground"
+                  >
+                    Streak Bonus Points
+                  </Label>
                   <Input
                     id="new-streak-bonus"
                     type="number"
                     min="0"
                     value={newStreakBonusPoints}
-                    onChange={(e) => setNewStreakBonusPoints(e.target.value)}
+                    onChange={e => setNewStreakBonusPoints(e.target.value)}
                     className="h-8 text-sm"
                   />
                 </div>
                 <div>
-                  <Label htmlFor="new-max-daily" className="text-xs text-muted-foreground">Max Daily Points</Label>
+                  <Label
+                    htmlFor="new-max-daily"
+                    className="text-xs text-muted-foreground"
+                  >
+                    Max Daily Points
+                  </Label>
                   <Input
                     id="new-max-daily"
                     type="number"
                     min="1"
                     value={newMaxDailyPoints}
-                    onChange={(e) => setNewMaxDailyPoints(e.target.value)}
+                    onChange={e => setNewMaxDailyPoints(e.target.value)}
                     className="h-8 text-sm"
                   />
                 </div>
               </div>
               <div className="text-xs text-muted-foreground">
-                Complete your {planType} goal of {planValue} {activityUnit || 'units'} to earn the goal bonus. 
-                Maintain streaks for additional points!
+                Complete your {planType} goal of {planValue}{" "}
+                {activityUnit || "units"} to earn the goal bonus. Maintain
+                streaks for additional points!
               </div>
             </div>
           </div>
@@ -695,12 +881,22 @@ function KidDashboardContent() {
           <div className="space-y-4 py-2">
             <div className="grid gap-2">
               <Label htmlFor="g-name">Name</Label>
-              <Input id="g-name" value={groupName} onChange={(e) => setGroupName(e.target.value)} placeholder="e.g., Reading Goals" />
+              <Input
+                id="g-name"
+                value={groupName}
+                onChange={e => setGroupName(e.target.value)}
+                placeholder="e.g., Reading Goals"
+              />
             </div>
             <div className="grid gap-2">
               <Label>Type</Label>
-              <Select value={groupType} onValueChange={(v) => setGroupType(v as any)}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+              <Select
+                value={groupType}
+                onValueChange={v => setGroupType(v as any)}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="project">Project</SelectItem>
                   <SelectItem value="goal">Goal</SelectItem>
@@ -722,17 +918,23 @@ function KidDashboardContent() {
           </DialogHeader>
           <div className="py-2">
             <DailyReportForm
-              kid={{ 
-                id: kid.id, 
-                name: kid.name, 
-                activities: kid.activities?.map(({ id, name, unit, groupId }) => ({ id, name, unit, groupId })) || [], 
-                groups: kid.groups || [] 
+              kid={{
+                id: kid.id,
+                name: kid.name,
+                activities:
+                  kid.activities?.map(({ id, name, unit, groupId }) => ({
+                    id,
+                    name,
+                    unit,
+                    groupId,
+                  })) || [],
+                groups: kid.groups || [],
               }}
-              onSave={(report) => {
+              onSave={report => {
                 addReport({
                   date: report.date,
                   notes: report.notes,
-                  entries: report.entries
+                  entries: report.entries,
                 });
                 setOpenAddReport(false);
               }}
@@ -740,7 +942,9 @@ function KidDashboardContent() {
             />
           </div>
           <DialogFooter>
-            <Button onClick={() => reportSaveRef.current?.()}><Save className="mr-2 h-4 w-4" /> Save Report</Button>
+            <Button onClick={() => reportSaveRef.current?.()}>
+              <Save className="mr-2 h-4 w-4" /> Save Report
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -768,7 +972,7 @@ function KidDashboardContent() {
           approveReport(reportId);
           setReviewingReport(null);
         }}
-        onReject={(reportId) => {
+        onReject={reportId => {
           rejectReport(reportId);
           setReviewingReport(null);
         }}
@@ -788,20 +992,24 @@ function KidDashboardContent() {
       />
 
       {/* Delete Report Confirmation Dialog */}
-      <Dialog open={!!deletingReport} onOpenChange={() => setDeletingReport(null)}>
+      <Dialog
+        open={!!deletingReport}
+        onOpenChange={() => setDeletingReport(null)}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Delete Report</DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete this report from {deletingReport?.date}? This action cannot be undone.
+              Are you sure you want to delete this report from{" "}
+              {deletingReport?.date}? This action cannot be undone.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDeletingReport(null)}>
               Cancel
             </Button>
-            <Button 
-              variant="destructive" 
+            <Button
+              variant="destructive"
               onClick={() => {
                 if (deletingReport) {
                   deleteReport(deletingReport.id);
@@ -819,13 +1027,13 @@ function KidDashboardContent() {
       <Dialog open={showManagement} onOpenChange={setShowManagement}>
         <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Prize Management</DialogTitle>
+            <DialogTitle>Gift Management</DialogTitle>
           </DialogHeader>
-          <PrizeManagement 
+          <GiftManagement
             kid={kid}
-            onAddPrize={addPrize}
-            onUpdatePrize={updatePrize}
-            onDeletePrize={deletePrize}
+            onAddGift={addGift}
+            onUpdateGift={updateGift}
+            onDeleteGift={deleteGift}
             onUpdateRedemption={updateRedemption}
           />
         </DialogContent>

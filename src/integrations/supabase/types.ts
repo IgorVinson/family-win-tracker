@@ -191,7 +191,7 @@ export type Database = {
           },
         ]
       }
-      prize_redemptions: {
+      gift_redemptions: {
         Row: {
           created_at: string
           date_processed: string | null
@@ -199,7 +199,7 @@ export type Database = {
           id: string
           kid_id: string
           notes: string | null
-          prize_id: string
+          gift_id: string
           processed_by: string | null
           status: string
         }
@@ -210,7 +210,7 @@ export type Database = {
           id?: string
           kid_id: string
           notes?: string | null
-          prize_id: string
+          gift_id: string
           processed_by?: string | null
           status?: string
         }
@@ -221,27 +221,27 @@ export type Database = {
           id?: string
           kid_id?: string
           notes?: string | null
-          prize_id?: string
+          gift_id?: string
           processed_by?: string | null
           status?: string
         }
         Relationships: [
           {
-            foreignKeyName: "prize_redemptions_kid_id_fkey"
+            foreignKeyName: "gift_redemptions_kid_id_fkey"
             columns: ["kid_id"]
             isOneToOne: false
             referencedRelation: "kids"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "prize_redemptions_prize_id_fkey"
-            columns: ["prize_id"]
+            foreignKeyName: "gift_redemptions_gift_id_fkey"
+            columns: ["gift_id"]
             isOneToOne: false
-            referencedRelation: "prizes"
+            referencedRelation: "gifts"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "prize_redemptions_processed_by_fkey"
+            foreignKeyName: "gift_redemptions_processed_by_fkey"
             columns: ["processed_by"]
             isOneToOne: false
             referencedRelation: "profiles"
@@ -249,7 +249,7 @@ export type Database = {
           },
         ]
       }
-      prizes: {
+      gifts: {
         Row: {
           active: boolean
           category: string | null

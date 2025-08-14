@@ -1,63 +1,93 @@
-import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Badge } from "@/components/ui/badge";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Settings, Plus, Edit, Trash2, Clock, CheckCircle, XCircle } from "lucide-react";
-import { EnhancedKid, Prize, PrizeRedemption } from "@/types/scoreSystem";
+import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
+import { EnhancedKid, Gift, GiftRedemption } from "@/types/scoreSystem";
 import { format } from "date-fns";
+import {
+  CheckCircle,
+  Clock,
+  Edit,
+  Plus,
+  Settings,
+  Trash2,
+  XCircle,
+} from "lucide-react";
+import { useState } from "react";
 
-interface PrizeManagementProps {
+interface GiftManagementProps {
   kid: EnhancedKid;
-  onAddPrize: (prize: Omit<Prize, "id" | "createdAt">) => void;
-  onUpdatePrize: (prizeId: string, updates: Partial<Prize>) => void;
-  onDeletePrize: (prizeId: string) => void;
-  onUpdateRedemption: (redemptionId: string, status: PrizeRedemption["status"], notes?: string) => void;
+  onAddGift: (gift: Omit<Gift, "id" | "createdAt">) => void;
+  onUpdateGift: (giftId: string, updates: Partial<Gift>) => void;
+  onDeleteGift: (giftId: string) => void;
+  onUpdateRedemption: (
+    redemptionId: string,
+    status: GiftRedemption["status"],
+    notes?: string
+  ) => void;
 }
 
-export function PrizeManagement({ 
-  kid, 
-  onAddPrize, 
-  onUpdatePrize, 
-  onDeletePrize, 
-  onUpdateRedemption 
-}: PrizeManagementProps) {
+export function GiftManagement({
+  kid,
+  onAddGift,
+  onUpdateGift,
+  onDeleteGift,
+  onUpdateRedemption,
+}: GiftManagementProps) {
   const [showAddDialog, setShowAddDialog] = useState(false);
-  const [editingPrize, setEditingPrize] = useState<Prize | null>(null);
-  const [newPrize, setNewPrize] = useState({
+  const [editingGift, setEditingGift] = useState<Gift | null>(null);
+  const [newGift, setNewGift] = useState({
     name: "",
     description: "",
     pointsCost: 0,
-    category: "treat" as Prize["category"],
+    category: "treat" as Gift["category"],
     isActive: true,
   });
   const { toast } = useToast();
 
-  const pendingRedemptions = kid.prizeRedemptions.filter(r => r.status === "pending");
-  const recentRedemptions = kid.prizeRedemptions
+  const pendingRedemptions = kid.giftRedemptions.filter(
+    r => r.status === "pending"
+  );
+  const recentRedemptions = kid.giftRedemptions
     .filter(r => r.status !== "pending")
-    .sort((a, b) => new Date(b.requestedAt).getTime() - new Date(a.requestedAt).getTime())
+    .sort(
+      (a, b) =>
+        new Date(b.requestedAt).getTime() - new Date(a.requestedAt).getTime()
+    )
     .slice(0, 10);
 
-  const handleAddPrize = () => {
-    if (!newPrize.name || !newPrize.description || newPrize.pointsCost <= 0) {
+  const handleAddGift = () => {
+    if (!newGift.name || !newGift.description || newGift.pointsCost <= 0) {
       toast({
-        title: "Invalid prize data",
+        title: "Invalid gift data",
         description: "Please fill in all fields with valid values.",
         variant: "destructive",
       });
       return;
     }
 
-    onAddPrize(newPrize);
-    setNewPrize({
+    onAddGift(newGift);
+    setNewGift({
       name: "",
       description: "",
       pointsCost: 0,
@@ -66,12 +96,15 @@ export function PrizeManagement({
     });
     setShowAddDialog(false);
     toast({
-      title: "Prize added",
-      description: `"${newPrize.name}" has been added to the prize shop.`,
+      title: "Gift added",
+      description: `"${newGift.name}" has been added to the gift shop.`,
     });
   };
 
-  const handleUpdateRedemption = (redemptionId: string, status: PrizeRedemption["status"]) => {
+  const handleUpdateRedemption = (
+    redemptionId: string,
+    status: GiftRedemption["status"]
+  ) => {
     onUpdateRedemption(redemptionId, status);
     toast({
       title: "Redemption updated",
@@ -79,12 +112,16 @@ export function PrizeManagement({
     });
   };
 
-  const getStatusIcon = (status: PrizeRedemption["status"]) => {
+  const getStatusIcon = (status: GiftRedemption["status"]) => {
     switch (status) {
-      case "pending": return <Clock className="h-4 w-4 text-yellow-500" />;
-      case "approved": return <CheckCircle className="h-4 w-4 text-green-500" />;
-      case "completed": return <CheckCircle className="h-4 w-4 text-green-500" />;
-      case "rejected": return <XCircle className="h-4 w-4 text-red-500" />;
+      case "pending":
+        return <Clock className="h-4 w-4 text-yellow-500" />;
+      case "approved":
+        return <CheckCircle className="h-4 w-4 text-green-500" />;
+      case "completed":
+        return <CheckCircle className="h-4 w-4 text-green-500" />;
+      case "rejected":
+        return <XCircle className="h-4 w-4 text-red-500" />;
     }
   };
 
@@ -96,21 +133,22 @@ export function PrizeManagement({
             <div className="flex items-center justify-between">
               <CardTitle className="flex items-center gap-2">
                 <Settings className="h-5 w-5" />
-                Prize Management for {kid.name}
+                Gift Management for {kid.name}
               </CardTitle>
               <Button onClick={() => setShowAddDialog(true)}>
                 <Plus className="h-4 w-4 mr-2" />
-                Add Prize
+                Add Gift
               </Button>
             </div>
           </CardHeader>
         </Card>
 
-        <Tabs defaultValue="prizes" className="w-full">
+        <Tabs defaultValue="gifts" className="w-full">
           <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="prizes">Manage Prizes</TabsTrigger>
+            <TabsTrigger value="gifts">Manage Gifts</TabsTrigger>
             <TabsTrigger value="redemptions">
-              Redemptions {pendingRedemptions.length > 0 && (
+              Redemptions{" "}
+              {pendingRedemptions.length > 0 && (
                 <Badge variant="destructive" className="ml-2">
                   {pendingRedemptions.length}
                 </Badge>
@@ -118,18 +156,20 @@ export function PrizeManagement({
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="prizes" className="space-y-4">
+          <TabsContent value="gifts" className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {kid.availablePrizes.map((prize) => (
-                <Card key={prize.id}>
+              {kid.availableGifts.map(gift => (
+                <Card key={gift.id}>
                   <CardHeader>
                     <div className="flex items-start justify-between">
                       <div>
-                        <CardTitle className="text-lg">{prize.name}</CardTitle>
+                        <CardTitle className="text-lg">{gift.name}</CardTitle>
                         <div className="flex items-center gap-2 mt-1">
-                          <Badge variant="outline">{prize.category}</Badge>
-                          <Badge variant={prize.isActive ? "default" : "secondary"}>
-                            {prize.isActive ? "Active" : "Inactive"}
+                          <Badge variant="outline">{gift.category}</Badge>
+                          <Badge
+                            variant={gift.isActive ? "default" : "secondary"}
+                          >
+                            {gift.isActive ? "Active" : "Inactive"}
                           </Badge>
                         </div>
                       </div>
@@ -137,14 +177,14 @@ export function PrizeManagement({
                         <Button
                           size="sm"
                           variant="outline"
-                          onClick={() => setEditingPrize(prize)}
+                          onClick={() => setEditingGift(gift)}
                         >
                           <Edit className="h-3 w-3" />
                         </Button>
                         <Button
                           size="sm"
                           variant="outline"
-                          onClick={() => onDeletePrize(prize.id)}
+                          onClick={() => onDeleteGift(gift.id)}
                         >
                           <Trash2 className="h-3 w-3" />
                         </Button>
@@ -152,8 +192,10 @@ export function PrizeManagement({
                     </div>
                   </CardHeader>
                   <CardContent>
-                    <p className="text-muted-foreground mb-2">{prize.description}</p>
-                    <p className="font-semibold">{prize.pointsCost} points</p>
+                    <p className="text-muted-foreground mb-2">
+                      {gift.description}
+                    </p>
+                    <p className="font-semibold">{gift.pointsCost} points</p>
                   </CardContent>
                 </Card>
               ))}
@@ -164,29 +206,39 @@ export function PrizeManagement({
             {pendingRedemptions.length > 0 && (
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-lg text-yellow-600">Pending Approvals</CardTitle>
+                  <CardTitle className="text-lg text-yellow-600">
+                    Pending Approvals
+                  </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-3">
-                    {pendingRedemptions.map((redemption) => (
-                      <div key={redemption.id} className="flex items-center justify-between p-4 border rounded-lg bg-yellow-50">
+                    {pendingRedemptions.map(redemption => (
+                      <div
+                        key={redemption.id}
+                        className="flex items-center justify-between p-4 border rounded-lg bg-yellow-50"
+                      >
                         <div>
-                          <p className="font-medium">{redemption.prizeName}</p>
+                          <p className="font-medium">{redemption.giftName}</p>
                           <p className="text-sm text-muted-foreground">
-                            {redemption.pointsCost} points • Requested {format(new Date(redemption.requestedAt), "PPP")}
+                            {redemption.pointsCost} points • Requested{" "}
+                            {format(new Date(redemption.requestedAt), "PPP")}
                           </p>
                         </div>
                         <div className="flex gap-2">
-                          <Button 
-                            size="sm" 
+                          <Button
+                            size="sm"
                             variant="outline"
-                            onClick={() => handleUpdateRedemption(redemption.id, "rejected")}
+                            onClick={() =>
+                              handleUpdateRedemption(redemption.id, "rejected")
+                            }
                           >
                             Reject
                           </Button>
-                          <Button 
+                          <Button
                             size="sm"
-                            onClick={() => handleUpdateRedemption(redemption.id, "approved")}
+                            onClick={() =>
+                              handleUpdateRedemption(redemption.id, "approved")
+                            }
                           >
                             Approve
                           </Button>
@@ -209,23 +261,31 @@ export function PrizeManagement({
                   </p>
                 ) : (
                   <div className="space-y-3">
-                    {recentRedemptions.map((redemption) => (
-                      <div key={redemption.id} className="flex items-center justify-between p-3 border rounded-lg">
+                    {recentRedemptions.map(redemption => (
+                      <div
+                        key={redemption.id}
+                        className="flex items-center justify-between p-3 border rounded-lg"
+                      >
                         <div className="flex items-center gap-3">
                           {getStatusIcon(redemption.status)}
                           <div>
-                            <p className="font-medium">{redemption.prizeName}</p>
+                            <p className="font-medium">{redemption.giftName}</p>
                             <p className="text-sm text-muted-foreground">
-                              {redemption.pointsCost} points • {format(new Date(redemption.requestedAt), "PPP")}
+                              {redemption.pointsCost} points •{" "}
+                              {format(new Date(redemption.requestedAt), "PPP")}
                             </p>
                           </div>
                         </div>
                         <div className="flex items-center gap-2">
-                          <Badge 
-                            variant={redemption.status === "rejected" ? "destructive" : "secondary"}
+                          <Badge
+                            variant={
+                              redemption.status === "rejected"
+                                ? "destructive"
+                                : "secondary"
+                            }
                             className={
-                              redemption.status === "completed" 
-                                ? "bg-green-100 text-green-800 border-green-200 hover:bg-green-200" 
+                              redemption.status === "completed"
+                                ? "bg-green-100 text-green-800 border-green-200 hover:bg-green-200"
                                 : ""
                             }
                           >
@@ -235,7 +295,12 @@ export function PrizeManagement({
                             <Button
                               size="sm"
                               variant="outline"
-                              onClick={() => handleUpdateRedemption(redemption.id, "completed")}
+                              onClick={() =>
+                                handleUpdateRedemption(
+                                  redemption.id,
+                                  "completed"
+                                )
+                              }
                             >
                               Mark Complete
                             </Button>
@@ -251,22 +316,22 @@ export function PrizeManagement({
         </Tabs>
       </div>
 
-      {/* Add Prize Dialog */}
+      {/* Add Gift Dialog */}
       <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
-            <DialogTitle>Add New Prize</DialogTitle>
+            <DialogTitle>Add New Gift</DialogTitle>
             <DialogDescription>
-              Create a new prize that {kid.name} can redeem with points.
+              Create a new gift that {kid.name} can redeem with points.
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
-              <Label htmlFor="name">Prize Name</Label>
+              <Label htmlFor="name">Gift Name</Label>
               <Input
                 id="name"
-                value={newPrize.name}
-                onChange={(e) => setNewPrize({ ...newPrize, name: e.target.value })}
+                value={newGift.name}
+                onChange={e => setNewGift({ ...newGift, name: e.target.value })}
                 placeholder="e.g., Extra bedtime story"
               />
             </div>
@@ -274,9 +339,11 @@ export function PrizeManagement({
               <Label htmlFor="description">Description</Label>
               <Textarea
                 id="description"
-                value={newPrize.description}
-                onChange={(e) => setNewPrize({ ...newPrize, description: e.target.value })}
-                placeholder="Describe what this prize includes..."
+                value={newGift.description}
+                onChange={e =>
+                  setNewGift({ ...newGift, description: e.target.value })
+                }
+                placeholder="Describe what this gift includes..."
               />
             </div>
             <div className="grid gap-2">
@@ -285,15 +352,25 @@ export function PrizeManagement({
                 id="points"
                 type="number"
                 min="1"
-                value={newPrize.pointsCost}
-                onChange={(e) => setNewPrize({ ...newPrize, pointsCost: parseInt(e.target.value) || 0 })}
+                value={newGift.pointsCost}
+                onChange={e =>
+                  setNewGift({
+                    ...newGift,
+                    pointsCost: parseInt(e.target.value) || 0,
+                  })
+                }
               />
             </div>
             <div className="grid gap-2">
               <Label htmlFor="category">Category</Label>
               <Select
-                value={newPrize.category}
-                onValueChange={(value) => setNewPrize({ ...newPrize, category: value as Prize["category"] })}
+                value={newGift.category}
+                onValueChange={value =>
+                  setNewGift({
+                    ...newGift,
+                    category: value as Gift["category"],
+                  })
+                }
               >
                 <SelectTrigger>
                   <SelectValue />
@@ -309,8 +386,10 @@ export function PrizeManagement({
             <div className="flex items-center space-x-2">
               <Switch
                 id="active"
-                checked={newPrize.isActive}
-                onCheckedChange={(checked) => setNewPrize({ ...newPrize, isActive: checked })}
+                checked={newGift.isActive}
+                onCheckedChange={checked =>
+                  setNewGift({ ...newGift, isActive: checked })
+                }
               />
               <Label htmlFor="active">Active (available in shop)</Label>
             </div>
@@ -319,7 +398,7 @@ export function PrizeManagement({
             <Button variant="outline" onClick={() => setShowAddDialog(false)}>
               Cancel
             </Button>
-            <Button onClick={handleAddPrize}>Add Prize</Button>
+            <Button onClick={handleAddGift}>Add Gift</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

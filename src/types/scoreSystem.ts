@@ -1,4 +1,4 @@
-// Score and Prize System Types
+// Score and Gift System Types
 
 export interface ScoreEntry {
   id: string;
@@ -10,7 +10,7 @@ export interface ScoreEntry {
   createdAt: string;
 }
 
-export interface Prize {
+export interface Gift {
   id: string;
   name: string;
   description: string;
@@ -21,10 +21,10 @@ export interface Prize {
   imageUrl?: string;
 }
 
-export interface PrizeRedemption {
+export interface GiftRedemption {
   id: string;
-  prizeId: string;
-  prizeName: string;
+  giftId: string;
+  giftName: string;
   pointsCost: number;
   status: "pending" | "approved" | "rejected" | "completed";
   requestedAt: string;
@@ -87,8 +87,8 @@ export interface EnhancedKid {
     processedBy?: "parent" | "system";
   }>;
   scoreHistory: ScoreEntry[];
-  availablePrizes: Prize[];
-  prizeRedemptions: PrizeRedemption[];
+  availableGifts: Gift[];
+  giftRedemptions: GiftRedemption[];
   achievements: Achievement[];
   streaks: Record<string, number>; // activityId -> consecutive days
 }
