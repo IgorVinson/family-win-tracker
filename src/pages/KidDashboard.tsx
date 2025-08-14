@@ -213,10 +213,7 @@ function KidDashboardContent() {
   // Count pending redemptions for notification badge
   const pendingRedemptions = kid?.prizeRedemptions?.filter(r => r.status === "pending").length || 0;
 
-  console.log("🔧 KidDashboard state:", { loading, authLoading, kid: !!kid });
-
-  // Show loading screen if either auth is loading OR kid data is loading
-  if (loading || authLoading) {
+  if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Card className="card-elevated">
@@ -224,9 +221,7 @@ function KidDashboardContent() {
             <Loader2 className="h-6 w-6 animate-spin" />
             <div>
               <p className="font-medium">Loading...</p>
-              <p className="text-sm text-muted-foreground">
-                {authLoading ? "Please wait while we set up your account" : "Loading kid dashboard"}
-              </p>
+              <p className="text-sm text-muted-foreground">Loading kid dashboard</p>
             </div>
           </CardContent>
         </Card>
