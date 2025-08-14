@@ -18,21 +18,26 @@ export const useAuth = () => {
         setUser(session?.user ?? null);
         
         if (session?.user) {
-          // Get user role
-          const role = await getUserRole(session.user.id);
-          setUserRole(role);
-
-          // Check for migration on sign in
-          if (event === 'SIGNED_IN' && checkIfMigrationNeeded()) {
-            if (role) {
-              setTimeout(async () => {
-                toast({
-                  title: "Migrating your data...",
-                  description: "Transferring your existing data to your account."
-                });
-                await migrateLocalStorageToSupabase(session.user.id, role);
-              }, 0);
+          // Get user role with retry logic
+          try {
+            const role = await getUserRole(session.user.id);
+            setUserRole(role);
+            
+            // Check for migration on sign in
+            if (event === 'SIGNED_IN' && checkIfMigrationNeeded()) {
+              if (role) {
+                setTimeout(async () => {
+                  toast({
+                    title: "Migrating your data...",
+                    description: "Transferring your existing data to your account."
+                  });
+                  await migrateLocalStorageToSupabase(session.user.id, role);
+                }, 0);
+              }
             }
+          } catch (error) {
+            console.error("Error getting user role:", error);
+            setUserRole(null);
           }
         } else {
           setUserRole(null);
@@ -43,12 +48,18 @@ export const useAuth = () => {
     );
 
     // Check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
       
       if (session?.user) {
-        getUserRole(session.user.id).then(setUserRole);
+        try {
+          const role = await getUserRole(session.user.id);
+          setUserRole(role);
+        } catch (error) {
+          console.error("Error getting user role on init:", error);
+          setUserRole(null);
+        }
       }
       
       setLoading(false);

@@ -66,18 +66,6 @@ const Auth = () => {
       if (error) throw error;
 
       if (data.user) {
-        // Insert user role
-        const { error: roleError } = await supabase
-          .from("user_roles")
-          .insert({
-            user_id: data.user.id,
-            role: signUpRole
-          });
-
-        if (roleError) {
-          console.error("Role insertion error:", roleError);
-        }
-
         toast({
           title: "Account created!",
           description: "Please check your email to confirm your account."

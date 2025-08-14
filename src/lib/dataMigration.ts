@@ -347,14 +347,14 @@ export const getUserRole = async (userId: string): Promise<'parent' | 'kid' | nu
       .from("user_roles")
       .select("role")
       .eq("user_id", userId)
-      .single();
+      .maybeSingle(); // Use maybeSingle instead of single to handle 0 rows gracefully
 
     if (error) {
       console.error("Error fetching user role:", error);
       return null;
     }
 
-    return data.role as 'parent' | 'kid';
+    return data?.role as 'parent' | 'kid' || null;
   } catch (error) {
     console.error("Error in getUserRole:", error);
     return null;
