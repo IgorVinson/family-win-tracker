@@ -408,7 +408,7 @@ export function useEnhancedKidDB(kidId: string) {
     if (!kid || !user) return;
 
     try {
-      const updateData: any = {};
+      const updateData: Record<string, unknown> = {};
 
       if (updates.date) updateData.date = updates.date;
       if (updates.notes !== undefined) updateData.notes = updates.notes;
@@ -484,17 +484,38 @@ export function useEnhancedKidDB(kidId: string) {
     if (!user || userRole !== "parent") return;
 
     try {
-      const { error } = await supabase.from("gifts").insert({
-        name: giftData.name,
-        description: giftData.description,
-        cost: giftData.pointsCost,
-        category: giftData.category,
-        active: giftData.isActive,
-      });
+      // Insert and return new row
+      const { data: inserted, error } = await supabase
+        .from("gifts")
+        .insert({
+          name: giftData.name,
+          description: giftData.description,
+          cost: giftData.pointsCost,
+          category: giftData.category,
+          active: giftData.isActive,
+        })
+        .select("*")
+        .single();
 
       if (error) throw error;
 
-      await loadKidData();
+      // Optimistically add to local state (no full reload)
+      if (inserted) {
+        const newGift: Gift = {
+          id: inserted.id,
+          name: inserted.name,
+          description: inserted.description || "",
+          pointsCost: inserted.cost,
+          category: (inserted.category as Gift["category"]) || "treat",
+          isActive: inserted.active,
+          createdAt: inserted.created_at,
+        };
+        setKid(prev =>
+          prev
+            ? { ...prev, availableGifts: [...prev.availableGifts, newGift] }
+            : prev
+        );
+      }
 
       toast({
         title: "Gift added",
@@ -511,16 +532,24 @@ export function useEnhancedKidDB(kidId: string) {
   };
 
   const updateGift = async (giftId: string, updates: Partial<Gift>) => {
-    if (!user || userRole !== "parent") return;
+    if (!user || userRole !== "parent" || !kid) return;
+
+    // Prepare optimistic state
+    const prevKid = kid;
+    const optimisticGifts = kid.availableGifts.map(g =>
+      g.id === giftId ? { ...g, ...updates } : g
+    );
+    setKid({ ...kid, availableGifts: optimisticGifts });
 
     try {
-      const updateData: any = {};
-      if (updates.name) updateData.name = updates.name;
+      const updateData: Record<string, unknown> = {};
+      if (updates.name !== undefined) updateData.name = updates.name;
       if (updates.description !== undefined)
         updateData.description = updates.description;
       if (updates.pointsCost !== undefined)
         updateData.cost = updates.pointsCost;
-      if (updates.category) updateData.category = updates.category;
+      if (updates.category !== undefined)
+        updateData.category = updates.category;
       if (updates.isActive !== undefined) updateData.active = updates.isActive;
 
       const { error } = await supabase
@@ -530,14 +559,14 @@ export function useEnhancedKidDB(kidId: string) {
 
       if (error) throw error;
 
-      await loadKidData();
-
       toast({
         title: "Gift updated",
         description: "The gift has been updated.",
       });
     } catch (error) {
       console.error("Error updating gift:", error);
+      // Rollback
+      setKid(prevKid);
       toast({
         variant: "destructive",
         title: "Failed to update gift",
@@ -547,7 +576,16 @@ export function useEnhancedKidDB(kidId: string) {
   };
 
   const deleteGift = async (giftId: string) => {
-    if (!user || userRole !== "parent") return;
+    if (!user || userRole !== "parent" || !kid) return;
+
+    const prevKid = kid;
+    // Optimistically mark inactive
+    setKid({
+      ...kid,
+      availableGifts: kid.availableGifts.map(g =>
+        g.id === giftId ? { ...g, isActive: false } : g
+      ),
+    });
 
     try {
       const { error } = await supabase
@@ -557,14 +595,14 @@ export function useEnhancedKidDB(kidId: string) {
 
       if (error) throw error;
 
-      await loadKidData();
-
       toast({
         title: "Gift removed",
         description: "The gift has been removed from the shop.",
       });
     } catch (error) {
       console.error("Error removing gift:", error);
+      // Rollback
+      setKid(prevKid);
       toast({
         variant: "destructive",
         title: "Failed to remove gift",

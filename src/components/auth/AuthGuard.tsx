@@ -1,19 +1,28 @@
+import { Card, CardContent } from "@/components/ui/card";
+import { useAuthContext } from "@/context/useAuthContext";
+import { useUserRole } from "@/hooks/useUserRole";
+import { Loader2 } from "lucide-react";
 import { ReactNode } from "react";
 import { Navigate } from "react-router-dom";
-import { useAuth } from "@/hooks/useAuth";
-import { Card, CardContent } from "@/components/ui/card";
-import { Loader2 } from "lucide-react";
 
 type AuthGuardProps = {
   children: ReactNode;
   requireAuth?: boolean;
-  allowedRoles?: ('parent' | 'kid')[];
+  allowedRoles?: ("parent" | "kid")[];
 };
 
-export const AuthGuard = ({ children, requireAuth = false, allowedRoles }: AuthGuardProps) => {
-  const { loading, isAuthenticated, userRole } = useAuth();
+export const AuthGuard = ({
+  children,
+  requireAuth = false,
+  allowedRoles,
+}: AuthGuardProps) => {
+  const { loading: authLoading, isAuthenticated, user } = useAuthContext();
+  const { data: userRole, isLoading: roleLoading } = useUserRole(user?.id);
 
-  if (loading) {
+  const blockingRoleCheck = allowedRoles !== undefined; // only block UI if specific roles required
+  const stillLoading = authLoading || (blockingRoleCheck && roleLoading);
+
+  if (stillLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Card className="card-elevated">
@@ -21,7 +30,9 @@ export const AuthGuard = ({ children, requireAuth = false, allowedRoles }: AuthG
             <Loader2 className="h-6 w-6 animate-spin" />
             <div>
               <p className="font-medium">Loading...</p>
-              <p className="text-sm text-muted-foreground">Please wait while we set up your account</p>
+              <p className="text-sm text-muted-foreground">
+                Please wait while we set up your account
+              </p>
             </div>
           </CardContent>
         </Card>

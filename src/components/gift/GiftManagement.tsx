@@ -33,7 +33,7 @@ import {
   Trash2,
   XCircle,
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 interface GiftManagementProps {
   kid: EnhancedKid;
@@ -56,6 +56,14 @@ export function GiftManagement({
 }: GiftManagementProps) {
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [editingGift, setEditingGift] = useState<Gift | null>(null);
+  // New local form state for editing
+  const [editingGiftForm, setEditingGiftForm] = useState({
+    name: "",
+    description: "",
+    pointsCost: 0,
+    category: "treat" as Gift["category"],
+    isActive: true,
+  });
   const [newGift, setNewGift] = useState({
     name: "",
     description: "",
@@ -64,6 +72,27 @@ export function GiftManagement({
     isActive: true,
   });
   const { toast } = useToast();
+
+  // Sync selected editing gift into form values
+  useEffect(() => {
+    if (editingGift) {
+      setEditingGiftForm({
+        name: editingGift.name,
+        description: editingGift.description,
+        pointsCost: editingGift.pointsCost,
+        category: editingGift.category,
+        isActive: editingGift.isActive,
+      });
+    } else {
+      setEditingGiftForm({
+        name: "",
+        description: "",
+        pointsCost: 0,
+        category: "treat",
+        isActive: true,
+      });
+    }
+  }, [editingGift]);
 
   const pendingRedemptions = kid.giftRedemptions.filter(
     r => r.status === "pending"
@@ -98,6 +127,42 @@ export function GiftManagement({
     toast({
       title: "Gift added",
       description: `"${newGift.name}" has been added to the gift shop.`,
+    });
+  };
+
+  // Save edits to existing gift
+  const handleSaveEditedGift = () => {
+    if (!editingGift) return;
+    if (
+      !editingGiftForm.name ||
+      !editingGiftForm.description ||
+      editingGiftForm.pointsCost <= 0
+    ) {
+      toast({
+        title: "Invalid gift data",
+        description: "Please fill in all fields with valid values.",
+        variant: "destructive",
+      });
+      return;
+    }
+    onUpdateGift(editingGift.id, {
+      name: editingGiftForm.name,
+      description: editingGiftForm.description,
+      pointsCost: editingGiftForm.pointsCost,
+      category: editingGiftForm.category,
+      isActive: editingGiftForm.isActive,
+    });
+    toast({
+      title: "Gift updated",
+      description: `"${editingGiftForm.name}" has been updated.`,
+    });
+    setEditingGift(null);
+    setEditingGiftForm({
+      name: "",
+      description: "",
+      pointsCost: 0,
+      category: "treat",
+      isActive: true,
     });
   };
 
@@ -399,6 +464,130 @@ export function GiftManagement({
               Cancel
             </Button>
             <Button onClick={handleAddGift}>Add Gift</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Gift Dialog */}
+      <Dialog
+        open={!!editingGift}
+        onOpenChange={open => {
+          if (!open) {
+            setEditingGift(null);
+            setEditingGiftForm({
+              name: "",
+              description: "",
+              pointsCost: 0,
+              category: "treat",
+              isActive: true,
+            });
+          }
+        }}
+      >
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Edit Gift</DialogTitle>
+            <DialogDescription>Update the gift details.</DialogDescription>
+          </DialogHeader>
+          {editingGift && (
+            <div className="grid gap-4 py-4">
+              <div className="grid gap-2">
+                <Label htmlFor="edit-name">Gift Name</Label>
+                <Input
+                  id="edit-name"
+                  value={editingGiftForm.name}
+                  onChange={e =>
+                    setEditingGiftForm({
+                      ...editingGiftForm,
+                      name: e.target.value,
+                    })
+                  }
+                  placeholder="e.g., Extra bedtime story"
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="edit-description">Description</Label>
+                <Textarea
+                  id="edit-description"
+                  value={editingGiftForm.description}
+                  onChange={e =>
+                    setEditingGiftForm({
+                      ...editingGiftForm,
+                      description: e.target.value,
+                    })
+                  }
+                  placeholder="Describe what this gift includes..."
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="edit-points">Points Cost</Label>
+                <Input
+                  id="edit-points"
+                  type="number"
+                  min="1"
+                  value={editingGiftForm.pointsCost}
+                  onChange={e =>
+                    setEditingGiftForm({
+                      ...editingGiftForm,
+                      pointsCost: parseInt(e.target.value) || 0,
+                    })
+                  }
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="edit-category">Category</Label>
+                <Select
+                  value={editingGiftForm.category}
+                  onValueChange={value =>
+                    setEditingGiftForm({
+                      ...editingGiftForm,
+                      category: value as Gift["category"],
+                    })
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="privilege">Privilege</SelectItem>
+                    <SelectItem value="treat">Treat</SelectItem>
+                    <SelectItem value="activity">Activity</SelectItem>
+                    <SelectItem value="item">Item</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Switch
+                  id="edit-active"
+                  checked={editingGiftForm.isActive}
+                  onCheckedChange={checked =>
+                    setEditingGiftForm({
+                      ...editingGiftForm,
+                      isActive: checked,
+                    })
+                  }
+                />
+                <Label htmlFor="edit-active">Active (available in shop)</Label>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setEditingGift(null);
+                setEditingGiftForm({
+                  name: "",
+                  description: "",
+                  pointsCost: 0,
+                  category: "treat",
+                  isActive: true,
+                });
+              }}
+            >
+              Cancel
+            </Button>
+            <Button onClick={handleSaveEditedGift}>Save Changes</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

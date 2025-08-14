@@ -1,15 +1,25 @@
-import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "@/hooks/use-toast";
+import { fetchUserRole } from "@/hooks/useUserRole";
 import { supabase } from "@/integrations/supabase/client";
-import { checkIfMigrationNeeded, migrateLocalStorageToSupabase, getUserRole } from "@/lib/dataMigration";
-import { UserRound, Mail, Lock, Users } from "lucide-react";
+import {
+  checkIfMigrationNeeded,
+  migrateLocalStorageToSupabase,
+} from "@/lib/dataMigration";
+import { Lock, Mail, UserRound, Users } from "lucide-react";
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 const Auth = () => {
   const [loading, setLoading] = useState(false);
@@ -28,7 +38,9 @@ const Auth = () => {
   // Check if user is already authenticated
   useEffect(() => {
     const checkAuth = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
       if (session) {
         navigate("/");
       }
@@ -42,7 +54,7 @@ const Auth = () => {
       toast({
         variant: "destructive",
         title: "Missing information",
-        description: "Please fill in all fields and select a role."
+        description: "Please fill in all fields and select a role.",
       });
       return;
     }
@@ -50,7 +62,7 @@ const Auth = () => {
     setLoading(true);
     try {
       const redirectUrl = `${window.location.origin}/`;
-      
+
       const { data, error } = await supabase.auth.signUp({
         email: signUpEmail,
         password: signUpPassword,
@@ -58,9 +70,9 @@ const Auth = () => {
           emailRedirectTo: redirectUrl,
           data: {
             display_name: signUpDisplayName,
-            role: signUpRole
-          }
-        }
+            role: signUpRole,
+          },
+        },
       });
 
       if (error) throw error;
@@ -70,42 +82,46 @@ const Auth = () => {
         try {
           // Insert profile
           const { error: profileError } = await supabase
-            .from('profiles')
+            .from("profiles")
             .insert({
               id: data.user.id,
-              display_name: signUpDisplayName
+              display_name: signUpDisplayName,
             });
 
           if (profileError) {
-            console.error('Profile creation error:', profileError);
+            console.error("Profile creation error:", profileError);
           }
 
           // Insert user role
           const { error: roleError } = await supabase
-            .from('user_roles')
+            .from("user_roles")
             .insert({
               user_id: data.user.id,
-              role: signUpRole
+              role: signUpRole,
             });
 
           if (roleError) {
-            console.error('Role creation error:', roleError);
+            console.error("Role creation error:", roleError);
           }
         } catch (error) {
-          console.error('Manual signup data creation error:', error);
+          console.error("Manual signup data creation error:", error);
         }
 
         toast({
           title: "Account created!",
-          description: "Please check your email to confirm your account."
+          description: "Please check your email to confirm your account.",
         });
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Sign up error:", error);
+      const message =
+        error instanceof Error
+          ? error.message
+          : "An error occurred during sign up.";
       toast({
         variant: "destructive",
         title: "Sign up failed",
-        description: error.message || "An error occurred during sign up."
+        description: message,
       });
     } finally {
       setLoading(false);
@@ -118,7 +134,7 @@ const Auth = () => {
       toast({
         variant: "destructive",
         title: "Missing information",
-        description: "Please enter both email and password."
+        description: "Please enter both email and password.",
       });
       return;
     }
@@ -135,16 +151,16 @@ const Auth = () => {
       if (data.user) {
         toast({
           title: "Welcome back!",
-          description: "You have successfully signed in."
+          description: "You have successfully signed in.",
         });
 
         // Check if migration is needed
         if (checkIfMigrationNeeded()) {
-          const userRole = await getUserRole(data.user.id);
+          const userRole = await fetchUserRole(data.user.id);
           if (userRole) {
             toast({
               title: "Migrating your data...",
-              description: "Transferring your existing data to your account."
+              description: "Transferring your existing data to your account.",
             });
             await migrateLocalStorageToSupabase(data.user.id, userRole);
           }
@@ -152,12 +168,14 @@ const Auth = () => {
 
         navigate("/");
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Sign in error:", error);
+      const message =
+        error instanceof Error ? error.message : "Invalid email or password.";
       toast({
-        variant: "destructive", 
+        variant: "destructive",
         title: "Sign in failed",
-        description: error.message || "Invalid email or password."
+        description: message,
       });
     } finally {
       setLoading(false);
@@ -168,9 +186,9 @@ const Auth = () => {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-muted/20 p-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <img 
-            src="/lovable-uploads/dd5214b6-f0ae-465c-be62-f98bdadb9881.png" 
-            alt="KidsRise Logo" 
+          <img
+            src="/lovable-uploads/dd5214b6-f0ae-465c-be62-f98bdadb9881.png"
+            alt="KidsRise Logo"
             className="h-16 w-auto mx-auto mb-4"
           />
           <h1 className="text-3xl font-bold">Welcome to KidsRise</h1>
@@ -196,7 +214,10 @@ const Auth = () => {
               <TabsContent value="signin" className="space-y-4">
                 <form onSubmit={handleSignIn} className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="signin-email" className="flex items-center gap-2">
+                    <Label
+                      htmlFor="signin-email"
+                      className="flex items-center gap-2"
+                    >
                       <Mail className="h-4 w-4" />
                       Email
                     </Label>
@@ -204,13 +225,16 @@ const Auth = () => {
                       id="signin-email"
                       type="email"
                       value={signInEmail}
-                      onChange={(e) => setSignInEmail(e.target.value)}
+                      onChange={e => setSignInEmail(e.target.value)}
                       placeholder="Enter your email"
                       required
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="signin-password" className="flex items-center gap-2">
+                    <Label
+                      htmlFor="signin-password"
+                      className="flex items-center gap-2"
+                    >
                       <Lock className="h-4 w-4" />
                       Password
                     </Label>
@@ -218,7 +242,7 @@ const Auth = () => {
                       id="signin-password"
                       type="password"
                       value={signInPassword}
-                      onChange={(e) => setSignInPassword(e.target.value)}
+                      onChange={e => setSignInPassword(e.target.value)}
                       placeholder="Enter your password"
                       required
                     />
@@ -232,7 +256,10 @@ const Auth = () => {
               <TabsContent value="signup" className="space-y-4">
                 <form onSubmit={handleSignUp} className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="signup-name" className="flex items-center gap-2">
+                    <Label
+                      htmlFor="signup-name"
+                      className="flex items-center gap-2"
+                    >
                       <UserRound className="h-4 w-4" />
                       Display Name
                     </Label>
@@ -240,17 +267,25 @@ const Auth = () => {
                       id="signup-name"
                       type="text"
                       value={signUpDisplayName}
-                      onChange={(e) => setSignUpDisplayName(e.target.value)}
+                      onChange={e => setSignUpDisplayName(e.target.value)}
                       placeholder="Enter your name"
                       required
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="signup-role" className="flex items-center gap-2">
+                    <Label
+                      htmlFor="signup-role"
+                      className="flex items-center gap-2"
+                    >
                       <Users className="h-4 w-4" />
                       Role
                     </Label>
-                    <Select value={signUpRole} onValueChange={(value: "parent" | "kid") => setSignUpRole(value)}>
+                    <Select
+                      value={signUpRole}
+                      onValueChange={(value: "parent" | "kid") =>
+                        setSignUpRole(value)
+                      }
+                    >
                       <SelectTrigger>
                         <SelectValue placeholder="Select your role" />
                       </SelectTrigger>
@@ -261,7 +296,10 @@ const Auth = () => {
                     </Select>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="signup-email" className="flex items-center gap-2">
+                    <Label
+                      htmlFor="signup-email"
+                      className="flex items-center gap-2"
+                    >
                       <Mail className="h-4 w-4" />
                       Email
                     </Label>
@@ -269,13 +307,16 @@ const Auth = () => {
                       id="signup-email"
                       type="email"
                       value={signUpEmail}
-                      onChange={(e) => setSignUpEmail(e.target.value)}
+                      onChange={e => setSignUpEmail(e.target.value)}
                       placeholder="Enter your email"
                       required
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="signup-password" className="flex items-center gap-2">
+                    <Label
+                      htmlFor="signup-password"
+                      className="flex items-center gap-2"
+                    >
                       <Lock className="h-4 w-4" />
                       Password
                     </Label>
@@ -283,7 +324,7 @@ const Auth = () => {
                       id="signup-password"
                       type="password"
                       value={signUpPassword}
-                      onChange={(e) => setSignUpPassword(e.target.value)}
+                      onChange={e => setSignUpPassword(e.target.value)}
                       placeholder="Create a password"
                       minLength={6}
                       required
@@ -299,7 +340,11 @@ const Auth = () => {
         </Card>
 
         <div className="text-center mt-4">
-          <Button variant="ghost" onClick={() => navigate("/")} className="text-sm">
+          <Button
+            variant="ghost"
+            onClick={() => navigate("/")}
+            className="text-sm"
+          >
             ← Back to Home
           </Button>
         </div>
