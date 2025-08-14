@@ -130,22 +130,34 @@ const Index = () => {
       <div className="spotlight-overlay" />
 
       <main className="relative z-10 container py-10">
-        <header className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <h1 className="text-4xl sm:text-5xl font-bold tracking-tight">
-              Watch Your Kids Rise to Every Challenge
-            </h1>
-            <p className="text-muted-foreground mt-2">
-              Transform daily chores and activities into exciting achievements. KidsRise helps families set goals, track progress, and celebrate wins together with our fun point-based reward system.
-            </p>
+        <header className="mb-8">
+          {/* Logo Section */}
+          <div className="text-center mb-8">
+            <img 
+              src="/lovable-uploads/dd5214b6-f0ae-465c-be62-f98bdadb9881.png" 
+              alt="KidsRise Logo" 
+              className="mx-auto h-16 sm:h-20 w-auto mb-4"
+            />
           </div>
-          <div className="flex gap-3">
-            <Dialog open={openAddKid} onOpenChange={setOpenAddKid}>
-              <DialogTrigger asChild>
-                <Button size="lg"><Plus className="mr-2 h-5 w-5" /> Add Kid</Button>
-              </DialogTrigger>
-              <AddKidDialog onAdd={(n, g) => { addKid(n, g); setOpenAddKid(false); }} />
-            </Dialog>
+          
+          {/* Title and Add Kid Section */}
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <h1 className="text-4xl sm:text-5xl font-bold tracking-tight">
+                Watch Your Kids Rise to Every Challenge
+              </h1>
+              <p className="text-muted-foreground mt-2">
+                Transform daily chores and activities into exciting achievements. KidsRise helps families set goals, track progress, and celebrate wins together with our fun point-based reward system.
+              </p>
+            </div>
+            <div className="flex gap-3">
+              <Dialog open={openAddKid} onOpenChange={setOpenAddKid}>
+                <DialogTrigger asChild>
+                  <Button size="lg"><Plus className="mr-2 h-5 w-5" /> Add Kid</Button>
+                </DialogTrigger>
+                <AddKidDialog onAdd={(n, g) => { addKid(n, g); setOpenAddKid(false); }} />
+              </Dialog>
+            </div>
           </div>
         </header>
 
