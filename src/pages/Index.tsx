@@ -134,12 +134,17 @@ const Index = () => {
           {/* Title and Add Kid Section */}
           <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             <div className="flex items-center gap-4">
-              {/* Logo */}
-              <img 
-                src="/lovable-uploads/dd5214b6-f0ae-465c-be62-f98bdadb9881.png" 
-                alt="KidsRise Logo" 
-                className="h-12 sm:h-16 w-auto flex-shrink-0"
-              />
+               {/* Logo */}
+               <img 
+                 src="/lovable-uploads/dd5214b6-f0ae-465c-be62-f98bdadb9881.png" 
+                 alt="KidsRise Logo" 
+                 className="h-12 sm:h-16 w-auto flex-shrink-0"
+                 onError={(e) => {
+                   console.error('Logo failed to load');
+                   e.currentTarget.style.display = 'none';
+                 }}
+                 onLoad={() => console.log('Logo loaded successfully')}
+               />
               {/* Title and Subtitle */}
               <div>
                 <h1 className="text-4xl sm:text-5xl font-bold tracking-tight">
