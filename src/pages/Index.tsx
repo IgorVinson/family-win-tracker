@@ -130,25 +130,25 @@ const Index = () => {
       <div className="spotlight-overlay" />
 
       <main className="relative z-10 container py-10">
-        <header className="mb-8">
-          {/* Logo Section */}
-          <div className="text-center mb-8">
-            <img 
-              src="/lovable-uploads/dd5214b6-f0ae-465c-be62-f98bdadb9881.png" 
-              alt="KidsRise Logo" 
-              className="mx-auto h-16 sm:h-20 w-auto mb-4"
-            />
-          </div>
-          
+        <header className="mb-8">          
           {/* Title and Add Kid Section */}
           <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-            <div>
-              <h1 className="text-4xl sm:text-5xl font-bold tracking-tight">
-                Watch Your Kids Rise to Every Challenge
-              </h1>
-              <p className="text-muted-foreground mt-2">
-                Transform daily chores and activities into exciting achievements. KidsRise helps families set goals, track progress, and celebrate wins together with our fun point-based reward system.
-              </p>
+            <div className="flex items-center gap-4">
+              {/* Logo */}
+              <img 
+                src="/lovable-uploads/dd5214b6-f0ae-465c-be62-f98bdadb9881.png" 
+                alt="KidsRise Logo" 
+                className="h-12 sm:h-16 w-auto flex-shrink-0"
+              />
+              {/* Title and Subtitle */}
+              <div>
+                <h1 className="text-4xl sm:text-5xl font-bold tracking-tight">
+                  Watch Your Kids Rise to Every Challenge
+                </h1>
+                <p className="text-muted-foreground mt-2">
+                  Transform daily chores and activities into exciting achievements. KidsRise helps families set goals, track progress, and celebrate wins together with our fun point-based reward system.
+                </p>
+              </div>
             </div>
             <div className="flex gap-3">
               <Dialog open={openAddKid} onOpenChange={setOpenAddKid}>
