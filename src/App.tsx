@@ -5,11 +5,11 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/context/AuthProvider";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Route, Routes, useLocation } from "react-router-dom";
+import AcceptInvite from "./pages/AcceptInvite";
 import Auth from "./pages/Auth";
 import IndexWrapper from "./pages/IndexWrapper";
 import KidDashboard from "./pages/KidDashboard";
 import NotFound from "./pages/NotFound";
-import AcceptInvite from "./pages/AcceptInvite";
 
 function AppContent() {
   const location = useLocation();

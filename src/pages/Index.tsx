@@ -1,5 +1,6 @@
-import { useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { CreateKidWithInvite } from "@/components/kid/CreateKidWithInvite";
+import { EditKidModal } from "@/components/kid/EditKidModal";
+import { ReportViewModal } from "@/components/kid/ReportViewModal";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -18,21 +19,18 @@ import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { useFamilyKids } from "@/hooks/useFamilyKids";
 import {
+  AlertCircle,
+  BarChart3,
+  Edit,
+  Loader2,
   Plus,
+  Star,
   Target,
   Trophy,
-  Star,
   UserRound,
-  ArrowRight,
-  Edit,
-  BarChart3,
-  AlertCircle,
-  LogOut,
-  Loader2,
 } from "lucide-react";
-import { EditKidModal } from "@/components/kid/EditKidModal";
-import { ReportViewModal } from "@/components/kid/ReportViewModal";
-import { CreateKidWithInvite } from "@/components/kid/CreateKidWithInvite";
+import { useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 
 type DailyReportEntry = { metricId: string; value: number };
 type DailyReport = {
@@ -182,7 +180,9 @@ const Index = () => {
               ) : null}
             </div>
             {isAuthenticated && (
-              <div className="mt-4 max-w-md"><CreateKidWithInvite /></div>
+              <div className="mt-4 max-w-md">
+                <CreateKidWithInvite />
+              </div>
             )}
           </div>
         </header>

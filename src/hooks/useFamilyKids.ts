@@ -1,7 +1,7 @@
-import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/hooks/useAuth";
 import { toast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
+import { useEffect, useState } from "react";
 
 // Simple Kid type for the main dashboard (lightweight)
 export type DailyReportLite = {
@@ -58,7 +58,7 @@ export function useFamilyKids() {
       updatePoints: async () => {},
       setGoal: async () => {},
       resetKid: async () => {},
-      refresh: async () => {}
+      refresh: async () => {},
     };
   }
 
@@ -73,12 +73,14 @@ export function useFamilyKids() {
       `);
 
       // If user is a kid, only show their own profile
-      if (userRole === 'kid') {
-        query = query.eq('user_id', user?.id);
+      if (userRole === "kid") {
+        query = query.eq("user_id", user?.id);
       }
       // For parents (and other roles), rely on RLS to scope visibility. Removing previous filter that excluded claimed kid accounts.
 
-      const { data: kidsData, error } = await query.order("created_at", { ascending: true });
+      const { data: kidsData, error } = await query.order("created_at", {
+        ascending: true,
+      });
 
       if (error) {
         console.error("Error loading kids:", error);
@@ -88,9 +90,16 @@ export function useFamilyKids() {
 
       // Convert database format to Kid format
       const convertedKids: Kid[] = (kidsData || []).map((kid, index) => {
-        type ReportRow = { id: string; date: string; status: string | null; created_at?: string };
+        type ReportRow = {
+          id: string;
+          date: string;
+          status: string | null;
+          created_at?: string;
+        };
         type GiftRow = { id: string; status: string | null };
-        const reports: DailyReportLite[] = ((kid.daily_reports || []) as ReportRow[]).map(r => ({
+        const reports: DailyReportLite[] = (
+          (kid.daily_reports || []) as ReportRow[]
+        ).map(r => ({
           id: r.id,
           date: r.date,
           status: r.status,
@@ -105,7 +114,9 @@ export function useFamilyKids() {
           color: getPastelColor(index),
           createdAt: kid.created_at,
           reports,
-          giftRedemptions: ((kid.gift_redemptions || []) as GiftRow[]).map(g => ({ id: g.id, status: g.status })),
+          giftRedemptions: ((kid.gift_redemptions || []) as GiftRow[]).map(
+            g => ({ id: g.id, status: g.status })
+          ),
         };
       });
 
@@ -123,23 +134,23 @@ export function useFamilyKids() {
       toast({
         variant: "destructive",
         title: "Authentication required",
-        description: "Please sign in to add kids."
+        description: "Please sign in to add kids.",
       });
       return;
     }
 
-    if (userRole !== 'parent') {
+    if (userRole !== "parent") {
       toast({
         variant: "destructive",
         title: "Permission denied",
-        description: "Only parents can create kid profiles."
+        description: "Only parents can create kid profiles.",
       });
       return;
     }
 
     try {
-      console.log('Adding kid with user role:', userRole, 'user id:', user.id);
-      
+      console.log("Adding kid with user role:", userRole, "user id:", user.id);
+
       const { data, error } = await supabase
         .from("kids")
         .insert({
@@ -153,32 +164,33 @@ export function useFamilyKids() {
 
       if (error) {
         console.error("Database error:", error);
-        
-        if (error.code === '42501') {
+
+        if (error.code === "42501") {
           toast({
             variant: "destructive",
             title: "Permission denied",
-            description: "You don't have permission to create kids. Please contact your administrator."
+            description:
+              "You don't have permission to create kids. Please contact your administrator.",
           });
           return;
         }
-        
+
         throw error;
       }
 
       // Refresh the kids list
       await loadKidsData();
-      
-      toast({ 
-        title: "Kid added", 
-        description: `${name} joined the leaderboard!` 
+
+      toast({
+        title: "Kid added",
+        description: `${name} joined the leaderboard!`,
       });
     } catch (error) {
       console.error("Error adding kid:", error);
       toast({
         variant: "destructive",
         title: "Failed to add kid",
-        description: "Could not add the kid. Please try again."
+        description: "Could not add the kid. Please try again.",
       });
     }
   };
@@ -191,29 +203,29 @@ export function useFamilyKids() {
       if (!kid) return;
 
       const newPoints = Math.max(0, kid.points + delta);
-      
+
       const { error } = await supabase
         .from("kids")
         .update({
           current_points: newPoints,
-          updated_at: new Date().toISOString()
+          updated_at: new Date().toISOString(),
         })
         .eq("id", kidId);
 
       if (error) throw error;
 
       // Update local state optimistically
-      setKids(prev => prev.map(k => 
-        k.id === kidId ? { ...k, points: newPoints } : k
-      ));
+      setKids(prev =>
+        prev.map(k => (k.id === kidId ? { ...k, points: newPoints } : k))
+      );
 
       // Check for goal achievement
       const before = kid.points;
       const after = newPoints;
       if (before < kid.goal && after >= kid.goal && kid.goal > 0) {
-        toast({ 
-          title: "Goal reached!", 
-          description: `${kid.name} hit their goal of ${kid.goal} points 🎉` 
+        toast({
+          title: "Goal reached!",
+          description: `${kid.name} hit their goal of ${kid.goal} points 🎉`,
         });
       }
     } catch (error) {
@@ -221,7 +233,7 @@ export function useFamilyKids() {
       toast({
         variant: "destructive",
         title: "Failed to update points",
-        description: "Could not update points. Please try again."
+        description: "Could not update points. Please try again.",
       });
       // Refresh data to revert optimistic update
       loadKidsData();
@@ -236,22 +248,20 @@ export function useFamilyKids() {
         .from("kids")
         .update({
           monthly_goal: goal,
-          updated_at: new Date().toISOString()
+          updated_at: new Date().toISOString(),
         })
         .eq("id", kidId);
 
       if (error) throw error;
 
       // Update local state optimistically
-      setKids(prev => prev.map(k => 
-        k.id === kidId ? { ...k, goal } : k
-      ));
+      setKids(prev => prev.map(k => (k.id === kidId ? { ...k, goal } : k)));
     } catch (error) {
       console.error("Error setting goal:", error);
       toast({
         variant: "destructive",
         title: "Failed to set goal",
-        description: "Could not update goal. Please try again."
+        description: "Could not update goal. Please try again.",
       });
       // Refresh data to revert optimistic update
       loadKidsData();
@@ -266,22 +276,22 @@ export function useFamilyKids() {
         .from("kids")
         .update({
           current_points: 0,
-          updated_at: new Date().toISOString()
+          updated_at: new Date().toISOString(),
         })
         .eq("id", kidId);
 
       if (error) throw error;
 
       // Update local state optimistically
-      setKids(prev => prev.map(k => 
-        k.id === kidId ? { ...k, points: 0 } : k
-      ));
+      setKids(prev =>
+        prev.map(k => (k.id === kidId ? { ...k, points: 0 } : k))
+      );
     } catch (error) {
       console.error("Error resetting kid:", error);
       toast({
         variant: "destructive",
         title: "Failed to reset points",
-        description: "Could not reset points. Please try again."
+        description: "Could not reset points. Please try again.",
       });
       // Refresh data to revert optimistic update
       loadKidsData();
@@ -298,7 +308,7 @@ export function useFamilyKids() {
     updatePoints,
     setGoal,
     resetKid,
-    refresh: loadKidsData
+    refresh: loadKidsData,
   };
 }
 

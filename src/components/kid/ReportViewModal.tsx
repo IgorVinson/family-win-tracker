@@ -1,10 +1,21 @@
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Calendar, FileText, Target } from "lucide-react";
 
 type DailyReportEntry = { metricId: string; value: number };
-type DailyReport = { id: string; date: string; createdAt?: string; notes?: string; entries?: DailyReportEntry[] };
+type DailyReport = {
+  id: string;
+  date: string;
+  createdAt?: string;
+  notes?: string;
+  entries?: DailyReportEntry[];
+};
 type Metric = { id: string; name: string; unit?: string; groupId?: string };
 
 interface ReportViewModalProps {
@@ -15,26 +26,35 @@ interface ReportViewModalProps {
   metrics?: Metric[];
 }
 
-export function ReportViewModal({ open, onOpenChange, report, kidName, metrics = [] }: ReportViewModalProps) {
+export function ReportViewModal({
+  open,
+  onOpenChange,
+  report,
+  kidName,
+  metrics = [],
+}: ReportViewModalProps) {
   if (!report) return null;
 
-  const totalPoints = (report.entries || []).reduce((sum, entry) => sum + (entry.value || 0), 0);
-  
+  const totalPoints = (report.entries || []).reduce(
+    (sum, entry) => sum + (entry.value || 0),
+    0
+  );
+
   const getMetricName = (metricId: string) => {
     return metrics.find(m => m.id === metricId)?.name || `Activity ${metricId}`;
   };
 
   const getMetricUnit = (metricId: string) => {
-    return metrics.find(m => m.id === metricId)?.unit || '';
+    return metrics.find(m => m.id === metricId)?.unit || "";
   };
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', { 
-      weekday: 'long', 
-      year: 'numeric', 
-      month: 'long', 
-      day: 'numeric' 
+    return date.toLocaleDateString("en-US", {
+      weekday: "long",
+      year: "numeric",
+      month: "long",
+      day: "numeric",
     });
   };
 
@@ -47,7 +67,7 @@ export function ReportViewModal({ open, onOpenChange, report, kidName, metrics =
             {kidName}'s Daily Report
           </DialogTitle>
         </DialogHeader>
-        
+
         <div className="space-y-4">
           {/* Report Header */}
           <Card>
@@ -64,7 +84,8 @@ export function ReportViewModal({ open, onOpenChange, report, kidName, metrics =
             </CardHeader>
             <CardContent>
               <div className="text-sm text-muted-foreground">
-                Submitted: {new Date(report.createdAt || report.date).toLocaleString()}
+                Submitted:{" "}
+                {new Date(report.createdAt || report.date).toLocaleString()}
               </div>
             </CardContent>
           </Card>
@@ -78,23 +99,31 @@ export function ReportViewModal({ open, onOpenChange, report, kidName, metrics =
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-              {(!report.entries || report.entries.length === 0) ? (
+              {!report.entries || report.entries.length === 0 ? (
                 <div className="text-center text-muted-foreground py-4">
                   No activities recorded for this day
                 </div>
               ) : (
                 <div className="space-y-2">
                   {(report.entries || []).map((entry, index) => (
-                    <div key={index} className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
+                    <div
+                      key={index}
+                      className="flex items-center justify-between p-3 bg-muted/30 rounded-lg"
+                    >
                       <div className="flex items-center gap-2">
                         <div className="h-2 w-2 bg-primary rounded-full" />
-                        <span className="font-medium">{getMetricName(entry.metricId)}</span>
+                        <span className="font-medium">
+                          {getMetricName(entry.metricId)}
+                        </span>
                         {getMetricUnit(entry.metricId) && (
-                          <span className="text-xs text-muted-foreground">({getMetricUnit(entry.metricId)})</span>
+                          <span className="text-xs text-muted-foreground">
+                            ({getMetricUnit(entry.metricId)})
+                          </span>
                         )}
                       </div>
                       <Badge variant="outline">
-                        {entry.value > 0 ? '+' : ''}{entry.value} pts
+                        {entry.value > 0 ? "+" : ""}
+                        {entry.value} pts
                       </Badge>
                     </div>
                   ))}

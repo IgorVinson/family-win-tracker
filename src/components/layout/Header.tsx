@@ -50,8 +50,11 @@ export function Header() {
           )}
           {isAuthenticated && (
             <>
-              {userRole === 'kid' && (
-                <Link to="/accept-invite" className="text-sm text-muted-foreground hover:text-foreground">
+              {userRole === "kid" && (
+                <Link
+                  to="/accept-invite"
+                  className="text-sm text-muted-foreground hover:text-foreground"
+                >
                   Accept Invite
                 </Link>
               )}
@@ -83,7 +86,9 @@ export function Header() {
                 >
                   <DropdownMenuLabel className="text-xs font-normal">
                     <div className="flex flex-col">
-                      <span className="text-muted-foreground">Signed in as</span>
+                      <span className="text-muted-foreground">
+                        Signed in as
+                      </span>
                       <span className="truncate font-medium text-foreground">
                         {user?.email}
                       </span>

@@ -1,13 +1,13 @@
 // filepath: src/pages/AcceptInvite.tsx
-import { useEffect, useState } from 'react';
-import { useSearchParams, useNavigate } from 'react-router-dom';
-import { useAuth } from '@/hooks/useAuth';
-import { rpcClaimKidInvitation } from '@/integrations/supabase/client';
-import { toast } from '@/hooks/use-toast';
+import { toast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
+import { rpcClaimKidInvitation } from "@/integrations/supabase/client";
+import { useEffect, useState } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 
 export default function AcceptInvite() {
   const [search] = useSearchParams();
-  const token = search.get('token') || '';
+  const token = search.get("token") || "";
   const { user } = useAuth();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
@@ -24,11 +24,18 @@ export default function AcceptInvite() {
     setLoading(false);
     if (error) {
       console.error(error);
-      toast({ variant: 'destructive', title: 'Invite failed', description: error.message });
+      toast({
+        variant: "destructive",
+        title: "Invite failed",
+        description: error.message,
+      });
       return;
     }
     const kidId = data?.[0]?.kid_id;
-    toast({ title: 'Invitation accepted', description: 'Your account is now linked.' });
+    toast({
+      title: "Invitation accepted",
+      description: "Your account is now linked.",
+    });
     if (kidId) navigate(`/kid/${kidId}`);
   };
 
@@ -36,10 +43,16 @@ export default function AcceptInvite() {
     <div className="p-4 max-w-md mx-auto">
       <h1 className="text-xl font-semibold mb-4">Accept Invitation</h1>
       {!token && <p>Invalid invitation link.</p>}
-      {token && !user && <p>Please sign up or log in first, then click claim.</p>}
+      {token && !user && (
+        <p>Please sign up or log in first, then click claim.</p>
+      )}
       {token && user && (
-        <button disabled={loading} onClick={claim} className="px-4 py-2 bg-blue-600 text-white rounded disabled:opacity-50">
-          {loading ? 'Claiming...' : 'Claim Invitation'}
+        <button
+          disabled={loading}
+          onClick={claim}
+          className="px-4 py-2 bg-blue-600 text-white rounded disabled:opacity-50"
+        >
+          {loading ? "Claiming..." : "Claim Invitation"}
         </button>
       )}
     </div>

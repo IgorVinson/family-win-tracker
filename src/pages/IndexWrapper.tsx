@@ -1,10 +1,7 @@
+import { Card, CardContent } from "@/components/ui/card";
 import { useAuth } from "@/hooks/useAuth";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Link } from "react-router-dom";
-import { UserRound, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import Index from "./Index";
-import AcceptInvite from "./AcceptInvite";
 
 export default function IndexWrapper() {
   const { loading, isAuthenticated } = useAuth();
@@ -17,7 +14,9 @@ export default function IndexWrapper() {
             <Loader2 className="h-6 w-6 animate-spin" />
             <div>
               <p className="font-medium">Loading...</p>
-              <p className="text-sm text-muted-foreground">Setting up your dashboard</p>
+              <p className="text-sm text-muted-foreground">
+                Setting up your dashboard
+              </p>
             </div>
           </CardContent>
         </Card>
