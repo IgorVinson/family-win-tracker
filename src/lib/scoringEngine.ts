@@ -7,16 +7,16 @@ export class ScoringEngine {
   static calculateDailyPoints(
     kid: EnhancedKid, 
     reportDate: string, 
-    entries: Array<{ metricId: string; value: number }>
+    entries: Array<{ activityId: string; value: number }>
   ): ScoreEntry[] {
     const scoreEntries: ScoreEntry[] = [];
     const now = new Date().toISOString();
 
     entries.forEach(entry => {
-      const metric = kid.metrics?.find(m => m.id === entry.metricId);
-      if (!metric || !metric.scoringRule) return;
+      const activity = kid.activities?.find(a => a.id === entry.activityId);
+      if (!activity || !activity.scoringRule) return;
 
-      const rule = metric.scoringRule;
+      const rule = activity.scoringRule;
       let totalPoints = 0;
       const reasons: string[] = [];
 
@@ -24,17 +24,17 @@ export class ScoringEngine {
       const basePoints = Math.floor(entry.value * rule.basePointsPerUnit);
       totalPoints += basePoints;
       if (basePoints > 0) {
-        reasons.push(`Base: ${entry.value} ${metric.unit || 'units'} × ${rule.basePointsPerUnit} pts`);
+        reasons.push(`Base: ${entry.value} ${activity.unit || 'units'} × ${rule.basePointsPerUnit} pts`);
       }
 
       // Goal bonus
-      if (rule.goalBonusPoints && metric.planValue && entry.value >= metric.planValue) {
+      if (rule.goalBonusPoints && activity.planValue && entry.value >= activity.planValue) {
         totalPoints += rule.goalBonusPoints;
         reasons.push(`Goal bonus: +${rule.goalBonusPoints} pts`);
       }
 
       // Streak bonus
-      const streakDays = kid.streaks[entry.metricId] || 0;
+      const streakDays = kid.streaks[entry.activityId] || 0;
       if (rule.streakBonusPoints && streakDays >= 2) {
         const streakBonus = Math.min(rule.streakBonusPoints * Math.floor(streakDays / 2), rule.streakBonusPoints * 5);
         totalPoints += streakBonus;
@@ -50,8 +50,8 @@ export class ScoringEngine {
         scoreEntries.push({
           id: crypto.randomUUID(),
           date: reportDate,
-          metricId: entry.metricId,
-          metricName: metric.name,
+          activityId: entry.activityId,
+          activityName: activity.name,
           points: totalPoints,
           reason: reasons.join(", "),
           createdAt: now
@@ -66,43 +66,43 @@ export class ScoringEngine {
   static updateStreaks(
     kid: EnhancedKid, 
     reportDate: string, 
-    entries: Array<{ metricId: string; value: number }>
+    entries: Array<{ activityId: string; value: number }>
   ): Record<string, number> {
     const newStreaks = { ...kid.streaks };
     const yesterday = format(subDays(parseISO(reportDate + "T00:00:00"), 1), "yyyy-MM-dd");
     
-    // Check each metric in the report
+    // Check each activity in the report
     entries.forEach(entry => {
-      const metric = kid.metrics?.find(m => m.id === entry.metricId);
-      if (!metric || !metric.planValue) return;
+      const activity = kid.activities?.find(a => a.id === entry.activityId);
+      if (!activity || !activity.planValue) return;
 
-      const metGoal = entry.value >= metric.planValue;
+      const metGoal = entry.value >= activity.planValue;
       
       if (metGoal) {
         // Check if they had a streak yesterday
-        const hadYesterdayStreak = this.checkStreakOnDate(kid, entry.metricId, yesterday);
-        newStreaks[entry.metricId] = hadYesterdayStreak ? (newStreaks[entry.metricId] || 0) + 1 : 1;
+        const hadYesterdayStreak = this.checkStreakOnDate(kid, entry.activityId, yesterday);
+        newStreaks[entry.activityId] = hadYesterdayStreak ? (newStreaks[entry.activityId] || 0) + 1 : 1;
       } else {
         // Reset streak if goal not met
-        newStreaks[entry.metricId] = 0;
+        newStreaks[entry.activityId] = 0;
       }
     });
 
     return newStreaks;
   }
 
-  // Check if a metric goal was met on a specific date
-  private static checkStreakOnDate(kid: EnhancedKid, metricId: string, date: string): boolean {
+  // Check if an activity goal was met on a specific date
+  private static checkStreakOnDate(kid: EnhancedKid, activityId: string, date: string): boolean {
     const report = kid.reports?.find(r => r.date === date);
     if (!report) return false;
 
-    const entry = report.entries.find(e => e.metricId === metricId);
+    const entry = report.entries.find(e => e.activityId === activityId);
     if (!entry) return false;
 
-    const metric = kid.metrics?.find(m => m.id === metricId);
-    if (!metric || !metric.planValue) return false;
+    const activity = kid.activities?.find(a => a.id === activityId);
+    if (!activity || !activity.planValue) return false;
 
-    return entry.value >= metric.planValue;
+    return entry.value >= activity.planValue;
   }
 
   // Check for new achievements
@@ -111,18 +111,18 @@ export class ScoringEngine {
     const unlockedIds = new Set(kid.achievements.map(a => a.id));
 
     // Streak achievements
-    Object.entries(kid.streaks).forEach(([metricId, streakDays]) => {
-      const metric = kid.metrics?.find(m => m.id === metricId);
-      if (!metric) return;
+    Object.entries(kid.streaks).forEach(([activityId, streakDays]) => {
+      const activity = kid.activities?.find(a => a.id === activityId);
+      if (!activity) return;
 
       const streakAchievements = [
-        { days: 7, name: "Week Warrior", description: `7 days in a row of ${metric.name}!`, points: 50 },
-        { days: 14, name: "Two Week Champion", description: `14 days in a row of ${metric.name}!`, points: 100 },
-        { days: 30, name: "Monthly Master", description: `30 days in a row of ${metric.name}!`, points: 200 }
+        { days: 7, name: "Week Warrior", description: `7 days in a row of ${activity.name}!`, points: 50 },
+        { days: 14, name: "Two Week Champion", description: `14 days in a row of ${activity.name}!`, points: 100 },
+        { days: 30, name: "Monthly Master", description: `30 days in a row of ${activity.name}!`, points: 200 }
       ];
 
       streakAchievements.forEach(achievement => {
-        const achievementId = `streak_${metricId}_${achievement.days}`;
+        const achievementId = `streak_${activityId}_${achievement.days}`;
         if (streakDays >= achievement.days && !unlockedIds.has(achievementId)) {
           newAchievements.push({
             id: achievementId,
@@ -131,7 +131,7 @@ export class ScoringEngine {
             icon: "trophy",
             pointsReward: achievement.points,
             type: "streak",
-            requirement: JSON.stringify({ metricId, streakDays: achievement.days }),
+            requirement: JSON.stringify({ activityId, streakDays: achievement.days }),
             unlockedAt: new Date().toISOString()
           });
         }
@@ -163,7 +163,7 @@ export class ScoringEngine {
   static processDailyReport(
     kid: EnhancedKid, 
     reportDate: string, 
-    entries: Array<{ metricId: string; value: number }>
+    entries: Array<{ activityId: string; value: number }>
   ): Partial<EnhancedKid> {
     // Calculate new points
     const newScoreEntries = this.calculateDailyPoints(kid, reportDate, entries);

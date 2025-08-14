@@ -23,11 +23,23 @@ import { ScoreDashboard } from "@/components/score/ScoreDashboard";
 import { PrizeShop } from "@/components/prize/PrizeShop";
 import { PrizeManagement } from "@/components/prize/PrizeManagement";
 
-// Legacy types for compatibility
+// Legacy types for compatibility (UPDATED FOR ACTIVITIES)
 export type Activity = { id: string; name: string; value: number; unit?: string; groupId?: string; planType?: "daily" | "weekly"; planValue?: number };
 export type Group = { id: string; name: string; type: "project" | "goal" };
 export type DailyReportEntry = { activityId: string; value: number };
-export type DailyReport = { id: string; date: string; createdAt: string; notes?: string; entries: DailyReportEntry[] };
+export type DailyReport = { id: string; date: string; createdAt: string; notes?: string; entries: DailyReportEntry[]; status?: "pending" | "approved" | "rejected"; processedAt?: string; processedBy?: "parent" | "system" };
+
+// Create a proper Report type alias
+export type Report = {
+  id: string;
+  date: string;
+  createdAt: string;
+  notes?: string;
+  entries: Array<{ activityId: string; value: number }>;
+  status: "pending" | "approved" | "rejected";
+  processedAt?: string;
+  processedBy?: "parent" | "system";
+};
 
 export default function KidDashboard() {
   const { id } = useParams<{ id: string }>();
@@ -48,10 +60,10 @@ export default function KidDashboard() {
   } = useEnhancedKid(id || "");
 
   const [activityName, setActivityName] = useState("");
-  const [metricUnit, setMetricUnit] = useState("");
+  const [activityUnit, setActivityUnit] = useState("");
   const [planType, setPlanType] = useState<"daily" | "weekly">("daily");
   const [planValue, setPlanValue] = useState("");
-  const [metricGroupId, setMetricGroupId] = useState<string>("");
+  const [activityGroupId, setActivityGroupId] = useState<string>("");
   
   // Scoring rule states for new activities
   const [newBasePointsPerUnit, setNewBasePointsPerUnit] = useState("1");
@@ -61,13 +73,13 @@ export default function KidDashboard() {
   const [groupName, setGroupName] = useState("");
   const [groupType, setGroupType] = useState<"project" | "goal">("goal");
   const [showManagement, setShowManagement] = useState(false);
-  const [editingMetric, setEditingMetric] = useState<any>(null);
+  const [editingActivity, setEditingActivity] = useState<any>(null);
   const [editingReport, setEditingReport] = useState<any>(null);
   const [reviewingReport, setReviewingReport] = useState<any>(null);
   const [deletingReport, setDeletingReport] = useState<any>(null);
 
   const [openAddGroup, setOpenAddGroup] = useState(false);
-  const [openAddMetric, setOpenAddMetric] = useState(false);
+  const [openAddActivity, setOpenAddActivity] = useState(false);
   const [openAddReport, setOpenAddReport] = useState(false);
   const reportSaveRef = useRef<(() => void) | null>(null);
 
@@ -81,61 +93,61 @@ export default function KidDashboard() {
     updateKid(updater);
   };
   
-  const { updateMetricScoringRule } = useEnhancedKid(id || "");
+  const { updateActivityScoringRule } = useEnhancedKid(id || "");
 
-  const addMetric = () => {
-    if (!metricName.trim()) return;
-    const metric: any = {
+  const addActivity = () => {
+    if (!activityName.trim()) return;
+    const activity: any = {
       id: crypto.randomUUID(),
-      name: metricName,
+      name: activityName,
       value: 0,
-      unit: metricUnit || undefined,
-      groupId: metricGroupId || undefined,
+      unit: activityUnit || undefined,
+      groupId: activityGroupId || undefined,
       planType,
       planValue: planValue ? parseInt(planValue) : undefined,
     };
     
-    // Create scoring rule for the new metric
+    // Create scoring rule for the new activity
     const scoringRule = {
-      metricId: metric.id,
+      activityId: activity.id,
       basePointsPerUnit: Math.max(0, Number(newBasePointsPerUnit) || 1),
       goalBonusPoints: Math.max(0, Number(newGoalBonusPoints) || 0),
       streakBonusPoints: Math.max(0, Number(newStreakBonusPoints) || 0),
       maxDailyPoints: Math.max(1, Number(newMaxDailyPoints) || 50),
     };
     
-    updateKidLegacy((k) => ({ ...k, metrics: [...(k.metrics ?? []), metric] }));
+    updateKidLegacy((k) => ({ ...k, activities: [...(k.activities ?? []), activity] }));
     
     // Add scoring rule to enhanced kid data
-    if (updateMetricScoringRule) {
-      updateMetricScoringRule(metric.id, scoringRule);
+    if (updateActivityScoringRule) {
+      updateActivityScoringRule(activity.id, scoringRule);
     }
     
     // Reset form
-    setMetricName("");
-    setMetricUnit("");
+    setActivityName("");
+    setActivityUnit("");
     setPlanValue("");
-    setMetricGroupId("");
+    setActivityGroupId("");
     setNewBasePointsPerUnit("1");
     setNewGoalBonusPoints("5");
     setNewStreakBonusPoints("2");
     setNewMaxDailyPoints("50"); 
-    setOpenAddMetric(false);
-    toast({ title: "Activity added", description: `${metricName} has been added.` });
+    setOpenAddActivity(false);
+    toast({ title: "Activity added", description: `${activityName} has been added.` });
   };
 
-  const updateMetric = (updatedMetric: any) => {
+  const updateActivity = (updatedActivity: any) => {
     updateKidLegacy((k) => ({
       ...k,
-      metrics: k.metrics?.map((m) => (m.id === updatedMetric.id ? updatedMetric : m)),
+      activities: k.activities?.map((a) => (a.id === updatedActivity.id ? updatedActivity : a)),
     }));
-    toast({ title: "Activity updated", description: `${updatedMetric.name} has been updated.` });
+    toast({ title: "Activity updated", description: `${updatedActivity.name} has been updated.` });
   };
 
-  const removeMetric = (metricId: string) => {
-    const metricName = kid?.metrics?.find((m) => m.id === metricId)?.name || "";
-    updateKidLegacy((k) => ({ ...k, metrics: k.metrics?.filter((m) => m.id !== metricId) }));
-    toast({ title: "Activity removed", description: `${metricName} has been removed.` });
+  const removeActivity = (activityId: string) => {
+    const activityName = kid?.activities?.find((a) => a.id === activityId)?.name || "";
+    updateKidLegacy((k) => ({ ...k, activities: k.activities?.filter((a) => a.id !== activityId) }));
+    toast({ title: "Activity removed", description: `${activityName} has been removed.` });
   };
 
   const addGroup = () => {
@@ -152,30 +164,30 @@ export default function KidDashboard() {
     updateKidLegacy((k) => ({
       ...k,
       groups: k.groups?.filter((g) => g.id !== groupId),
-      metrics: k.metrics?.map((m) => (m.groupId === groupId ? { ...m, groupId: undefined } : m)),
+      activities: k.activities?.map((a) => (a.groupId === groupId ? { ...a, groupId: undefined } : a)),
     }));
     toast({ title: "Group removed", description: `${groupName} group has been removed.` });
   };
 
-  const groupedMetrics = useMemo(() => {
-    if (!kid?.metrics) return [];
+  const groupedActivities = useMemo(() => {
+    if (!kid?.activities) return [];
     const groups = kid.groups || [];
-    const ungrouped = kid.metrics.filter(m => !m.groupId);
+    const ungrouped = kid.activities.filter(a => !a.groupId);
     const result = [];
     
     if (ungrouped.length > 0) {
-      result.push({ group: null, metrics: ungrouped });
+      result.push({ group: null, activities: ungrouped });
     }
     
     groups.forEach(group => {
-      const groupMetrics = kid.metrics?.filter(m => m.groupId === group.id) || [];
-      if (groupMetrics.length > 0) {
-        result.push({ group, metrics: groupMetrics });
+      const groupActivities = kid.activities?.filter(a => a.groupId === group.id) || [];
+      if (groupActivities.length > 0) {
+        result.push({ group, activities: groupActivities });
       }
     });
     
     return result;
-  }, [kid?.metrics, kid?.groups]);
+  }, [kid?.activities, kid?.groups]);
 
   const pendingReports = (kid?.reports || [])
     .filter(report => report.status === "pending")
@@ -223,7 +235,7 @@ export default function KidDashboard() {
           <Button onClick={() => setOpenAddGroup(true)} variant="outline">
             <Plus className="mr-2 h-4 w-4" /> Add group
           </Button>
-          <Button onClick={() => setOpenAddMetric(true)} variant="outline">
+          <Button onClick={() => setOpenAddActivity(true)} variant="outline">
             <Plus className="mr-2 h-4 w-4" /> Add activity
           </Button>
           <Button 
@@ -331,13 +343,13 @@ export default function KidDashboard() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              {!kid.metrics || kid.metrics.length === 0 ? (
+              {!kid.activities || kid.activities.length === 0 ? (
                 <p className="text-muted-foreground text-center py-4">
                   No activities configured. Add an activity to start tracking progress.
                 </p>
               ) : (
                 <div className="space-y-6">
-                  {groupedMetrics.map(({ group, metrics }) => (
+                  {groupedActivities.map(({ group, activities }) => (
                     <div key={group?.id || "ungrouped"}>
                       <div className="flex items-center justify-between mb-3">
                         <div className="flex items-center gap-2">
@@ -371,28 +383,28 @@ export default function KidDashboard() {
                             </TableRow>
                           </TableHeader>
                         <TableBody>
-                          {metrics.map((metric) => {
-                            // Get scoring rule from metric or use default
-                            const scoringRule = metric.scoringRule || {
-                              metricId: metric.id,
+                          {activities.map((activity) => {
+                            // Get scoring rule from activity or use default
+                            const scoringRule = activity.scoringRule || {
+                              activityId: activity.id,
                               basePointsPerUnit: 1,
                               goalBonusPoints: 5,
                               streakBonusPoints: 2,
                               maxDailyPoints: 50
                             };
                             
-                            const pointsDisplay = `${scoringRule.basePointsPerUnit}${metric.unit ? ` per ${metric.unit}` : ''} (+${scoringRule.goalBonusPoints} goal)`;
+                            const pointsDisplay = `${scoringRule.basePointsPerUnit}${activity.unit ? ` per ${activity.unit}` : ''} (+${scoringRule.goalBonusPoints} goal)`;
                             
                             return (
-                            <TableRow key={metric.id}>
-                              <TableCell className="font-medium">{metric.name}</TableCell>
+                            <TableRow key={activity.id}>
+                              <TableCell className="font-medium">{activity.name}</TableCell>
                               <TableCell>
-                                {metric.value} {metric.unit || ""}
+                                {activity.value} {activity.unit || ""}
                               </TableCell>
                               <TableCell>
-                                {metric.planValue ? (
+                                {activity.planValue ? (
                                   <Badge variant="outline">
-                                    {metric.planValue} {metric.unit || ""} {metric.planType}
+                                    {activity.planValue} {activity.unit || ""} {activity.planType}
                                   </Badge>
                                 ) : (
                                   <span className="text-muted-foreground">No plan</span>
@@ -411,14 +423,14 @@ export default function KidDashboard() {
                                   <Button
                                     variant="outline"
                                     size="sm"
-                                    onClick={() => setEditingMetric(metric)}
+                                    onClick={() => setEditingActivity(activity)}
                                   >
                                     <Edit className="h-3 w-3" />
                                   </Button>
                                   <Button
                                     variant="outline"
                                     size="sm"
-                                    onClick={() => removeMetric(metric.id)}
+                                    onClick={() => removeActivity(activity.id)}
                                   >
                                     <Trash2 className="h-3 w-3" />
                                   </Button>
@@ -429,7 +441,7 @@ export default function KidDashboard() {
                           })}
                         </TableBody>
                       </Table>
-                      {group !== groupedMetrics[groupedMetrics.length - 1]?.group && <Separator className="mt-4" />}
+                      {group !== groupedActivities[groupedActivities.length - 1]?.group && <Separator className="mt-4" />}
                     </div>
                   ))}
                 </div>
@@ -521,10 +533,10 @@ export default function KidDashboard() {
                         )}
                         <div className="flex flex-wrap gap-2">
                           {report.entries.map((entry) => {
-                            const metric = kid.metrics?.find((m) => m.id === entry.metricId);
-                            return metric ? (
-                              <Badge key={entry.metricId} variant="secondary">
-                                {metric.name}: {entry.value} {metric.unit || ""}
+                            const activity = kid.activities?.find((a) => a.id === entry.activityId);
+                            return activity ? (
+                              <Badge key={entry.activityId} variant="secondary">
+                                {activity.name}: {entry.value} {activity.unit || ""}
                               </Badge>
                             ) : null;
                           })}
@@ -540,7 +552,7 @@ export default function KidDashboard() {
 
       {/* Modals */}
       {/* Add Metric Dialog */}
-      <Dialog open={openAddMetric} onOpenChange={setOpenAddMetric}>
+      <Dialog open={openAddActivity} onOpenChange={setOpenAddActivity}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Add Activity</DialogTitle>
@@ -548,11 +560,11 @@ export default function KidDashboard() {
           <div className="space-y-4 py-2">
             <div className="grid gap-2">
               <Label htmlFor="m-name">Activity name</Label>
-              <Input id="m-name" value={metricName} onChange={(e) => setMetricName(e.target.value)} placeholder="e.g., Reading minutes" />
+              <Input id="m-name" value={activityName} onChange={(e) => setActivityName(e.target.value)} placeholder="e.g., Reading minutes" />
             </div>
             <div className="grid gap-2">
               <Label htmlFor="m-unit">Unit (optional)</Label>
-              <Input id="m-unit" value={metricUnit} onChange={(e) => setMetricUnit(e.target.value)} placeholder="e.g., min, pages" />
+              <Input id="m-unit" value={activityUnit} onChange={(e) => setActivityUnit(e.target.value)} placeholder="e.g., min, pages" />
             </div>
             <div className="grid gap-2">
               <Label>Plan type</Label>
@@ -570,7 +582,7 @@ export default function KidDashboard() {
             </div>
             <div className="grid gap-2">
               <Label>Group</Label>
-              <Select value={metricGroupId || "none"} onValueChange={(v) => setMetricGroupId(v === "none" ? "" : v)}>
+              <Select value={activityGroupId || "none"} onValueChange={(v) => setActivityGroupId(v === "none" ? "" : v)}>
                 <SelectTrigger><SelectValue placeholder="None" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="none">None</SelectItem>
@@ -585,7 +597,7 @@ export default function KidDashboard() {
               <h4 className="font-medium text-sm">Scoring Rules</h4>
               <div className="grid grid-cols-2 gap-3 text-sm">
                 <div>
-                  <Label htmlFor="new-base-points" className="text-xs text-muted-foreground">Base Points per {metricUnit || 'unit'}</Label>
+                  <Label htmlFor="new-base-points" className="text-xs text-muted-foreground">Base Points per {activityUnit || 'unit'}</Label>
                   <Input
                     id="new-base-points"
                     type="number"
@@ -630,13 +642,13 @@ export default function KidDashboard() {
                 </div>
               </div>
               <div className="text-xs text-muted-foreground">
-                Complete your {planType} goal of {planValue} {metricUnit || 'units'} to earn the goal bonus. 
+                Complete your {planType} goal of {planValue} {activityUnit || 'units'} to earn the goal bonus. 
                 Maintain streaks for additional points!
               </div>
             </div>
           </div>
           <DialogFooter>
-            <Button onClick={addMetric}>Save</Button>
+            <Button onClick={addActivity}>Save</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -680,7 +692,7 @@ export default function KidDashboard() {
               kid={{ 
                 id: kid.id, 
                 name: kid.name, 
-                metrics: kid.metrics?.map(({ id, name, unit, groupId }) => ({ id, name, unit, groupId })) || [], 
+                activities: kid.activities?.map(({ id, name, unit, groupId }) => ({ id, name, unit, groupId })) || [], 
                 groups: kid.groups || [] 
               }}
               onSave={(report) => {
@@ -701,12 +713,12 @@ export default function KidDashboard() {
       </Dialog>
 
       {/* Edit Metric Modal */}
-      <EditMetricModal
-        metric={editingMetric}
+      <EditActivityModal
+        activity={editingActivity}
         groups={kid.groups || []}
-        isOpen={!!editingMetric}
-        onClose={() => setEditingMetric(null)}
-        onSave={updateMetric}
+        isOpen={!!editingActivity}
+        onClose={() => setEditingActivity(null)}
+        onSave={updateActivity}
         kidId={id || ""}
       />
 

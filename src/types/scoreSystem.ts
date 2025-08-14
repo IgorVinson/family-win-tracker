@@ -61,7 +61,7 @@ export interface EnhancedKid {
   color: string;
   createdAt: string;
   notes?: string;
-  metrics?: Array<{
+  activities?: Array<{
     id: string;
     name: string;
     value: number;

@@ -9,11 +9,11 @@ export interface ScoringDisplay {
 }
 
 /**
- * Get default scoring rule for a metric
+ * Get default scoring rule for an activity
  */
-export function getDefaultScoringRule(metric: any): ScoringRule {
+export function getDefaultScoringRule(activity: any): ScoringRule {
   return {
-    metricId: metric.id,
+    activityId: activity.id,
     basePointsPerUnit: 1,
     goalBonusPoints: 5,
     streakBonusPoints: 2,

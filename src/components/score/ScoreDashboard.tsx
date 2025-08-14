@@ -16,11 +16,11 @@ export function ScoreDashboard({ kid }: ScoreDashboardProps) {
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
   const topStreaks = Object.entries(kid.streaks)
-    .map(([metricId, days]) => ({
-      metric: kid.metrics?.find(m => m.id === metricId),
+    .map(([activityId, days]) => ({
+      activity: kid.activities?.find(a => a.id === activityId),
       days
     }))
-    .filter(s => s.metric && s.days > 0)
+    .filter(s => s.activity && s.days > 0)
     .sort((a, b) => b.days - a.days)
     .slice(0, 3);
 
@@ -92,12 +92,12 @@ export function ScoreDashboard({ kid }: ScoreDashboardProps) {
               ) : (
                 <div className="space-y-3">
                   {recentEntries.map((entry) => (
-                    <div key={entry.id} className="flex items-center justify-between p-3 border rounded-lg">
-                      <div>
-                        <p className="font-medium">{entry.metricName}</p>
-                        <p className="text-sm text-muted-foreground">{entry.reason}</p>
-                        <p className="text-xs text-muted-foreground">{format(new Date(entry.date), "PPP")}</p>
-                      </div>
+                     <div key={entry.id} className="flex items-center justify-between p-3 border rounded-lg">
+                       <div>
+                         <p className="font-medium">{entry.activityName}</p>
+                         <p className="text-sm text-muted-foreground">{entry.reason}</p>
+                         <p className="text-xs text-muted-foreground">{format(new Date(entry.date), "PPP")}</p>
+                       </div>
                       <Badge variant="secondary" className="ml-2">
                         +{entry.points}
                       </Badge>
@@ -123,15 +123,15 @@ export function ScoreDashboard({ kid }: ScoreDashboardProps) {
                   No active streaks. Start completing daily goals to build streaks!
                 </p>
               ) : (
-                <div className="space-y-3">
-                  {topStreaks.map(({ metric, days }) => (
-                    <div key={metric!.id} className="flex items-center justify-between p-3 border rounded-lg">
-                      <div>
-                        <p className="font-medium">{metric!.name}</p>
-                        <p className="text-sm text-muted-foreground">
-                          {days} consecutive days
-                        </p>
-                      </div>
+                 <div className="space-y-3">
+                   {topStreaks.map(({ activity, days }) => (
+                     <div key={activity!.id} className="flex items-center justify-between p-3 border rounded-lg">
+                       <div>
+                         <p className="font-medium">{activity!.name}</p>
+                         <p className="text-sm text-muted-foreground">
+                           {days} consecutive days
+                         </p>
+                       </div>
                       <Badge variant={days >= 7 ? "default" : "secondary"}>
                         {days} 🔥
                       </Badge>

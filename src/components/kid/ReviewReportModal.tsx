@@ -16,7 +16,7 @@ interface Report {
   date: string;
   createdAt: string;
   notes?: string;
-  entries: Array<{ metricId: string; value: number }>;
+  entries: Array<{ activityId: string; value: number }>;
   status: "pending" | "approved" | "rejected";
   processedAt?: string;
   processedBy?: "parent" | "system";
@@ -30,13 +30,13 @@ interface ReviewReportModalProps {
   onApprove: (reportId: string, updates?: {
     date?: string;
     notes?: string;
-    entries?: Array<{ metricId: string; value: number }>;
+    entries?: Array<{ activityId: string; value: number }>;
   }) => void;
   onReject: (reportId: string) => void;
   onSave: (reportId: string, updates: {
     date?: string;
     notes?: string;
-    entries?: Array<{ metricId: string; value: number }>;
+    entries?: Array<{ activityId: string; value: number }>;
   }) => void;
 }
 
@@ -59,18 +59,18 @@ export function ReviewReportModal({ report, kid, isOpen, onClose, onApprove, onR
       setNotes(report.notes || "");
       
       const initialValues: Record<string, number> = {};
-      (kid.metrics ?? []).forEach((m) => {
-        const entry = report.entries.find(e => e.metricId === m.id);
-        initialValues[m.id] = entry?.value || 0;
+      (kid.activities ?? []).forEach((a) => {
+        const entry = report.entries.find(e => e.activityId === a.id);
+        initialValues[a.id] = entry?.value || 0;
       });
       setValues(initialValues);
       setHasChanges(false);
     }
-  }, [report, kid.metrics]);
+  }, [report, kid.activities]);
 
-  const handleChange = (metricId: string, val: string) => {
+  const handleChange = (activityId: string, val: string) => {
     const n = Math.max(0, Number(val || 0));
-    setValues((prev) => ({ ...prev, [metricId]: Number.isFinite(n) ? n : 0 }));
+    setValues((prev) => ({ ...prev, [activityId]: Number.isFinite(n) ? n : 0 }));
     setHasChanges(true);
   };
 
@@ -93,9 +93,9 @@ export function ReviewReportModal({ report, kid, isOpen, onClose, onApprove, onR
       const updates = {
         date: formatYMD(date),
         notes: notes.trim() || undefined,
-        entries: (kid.metrics ?? []).map((m) => ({ 
-          metricId: m.id, 
-          value: Number(values[m.id] ?? 0) 
+        entries: (kid.activities ?? []).map((a) => ({ 
+          activityId: a.id, 
+          value: Number(values[a.id] ?? 0) 
         })),
       };
       onApprove(report.id, updates);
@@ -116,9 +116,9 @@ export function ReviewReportModal({ report, kid, isOpen, onClose, onApprove, onR
     const updates = {
       date: formatYMD(date),
       notes: notes.trim() || undefined,
-      entries: (kid.metrics ?? []).map((m) => ({ 
-        metricId: m.id, 
-        value: Number(values[m.id] ?? 0) 
+      entries: (kid.activities ?? []).map((a) => ({ 
+        activityId: a.id, 
+        value: Number(values[a.id] ?? 0) 
       })),
     };
     
@@ -143,15 +143,15 @@ export function ReviewReportModal({ report, kid, isOpen, onClose, onApprove, onR
 
   if (!report) return null;
 
-  const metrics = kid.metrics ?? [];
+  const activities = kid.activities ?? [];
   const groups = kid.groups ?? [];
 
-  // Group metrics by sections
-  const ungrouped = metrics.filter((m) => !m.groupId);
-  const sections: { id: string; title: string; items: typeof metrics }[] = [];
+  // Group activities by sections
+  const ungrouped = activities.filter((a) => !a.groupId);
+  const sections: { id: string; title: string; items: typeof activities }[] = [];
   if (ungrouped.length > 0) sections.push({ id: "__ungrouped__", title: "Ungrouped", items: ungrouped });
   for (const g of groups) {
-    const items = metrics.filter((m) => m.groupId === g.id);
+    const items = activities.filter((a) => a.groupId === g.id);
     if (items.length > 0) sections.push({ id: g.id, title: `${g.name} (${g.type})`, items });
   }
 
@@ -192,24 +192,24 @@ export function ReviewReportModal({ report, kid, isOpen, onClose, onApprove, onR
           <Separator />
 
           {sections.length === 0 ? (
-            <p className="text-muted-foreground text-sm">No metrics configured yet.</p>
+            <p className="text-muted-foreground text-sm">No activities configured yet.</p>
           ) : (
             <div className="space-y-6">
               {sections.map((section) => (
                 <div key={section.id}>
                   <h4 className="text-sm font-semibold text-muted-foreground mb-2">{section.title}</h4>
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                    {section.items.map((m) => (
-                      <div key={m.id} className="grid gap-2">
-                        <Label htmlFor={`metric-${m.id}`}>
-                          {m.name} {m.unit ? `(${m.unit})` : ""}
+                    {section.items.map((a) => (
+                      <div key={a.id} className="grid gap-2">
+                        <Label htmlFor={`activity-${a.id}`}>
+                          {a.name} {a.unit ? `(${a.unit})` : ""}
                         </Label>
                         <Input
-                          id={`metric-${m.id}`}
+                          id={`activity-${a.id}`}
                           type="number"
                           min={0}
-                          value={values[m.id] ?? 0}
-                          onChange={(e) => handleChange(m.id, e.target.value)}
+                          value={values[a.id] ?? 0}
+                          onChange={(e) => handleChange(a.id, e.target.value)}
                         />
                       </div>
                     ))}

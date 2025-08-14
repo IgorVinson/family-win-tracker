@@ -8,7 +8,7 @@ interface Report {
   date: string;
   createdAt: string;
   notes?: string;
-  entries: Array<{ metricId: string; value: number }>;
+  entries: Array<{ activityId: string; value: number }>;
   status: "pending" | "approved" | "rejected";
   processedAt?: string;
   processedBy?: "parent" | "system";
@@ -33,12 +33,12 @@ export function ReportApprovalCard({ report, kid, onReview, onEdit }: ReportAppr
     }
   };
 
-  const getMetricName = (metricId: string) => {
-    return kid.metrics?.find(m => m.id === metricId)?.name || metricId;
+  const getActivityName = (activityId: string) => {
+    return kid.activities?.find(a => a.id === activityId)?.name || activityId;
   };
 
-  const getMetricUnit = (metricId: string) => {
-    return kid.metrics?.find(m => m.id === metricId)?.unit || "";
+  const getActivityUnit = (activityId: string) => {
+    return kid.activities?.find(a => a.id === activityId)?.unit || "";
   };
 
   const formatDate = (dateStr: string) => {
@@ -80,8 +80,8 @@ export function ReportApprovalCard({ report, kid, onReview, onEdit }: ReportAppr
       
       <div className="flex flex-wrap gap-2">
         {report.entries.filter(entry => entry.value > 0).map((entry) => (
-          <Badge key={entry.metricId} variant="secondary">
-            {getMetricName(entry.metricId)}: {entry.value} {getMetricUnit(entry.metricId)}
+          <Badge key={entry.activityId} variant="secondary">
+            {getActivityName(entry.activityId)}: {entry.value} {getActivityUnit(entry.activityId)}
           </Badge>
         ))}
       </div>

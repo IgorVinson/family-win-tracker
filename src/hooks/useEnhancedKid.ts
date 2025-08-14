@@ -13,9 +13,9 @@ function migrateToEnhancedKid(legacyKid: any): EnhancedKid {
     prizeRedemptions: legacyKid.prizeRedemptions || [],
     achievements: legacyKid.achievements || [],
     streaks: legacyKid.streaks || {},
-    metrics: (legacyKid.metrics || []).map((metric: any) => ({
-      ...metric,
-      scoringRule: metric.scoringRule || getDefaultScoringRule(metric)
+    activities: (legacyKid.metrics || legacyKid.activities || []).map((activity: any) => ({
+      ...activity,
+      scoringRule: activity.scoringRule || getDefaultScoringRule(activity)
     }))
   };
 }
@@ -70,10 +70,10 @@ function getDefaultPrizes(): Prize[] {
   ];
 }
 
-function getDefaultScoringRule(metric: any): ScoringRule {
-  const basePoints = metric.unit === "min" ? 1 : 10; // 1 point per minute, 10 points per other unit
+function getDefaultScoringRule(activity: any): ScoringRule {
+  const basePoints = activity.unit === "min" ? 1 : 10; // 1 point per minute, 10 points per other unit
   return {
-    metricId: metric.id,
+    activityId: activity.id,
     basePointsPerUnit: basePoints,
     goalBonusPoints: 20,
     streakBonusPoints: 10,
@@ -109,7 +109,7 @@ export function useEnhancedKid(kidId: string) {
   const addReport = (reportData: {
     date: string;
     notes?: string;
-    entries: Array<{ metricId: string; value: number }>;
+    entries: Array<{ activityId: string; value: number }>;
   }) => {
     if (!kid) return;
 
@@ -165,7 +165,7 @@ export function useEnhancedKid(kidId: string) {
   const updateReport = (reportId: string, updates: {
     date?: string;
     notes?: string;
-    entries?: Array<{ metricId: string; value: number }>;
+    entries?: Array<{ activityId: string; value: number }>;
   }) => {
     if (!kid) return;
 
@@ -261,14 +261,17 @@ export function useEnhancedKid(kidId: string) {
     });
   };
 
-  const updateMetricScoringRule = (metricId: string, scoringRule: ScoringRule) => {
+  const updateActivityScoringRule = (activityId: string, scoringRule: ScoringRule) => {
     updateKid(currentKid => ({
       ...currentKid,
-      metrics: currentKid.metrics?.map(m =>
-        m.id === metricId ? { ...m, scoringRule } : m
+      activities: currentKid.activities?.map(a =>
+        a.id === activityId ? { ...a, scoringRule } : a
       )
     }));
   };
+
+  // Legacy alias for compatibility
+  const updateMetricScoringRule = updateActivityScoringRule;
 
   return {
     kid,
@@ -283,6 +286,7 @@ export function useEnhancedKid(kidId: string) {
     deletePrize,
     redeemPrize,
     updateRedemption,
-    updateMetricScoringRule
+    updateMetricScoringRule,
+    updateActivityScoringRule
   };
 }
