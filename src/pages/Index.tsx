@@ -1,4 +1,3 @@
-import { CreateKidWithInvite } from "@/components/kid/CreateKidWithInvite";
 import { EditKidModal } from "@/components/kid/EditKidModal";
 import { ReportViewModal } from "@/components/kid/ReportViewModal";
 import { Button } from "@/components/ui/button";
@@ -15,6 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
+import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { useFamilyKids } from "@/hooks/useFamilyKids";
@@ -31,6 +31,7 @@ import {
 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
+import { rpcCreateKidWithInvite, supabase } from "@/integrations/supabase/client";
 
 type DailyReportEntry = { metricId: string; value: number };
 type DailyReport = {
@@ -84,6 +85,7 @@ const Index = () => {
     updatePoints,
     setGoal,
     resetKid,
+    refresh,
   } = useFamilyKids();
 
   const [openAddKid, setOpenAddKid] = useState(false);
@@ -175,15 +177,12 @@ const Index = () => {
                       addKid(n, g);
                       setOpenAddKid(false);
                     }}
+                    onAfterCreate={refresh}
+                    onClose={() => setOpenAddKid(false)}
                   />
                 </Dialog>
               ) : null}
             </div>
-            {isAuthenticated && (
-              <div className="mt-4 max-w-md">
-                <CreateKidWithInvite />
-              </div>
-            )}
           </div>
         </header>
 
@@ -466,20 +465,181 @@ function KidCard({
 
 function AddKidDialog({
   onAdd,
+  onAfterCreate,
+  onClose,
 }: {
   onAdd: (name: string, goal: number) => void;
+  onAfterCreate?: () => void;
+  onClose: () => void;
 }) {
   const [name, setName] = useState("");
   const [goal, setGoal] = useState<number>(50);
+  const [age, setAge] = useState<number | "">("");
+  const [hobbies, setHobbies] = useState("");
+  const [description, setDescription] = useState("");
+  const [email, setEmail] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [mode, setMode] = useState<"form" | "invite">("form");
+  const [inviteLink, setInviteLink] = useState<string | null>(null);
+  const [inviteError, setInviteError] = useState<string | null>(null);
+  const [pendingRefresh, setPendingRefresh] = useState(false); // defer refresh to avoid flicker
+
+  const resetForm = () => {
+    setName("");
+    setGoal(50);
+    setAge("");
+    setHobbies("");
+    setDescription("");
+    setEmail("");
+    setInviteLink(null);
+    setInviteError(null);
+    setMode("form");
+    setPendingRefresh(false);
+  };
+
+  async function handleSaveKid() {
+    if (!name.trim()) {
+      toast({ title: "Please enter a name" });
+      return;
+    }
+    onAdd(name.trim(), Math.max(0, goal));
+    resetForm();
+  }
+
+  async function handleSaveAndInvite() {
+    if (!name.trim()) {
+      toast({ title: "Please enter a name" });
+      return;
+    }
+    // Immediately switch to invite mode so user sees second modal view
+    setMode("invite");
+    setInviteLink(null);
+    setInviteError(null);
+    try {
+      setLoading(true);
+      const { data, error } = await rpcCreateKidWithInvite(
+        name.trim(),
+        email.trim() || undefined
+      );
+      if (error) throw error;
+      const kidId: string | undefined = data?.[0]?.kid_id;
+      let token: string | undefined = data?.[0]?.token;
+
+      // Update goal if changed from default
+      if (kidId && goal !== 50) {
+        await supabase
+          .from("kids")
+          .update({ monthly_goal: Math.max(0, goal) })
+          .eq("id", kidId);
+      }
+
+      if (kidId) setPendingRefresh(true); // defer refresh until user closes invite view
+
+      // Fallback: fetch invitation token if not returned
+      if (!token && kidId) {
+        const { data: invRows } = await supabase
+          .from("kid_invitations")
+          .select("token")
+          .eq("kid_id", kidId)
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        token = invRows?.token;
+      }
+
+      if (token) {
+        const link = `${window.location.origin}/accept-invite?token=${token}`;
+        setInviteLink(link);
+        toast({ title: "Kid created", description: "Invitation link ready." });
+      } else {
+        setInviteError("Invitation token not returned. Please try again or create manually.");
+        toast({ variant: "destructive", title: "Missing token", description: "Could not generate invite link." });
+      }
+    } catch (err: unknown) {
+      console.error(err);
+      const message = err instanceof Error ? err.message : "Could not create kid.";
+      setInviteError(message);
+      toast({ variant: "destructive", title: "Create failed", description: message });
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function InviteView() {
+    return (
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Invite Link</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4 py-2">
+          {inviteLink ? (
+            <div className="p-3 rounded-md border bg-muted break-all text-sm">
+              {inviteLink}
+              <div className="mt-2 flex gap-2">
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onClick={() => {
+                    navigator.clipboard.writeText(inviteLink);
+                    toast({ title: "Copied to clipboard" });
+                  }}
+                >
+                  Copy Link
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={() => {
+                    if (pendingRefresh) onAfterCreate?.();
+                    resetForm();
+                    onClose();
+                  }}
+                >
+                  Close
+                </Button>
+              </div>
+            </div>
+          ) : loading ? (
+            <div className="text-sm text-muted-foreground">Generating invite link...</div>
+          ) : inviteError ? (
+            <div className="space-y-3">
+              <p className="text-sm text-destructive">{inviteError}</p>
+              <div className="flex gap-2">
+                <Button
+                  size="sm"
+                  onClick={handleSaveAndInvite}
+                  disabled={loading}
+                >
+                  Retry
+                </Button>
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onClick={() => {
+                    if (pendingRefresh) onAfterCreate?.();
+                    resetForm();
+                    onClose();
+                  }}
+                >
+                  Close
+                </Button>
+              </div>
+            </div>
+          ) : null}
+        </div>
+      </DialogContent>
+    );
+  }
+
+  if (mode === "invite") return <InviteView />;
 
   return (
     <DialogContent>
       <DialogHeader>
         <DialogTitle>Add Kid</DialogTitle>
       </DialogHeader>
-      <div className="space-y-4 py-2">
+      <div className="space-y-4 py-2 max-h-[70vh] overflow-y-auto pr-1">
         <div className="grid gap-2">
-          <Label htmlFor="kid-name">Name</Label>
+          <Label htmlFor="kid-name">Name *</Label>
           <Input
             id="kid-name"
             value={name}
@@ -489,27 +649,79 @@ function AddKidDialog({
         </div>
         <div className="grid gap-2">
           <Label htmlFor="kid-goal">Goal (points)</Label>
+            <Input
+              id="kid-goal"
+              type="number"
+              value={goal}
+              onChange={e => setGoal(Number(e.target.value))}
+            />
+        </div>
+        <div className="grid gap-2 sm:grid-cols-2 sm:gap-4">
+          <div className="grid gap-2">
+            <Label htmlFor="kid-age">Age (years)</Label>
+            <Input
+              id="kid-age"
+              type="number"
+              value={age}
+              onChange={e => setAge(e.target.value ? Number(e.target.value) : "")}
+              placeholder="e.g., 9"
+            />
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="kid-email">Invite Email (optional)</Label>
+            <Input
+              id="kid-email"
+              type="email"
+              value={email}
+              onChange={e => setEmail(e.target.value)}
+              placeholder="child@example.com"
+            />
+          </div>
+        </div>
+        <div className="grid gap-2">
+          <Label htmlFor="kid-hobbies">Hobbies / Interests</Label>
           <Input
-            id="kid-goal"
-            type="number"
-            value={goal}
-            onChange={e => setGoal(Number(e.target.value))}
+            id="kid-hobbies"
+            value={hobbies}
+            onChange={e => setHobbies(e.target.value)}
+            placeholder="e.g., Soccer, Reading, Coding"
           />
         </div>
+        <div className="grid gap-2">
+          <Label htmlFor="kid-description">Description / Notes</Label>
+          <Textarea
+            id="kid-description"
+            value={description}
+            onChange={e => setDescription(e.target.value)}
+            placeholder="Short description, strengths, focus areas..."
+          />
+        </div>
+        <p className="text-[11px] text-muted-foreground">Age, hobbies and description fields are currently UI-only. Backend columns would be needed to persist them.</p>
       </div>
-      <DialogFooter>
+      <DialogFooter className="flex flex-col sm:flex-row gap-2 sm:gap-3">
         <Button
+          variant="secondary"
+          className="w-full sm:w-auto"
           onClick={() => {
-            if (!name.trim()) {
-              toast({ title: "Please enter a name" });
-              return;
-            }
-            onAdd(name.trim(), Math.max(0, goal));
-            setName("");
-            setGoal(50);
+            resetForm();
+            onClose();
           }}
         >
-          Save
+          Cancel
+        </Button>
+        <Button
+          disabled={loading}
+          className="w-full sm:w-auto"
+          onClick={handleSaveKid}
+        >
+          {loading ? "Saving..." : "Save Kid"}
+        </Button>
+        <Button
+          disabled={loading}
+          className="w-full sm:w-auto"
+          onClick={handleSaveAndInvite}
+        >
+          {loading ? "Processing..." : "Save + Invite"}
         </Button>
       </DialogFooter>
     </DialogContent>
