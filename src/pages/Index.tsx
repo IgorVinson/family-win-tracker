@@ -156,6 +156,12 @@ const Index = () => {
               </div>
             </div>
             <div className="flex gap-3">
+              <Button variant="outline" size="lg" asChild>
+                <Link to="/auth">
+                  <UserRound className="mr-2 h-5 w-5" />
+                  Sign In / Sign Up
+                </Link>
+              </Button>
               <Dialog open={openAddKid} onOpenChange={setOpenAddKid}>
                 <DialogTrigger asChild>
                   <Button size="lg"><Plus className="mr-2 h-5 w-5" /> Add Kid</Button>

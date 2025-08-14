@@ -7,6 +7,7 @@ import { useEffect } from "react";
 import { seedMockDataIfEmpty } from "./lib/seed";
 import Index from "./pages/Index";
 import KidDashboard from "./pages/KidDashboard";
+import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -27,6 +28,7 @@ const App = () => (
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Index />} />
+          <Route path="/auth" element={<Auth />} />
           <Route path="/kid/:id" element={<KidDashboard />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
