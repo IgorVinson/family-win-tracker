@@ -13,7 +13,8 @@ import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ArrowLeft, Plus, Save, Edit, Trash2, BarChart3, Users, Calendar, Target, Gift, Award, Coins, FileText } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { useEnhancedKid } from "@/hooks/useEnhancedKid";
+import { useEnhancedKidDB } from "@/hooks/useEnhancedKidDB";
+import { AuthGuard } from "@/components/auth/AuthGuard";
 import DailyReportForm from "@/components/kid/DailyReportForm";
 import EditActivityModal from "@/components/kid/EditActivityModal";
 import { ReportApprovalCard } from "@/components/kid/ReportApprovalCard";
@@ -42,10 +43,19 @@ export type Report = {
 };
 
 export default function KidDashboard() {
+  return (
+    <AuthGuard requireAuth={true}>
+      <KidDashboardContent />
+    </AuthGuard>
+  );
+}
+
+function KidDashboardContent() {
   const { id } = useParams<{ id: string }>();
   const { toast } = useToast();
   const { 
     kid, 
+    loading,
     addReport, 
     approveReport,
     rejectReport,
@@ -56,8 +66,9 @@ export default function KidDashboard() {
     deletePrize, 
     redeemPrize, 
     updateRedemption,
-    updateKid 
-  } = useEnhancedKid(id || "");
+    updateKid,
+    updateActivityScoringRule
+  } = useEnhancedKidDB(id || "");
 
   const [activityName, setActivityName] = useState("");
   const [activityUnit, setActivityUnit] = useState("");
@@ -87,15 +98,19 @@ export default function KidDashboard() {
     document.title = kid ? `${kid.name} Dashboard – Kids Tracker` : "Kid Dashboard – Kids Tracker";
   }, [kid]);
 
-  // Keep the legacy updateKid function for existing metric/group operations
-  const updateKidLegacy = (updater: (k: any) => any) => {
+  // Keep the legacy updateKid function for existing metric/group operations - now using database
+  const updateKidLegacy = async (updater: (k: any) => any) => {
     if (!kid) return;
-    updateKid(updater);
+    
+    // For now, activities and groups will be handled locally until we add them to database
+    // Since we don't have direct setKid access, we'll use the updateKid function
+    const updatedKid = updater(kid);
+    
+    // Use the database updateKid function to persist changes
+    await updateKid(() => updatedKid);
   };
-  
-  const { updateActivityScoringRule } = useEnhancedKid(id || "");
 
-  const addActivity = () => {
+  const addActivity = async () => {
     if (!activityName.trim()) return;
     const activity: any = {
       id: crypto.randomUUID(),
@@ -118,9 +133,9 @@ export default function KidDashboard() {
     
     updateKidLegacy((k) => ({ ...k, activities: [...(k.activities ?? []), activity] }));
     
-    // Add scoring rule to enhanced kid data
+    // Add scoring rule to database
     if (updateActivityScoringRule) {
-      updateActivityScoringRule(activity.id, scoringRule);
+      await updateActivityScoringRule(activity.id, scoringRule);
     }
     
     // Reset form
@@ -195,6 +210,21 @@ export default function KidDashboard() {
 
   // Count pending redemptions for notification badge
   const pendingRedemptions = kid?.prizeRedemptions?.filter(r => r.status === "pending").length || 0;
+
+  if (loading) {
+    return (
+      <div className="max-w-6xl mx-auto p-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Loading...</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p>Loading dashboard data...</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   if (!kid) {
     return (

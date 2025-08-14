@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Save } from "lucide-react";
 import type { Activity, Group } from "@/pages/KidDashboard";
-import { useEnhancedKid } from "@/hooks/useEnhancedKid";
+import { useEnhancedKidDB } from "@/hooks/useEnhancedKidDB";
 import type { ScoringRule } from "@/types/scoreSystem";
 
 interface EditActivityModalProps {
@@ -19,7 +19,7 @@ interface EditActivityModalProps {
 }
 
 const EditActivityModal = ({ activity, groups, isOpen, onClose, onSave, kidId }: EditActivityModalProps) => {
-  const { kid, updateActivityScoringRule } = useEnhancedKid(kidId);
+  const { kid, updateActivityScoringRule } = useEnhancedKidDB(kidId);
   
   const [name, setName] = useState(activity?.name || "");
   const [unit, setUnit] = useState(activity?.unit || "");
