@@ -18,22 +18,58 @@ export type Database = {
         Row: {
           category: string | null
           created_at: string
+          current_value: number
+          group_id: string | null
           id: string
+          kid_id: string | null
           name: string
+          plan_type: string | null
+          plan_value: number | null
+          unit: string | null
+          updated_at: string
         }
         Insert: {
           category?: string | null
           created_at?: string
+          current_value?: number
+          group_id?: string | null
           id?: string
+          kid_id?: string | null
           name: string
+          plan_type?: string | null
+          plan_value?: number | null
+          unit?: string | null
+          updated_at?: string
         }
         Update: {
           category?: string | null
           created_at?: string
+          current_value?: number
+          group_id?: string | null
           id?: string
+          kid_id?: string | null
           name?: string
+          plan_type?: string | null
+          plan_value?: number | null
+          unit?: string | null
+          updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "activities_kid_id_fkey"
+            columns: ["kid_id"]
+            isOneToOne: false
+            referencedRelation: "kids"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "activities_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "groups"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       daily_reports: {
         Row: {
@@ -403,7 +439,7 @@ export type Database = {
       }
       scoring_rules: {
         Row: {
-          activity: string
+          activity_id: string
           bonus: number
           created_at: string
           id: string
@@ -414,7 +450,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
-          activity: string
+          activity_id: string
           bonus?: number
           created_at?: string
           id?: string
@@ -425,7 +461,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
-          activity?: string
+          activity_id?: string
           bonus?: number
           created_at?: string
           id?: string
@@ -441,6 +477,13 @@ export type Database = {
             columns: ["kid_id"]
             isOneToOne: false
             referencedRelation: "kids"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_scoring_rules_activity_id"
+            columns: ["activity_id"]
+            isOneToOne: false
+            referencedRelation: "activities"
             referencedColumns: ["id"]
           },
         ]

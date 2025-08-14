@@ -113,6 +113,9 @@ function KidDashboardContent() {
     rejectReport,
     updateReport,
     deleteReport,
+    addActivity: addActivityDB,
+    updateActivity: updateActivityDB,
+    removeActivity: removeActivityDB,
     addGift,
     updateGift,
     deleteGift,
@@ -184,34 +187,26 @@ function KidDashboardContent() {
 
   const addActivity = async () => {
     if (!activityName.trim()) return;
-    const activity: Activity = {
-      id: crypto.randomUUID(),
-      name: activityName,
-      value: 0,
-      unit: activityUnit || undefined,
-      groupId: activityGroupId || undefined,
-      planType,
-      planValue: planValue ? parseInt(planValue) : undefined,
-    };
 
     // Create scoring rule for the new activity
     const scoringRule = {
-      activityId: activity.id,
+      activityId: crypto.randomUUID(), // This will be replaced by the actual activity ID
       basePointsPerUnit: Math.max(0, Number(newBasePointsPerUnit) || 1),
       goalBonusPoints: Math.max(0, Number(newGoalBonusPoints) || 0),
       streakBonusPoints: Math.max(0, Number(newStreakBonusPoints) || 0),
       maxDailyPoints: Math.max(1, Number(newMaxDailyPoints) || 50),
     };
 
-    updateKidLegacy(k => ({
-      ...k,
-      activities: [...(k.activities ?? []), activity],
-    }));
-
-    // Add scoring rule to database
-    if (updateActivityScoringRule) {
-      await updateActivityScoringRule(activity.id, scoringRule);
-    }
+    await addActivityDB(
+      {
+        name: activityName,
+        unit: activityUnit || undefined,
+        groupId: activityGroupId || undefined,
+        planType,
+        planValue: planValue ? parseInt(planValue) : undefined,
+      },
+      scoringRule
+    );
 
     // Reset form
     setActivityName("");
@@ -223,36 +218,20 @@ function KidDashboardContent() {
     setNewStreakBonusPoints("2");
     setNewMaxDailyPoints("50");
     setOpenAddActivity(false);
-    toast({
-      title: "Activity added",
-      description: `${activityName} has been added.`,
+  };
+
+  const updateActivity = async (updatedActivity: Activity) => {
+    await updateActivityDB(updatedActivity.id, {
+      name: updatedActivity.name,
+      unit: updatedActivity.unit,
+      groupId: updatedActivity.groupId,
+      planType: updatedActivity.planType,
+      planValue: updatedActivity.planValue,
     });
   };
 
-  const updateActivity = (updatedActivity: Activity) => {
-    updateKidLegacy(k => ({
-      ...k,
-      activities: k.activities?.map(a =>
-        a.id === updatedActivity.id ? updatedActivity : a
-      ),
-    }));
-    toast({
-      title: "Activity updated",
-      description: `${updatedActivity.name} has been updated.`,
-    });
-  };
-
-  const removeActivity = (activityId: string) => {
-    const activityName =
-      kid?.activities?.find(a => a.id === activityId)?.name || "";
-    updateKidLegacy(k => ({
-      ...k,
-      activities: k.activities?.filter(a => a.id !== activityId),
-    }));
-    toast({
-      title: "Activity removed",
-      description: `${activityName} has been removed.`,
-    });
+  const removeActivity = async (activityId: string) => {
+    await removeActivityDB(activityId);
   };
 
   const addGroup = async () => {

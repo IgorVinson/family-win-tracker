@@ -11,40 +11,106 @@ import { useEffect, useState } from "react";
 
 // Convert database kid to EnhancedKid format
 function convertToEnhancedKid(
-  dbKid: any,
-  activities: any[],
-  reports: any[],
-  scoreEntries: any[],
-  gifts: any[],
-  redemptions: any[],
-  groups: any[] = []
+  dbKid: {
+    id: string;
+    name: string;
+    current_points: number;
+    monthly_goal: number;
+    created_at: string;
+  },
+  activities: Array<{
+    id: string;
+    name: string;
+    current_value: number;
+    unit: string | null;
+    group_id: string | null;
+    plan_type: "daily" | "weekly" | null | string;
+    plan_value: number | null;
+  }>,
+  scoringRules: Array<{
+    activity_id: string;
+    points: number;
+    bonus: number;
+    streak: number;
+    max_daily: number | null;
+  }>,
+  reports: Array<{
+    id: string;
+    date: string;
+    created_at: string;
+    notes: string | null;
+    activities: unknown;
+    status: string;
+    updated_at: string;
+  }>,
+  scoreEntries: Array<{
+    id: string;
+    date: string;
+    activity: string;
+    points: number;
+    reason: string | null;
+    approved: boolean;
+    created_at: string;
+  }>,
+  gifts: Array<{
+    id: string;
+    name: string;
+    description: string | null;
+    cost: number;
+    category: string | null;
+    active: boolean;
+    created_at: string;
+  }>,
+  redemptions: Array<{
+    id: string;
+    gift_id: string;
+    status: string;
+    created_at: string;
+    date_processed: string | null;
+    notes: string | null;
+    gifts?: { name: string; cost: number };
+  }>,
+  groups: Array<{ id: string; name: string; type: string }> = []
 ): EnhancedKid {
   // Convert database activities to enhanced format
-  const enhancedActivities = activities.map(activity => ({
-    id: activity.activity,
-    name: activity.activity,
-    value: 0, // This would be calculated from recent reports
-    scoringRule: {
-      activityId: activity.activity,
-      basePointsPerUnit: activity.points,
-      goalBonusPoints: activity.bonus,
-      streakBonusPoints: activity.streak,
-      maxDailyPoints: activity.max_daily || 100,
-    },
-  }));
+  const enhancedActivities = activities.map(activity => {
+    // Find scoring rule for this activity
+    const scoringRule = scoringRules.find(
+      rule => rule.activity_id === activity.id
+    );
+
+    return {
+      id: activity.id,
+      name: activity.name,
+      value: activity.current_value || 0,
+      unit: activity.unit || undefined,
+      groupId: activity.group_id || undefined,
+      planType: (activity.plan_type as "daily" | "weekly") || undefined,
+      planValue: activity.plan_value || undefined,
+      scoringRule: scoringRule
+        ? {
+            activityId: activity.id,
+            basePointsPerUnit: scoringRule.points,
+            goalBonusPoints: scoringRule.bonus,
+            streakBonusPoints: scoringRule.streak,
+            maxDailyPoints: scoringRule.max_daily || 100,
+          }
+        : undefined,
+    };
+  });
 
   // Convert reports
   const enhancedReports = reports.map(report => ({
     id: report.id,
     date: report.date,
     createdAt: report.created_at,
-    notes: report.notes,
-    entries: Object.entries(report.activities || {}).map(
-      ([activity, value]) => ({
-        activityId: activity,
-        value: value as number,
-      })
-    ),
+    notes: report.notes || undefined,
+    entries: Object.entries(
+      (report.activities || {}) as Record<string, number>
+    ).map(([activity, value]) => ({
+      activityId: activity,
+      value: value as number,
+    })),
     status: report.status as "pending" | "approved" | "rejected",
     processedAt: report.updated_at,
     processedBy: "parent" as const,
@@ -68,7 +134,7 @@ function convertToEnhancedKid(
     name: gift.name,
     description: gift.description || "",
     pointsCost: gift.cost,
-    category: gift.category || "general",
+    category: (gift.category as Gift["category"]) || "activity",
     isActive: gift.active,
     createdAt: gift.created_at,
   }));
@@ -125,24 +191,6 @@ export function useEnhancedKidDB(kidId: string) {
   const [loading, setLoading] = useState(true);
   const { user, userRole, loading: authLoading } = useAuth();
 
-  // Load kid data from database
-  useEffect(() => {
-    if (!user || !kidId) {
-      setKid(null);
-      setLoading(false);
-      return;
-    }
-
-    // Don't load data until userRole is available (not null)
-    if (userRole === null) {
-      // Keep loading true while waiting for userRole
-      setLoading(true);
-      return;
-    }
-
-    loadKidData();
-  }, [user, kidId, userRole]);
-
   const loadKidData = async () => {
     try {
       setLoading(true);
@@ -176,12 +224,18 @@ export function useEnhancedKidDB(kidId: string) {
       // Load related data in parallel
       const [
         { data: activities = [] },
+        { data: scoringRules = [] },
         { data: reports = [] },
         { data: scoreEntries = [] },
         { data: prizes = [] },
         { data: redemptions = [] },
         { data: groups = [] },
       ] = await Promise.all([
+        supabase
+          .from("activities")
+          .select("*")
+          .eq("kid_id", kidId)
+          .order("name", { ascending: true }),
         supabase.from("scoring_rules").select("*").eq("kid_id", kidId),
         supabase
           .from("daily_reports")
@@ -213,6 +267,7 @@ export function useEnhancedKidDB(kidId: string) {
       const enhancedKid = convertToEnhancedKid(
         kidData,
         activities,
+        scoringRules,
         reports,
         scoreEntries,
         prizes,
@@ -227,6 +282,25 @@ export function useEnhancedKidDB(kidId: string) {
       setLoading(false);
     }
   };
+
+  // Load kid data from database
+  useEffect(() => {
+    if (!user || !kidId) {
+      setKid(null);
+      setLoading(false);
+      return;
+    }
+
+    // Don't load data until userRole is available (not null)
+    if (userRole === null) {
+      // Keep loading true while waiting for userRole
+      setLoading(true);
+      return;
+    }
+
+    loadKidData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, kidId, userRole, authLoading]);
 
   const updateKid = async (updater: (kid: EnhancedKid) => EnhancedKid) => {
     if (!kid || !user) return;
@@ -733,20 +807,41 @@ export function useEnhancedKidDB(kidId: string) {
       const { error } = await supabase.from("scoring_rules").upsert(
         {
           kid_id: kidId,
-          activity: activityId,
+          activity_id: activityId,
           points: scoringRule.basePointsPerUnit,
           bonus: scoringRule.goalBonusPoints,
           streak: scoringRule.streakBonusPoints,
           max_daily: scoringRule.maxDailyPoints,
         },
         {
-          onConflict: "kid_id,activity",
+          onConflict: "kid_id,activity_id",
         }
       );
 
       if (error) throw error;
 
-      await loadKidData();
+      // Optimistic local merge
+      setKid(prev =>
+        prev
+          ? {
+              ...prev,
+              activities: prev.activities?.map(a =>
+                a.id === activityId
+                  ? {
+                      ...a,
+                      scoringRule: {
+                        activityId: activityId,
+                        basePointsPerUnit: scoringRule.basePointsPerUnit,
+                        goalBonusPoints: scoringRule.goalBonusPoints,
+                        streakBonusPoints: scoringRule.streakBonusPoints,
+                        maxDailyPoints: scoringRule.maxDailyPoints,
+                      },
+                    }
+                  : a
+              ),
+            }
+          : prev
+      );
 
       toast({
         title: "Scoring rule updated",
@@ -845,6 +940,229 @@ export function useEnhancedKidDB(kidId: string) {
     }
   };
 
+  const addActivity = async (
+    activityData: {
+      name: string;
+      unit?: string;
+      groupId?: string;
+      planType?: "daily" | "weekly";
+      planValue?: number;
+    },
+    scoringRule: ScoringRule
+  ) => {
+    if (!user || !kid) return;
+
+    try {
+      // Insert activity and scoring rule in a single transaction-like flow
+      const { data: activityResult, error: activityError } = await supabase
+        .from("activities")
+        .insert({
+          kid_id: kidId,
+          name: activityData.name,
+          unit: activityData.unit,
+          group_id: activityData.groupId || null,
+          plan_type: activityData.planType,
+          plan_value: activityData.planValue,
+          current_value: 0,
+          category: "custom",
+        })
+        .select()
+        .single();
+
+      if (activityError) throw activityError;
+
+      const { error: scoringError } = await supabase
+        .from("scoring_rules")
+        .insert({
+          kid_id: kidId,
+          activity_id: activityResult.id,
+          points: scoringRule.basePointsPerUnit,
+          bonus: scoringRule.goalBonusPoints,
+          streak: scoringRule.streakBonusPoints,
+          max_daily: scoringRule.maxDailyPoints,
+        });
+
+      if (scoringError) throw scoringError;
+
+      // Optimistically merge into local state instead of full reload
+      setKid(prev =>
+        prev
+          ? {
+              ...prev,
+              activities: [
+                ...(prev.activities || []),
+                {
+                  id: activityResult.id,
+                  name: activityResult.name,
+                  value: 0,
+                  unit: activityResult.unit || undefined,
+                  groupId: activityResult.group_id || undefined,
+                  planType: activityResult.plan_type || undefined,
+                  planValue: activityResult.plan_value || undefined,
+                  scoringRule: {
+                    activityId: activityResult.id,
+                    basePointsPerUnit: scoringRule.basePointsPerUnit,
+                    goalBonusPoints: scoringRule.goalBonusPoints,
+                    streakBonusPoints: scoringRule.streakBonusPoints,
+                    maxDailyPoints: scoringRule.maxDailyPoints,
+                  },
+                },
+              ],
+            }
+          : prev
+      );
+
+      toast({
+        title: "Activity added",
+        description: `${activityData.name} has been added.`,
+      });
+    } catch (error) {
+      console.error("Error adding activity:", error);
+      toast({
+        variant: "destructive",
+        title: "Failed to add activity",
+        description: "Could not add the activity. Please try again.",
+      });
+    }
+  };
+
+  const updateActivity = async (
+    activityId: string,
+    updates: {
+      name?: string;
+      unit?: string;
+      groupId?: string;
+      planType?: "daily" | "weekly";
+      planValue?: number;
+      scoringRule?: ScoringRule;
+    }
+  ) => {
+    if (!user || !kid) return;
+
+    try {
+      const updateData: { [k: string]: unknown } = {};
+      if (updates.name !== undefined) updateData.name = updates.name;
+      if (updates.unit !== undefined) updateData.unit = updates.unit;
+      if (updates.groupId !== undefined)
+        updateData.group_id = updates.groupId || null;
+      if (updates.planType !== undefined)
+        updateData.plan_type = updates.planType || null;
+      if (updates.planValue !== undefined)
+        updateData.plan_value = updates.planValue || null;
+
+      // Perform activity update
+      if (Object.keys(updateData).length) {
+        const { error } = await supabase
+          .from("activities")
+          .update(updateData)
+          .eq("id", activityId);
+        if (error) throw error;
+      }
+
+      // Upsert scoring rule if provided
+      if (updates.scoringRule) {
+        const sr = updates.scoringRule;
+        const { error: srError } = await supabase.from("scoring_rules").upsert(
+          {
+            kid_id: kidId,
+            activity_id: activityId,
+            points: sr.basePointsPerUnit,
+            bonus: sr.goalBonusPoints,
+            streak: sr.streakBonusPoints,
+            max_daily: sr.maxDailyPoints,
+          },
+          { onConflict: "kid_id,activity_id" }
+        );
+        if (srError) throw srError;
+      }
+
+      // Optimistic local merge
+      setKid(prev =>
+        prev
+          ? {
+              ...prev,
+              activities: prev.activities?.map(a =>
+                a.id === activityId
+                  ? {
+                      ...a,
+                      name: updates.name !== undefined ? updates.name : a.name,
+                      unit: updates.unit !== undefined ? updates.unit : a.unit,
+                      groupId:
+                        updates.groupId !== undefined
+                          ? updates.groupId
+                          : a.groupId,
+                      planType:
+                        updates.planType !== undefined
+                          ? updates.planType
+                          : a.planType,
+                      planValue:
+                        updates.planValue !== undefined
+                          ? updates.planValue
+                          : a.planValue,
+                      scoringRule: updates.scoringRule
+                        ? {
+                            activityId: activityId,
+                            basePointsPerUnit:
+                              updates.scoringRule.basePointsPerUnit,
+                            goalBonusPoints:
+                              updates.scoringRule.goalBonusPoints,
+                            streakBonusPoints:
+                              updates.scoringRule.streakBonusPoints,
+                            maxDailyPoints: updates.scoringRule.maxDailyPoints,
+                          }
+                        : a.scoringRule,
+                    }
+                  : a
+              ),
+            }
+          : prev
+      );
+
+      toast({
+        title: "Activity updated",
+        description: "The activity has been updated.",
+      });
+    } catch (error) {
+      console.error("Error updating activity:", error);
+      toast({
+        variant: "destructive",
+        title: "Failed to update activity",
+        description: "Could not update the activity. Please try again.",
+      });
+    }
+  };
+
+  const removeActivity = async (activityId: string) => {
+    if (!user || !kid) return;
+
+    try {
+      const activity = kid.activities?.find(a => a.id === activityId);
+      if (!activity) return;
+
+      // Delete activity (scoring rules will be deleted via CASCADE)
+      const { error } = await supabase
+        .from("activities")
+        .delete()
+        .eq("id", activityId);
+
+      if (error) throw error;
+
+      await loadKidData();
+
+      toast({
+        title: "Activity removed",
+        description: `${activity.name} has been removed.`,
+      });
+    } catch (error) {
+      console.error("Error removing activity:", error);
+      toast({
+        variant: "destructive",
+        title: "Failed to remove activity",
+        description: "Could not remove the activity. Please try again.",
+      });
+    }
+  };
+
   // Legacy alias for compatibility
   const updateMetricScoringRule = updateActivityScoringRule;
 
@@ -860,6 +1178,9 @@ export function useEnhancedKidDB(kidId: string) {
     rejectReport,
     updateReport,
     deleteReport,
+    addActivity,
+    updateActivity,
+    removeActivity,
     addGift,
     updateGift,
     deleteGift,
