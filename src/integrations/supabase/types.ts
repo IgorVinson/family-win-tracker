@@ -14,16 +14,450 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      activities: {
+        Row: {
+          category: string | null
+          created_at: string
+          id: string
+          name: string
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string
+          id?: string
+          name: string
+        }
+        Update: {
+          category?: string | null
+          created_at?: string
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
+      daily_reports: {
+        Row: {
+          activities: Json
+          created_at: string
+          date: string
+          id: string
+          kid_id: string
+          notes: string | null
+          status: string
+          total_points: number
+          updated_at: string
+        }
+        Insert: {
+          activities?: Json
+          created_at?: string
+          date: string
+          id?: string
+          kid_id: string
+          notes?: string | null
+          status?: string
+          total_points?: number
+          updated_at?: string
+        }
+        Update: {
+          activities?: Json
+          created_at?: string
+          date?: string
+          id?: string
+          kid_id?: string
+          notes?: string | null
+          status?: string
+          total_points?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "daily_reports_kid_id_fkey"
+            columns: ["kid_id"]
+            isOneToOne: false
+            referencedRelation: "kids"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      families: {
+        Row: {
+          created_at: string
+          created_by: string
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          id?: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          id?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "families_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      family_members: {
+        Row: {
+          family_id: string
+          id: string
+          joined_at: string
+          user_id: string
+        }
+        Insert: {
+          family_id: string
+          id?: string
+          joined_at?: string
+          user_id: string
+        }
+        Update: {
+          family_id?: string
+          id?: string
+          joined_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "family_members_family_id_fkey"
+            columns: ["family_id"]
+            isOneToOne: false
+            referencedRelation: "families"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "family_members_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      kids: {
+        Row: {
+          best_streak: number
+          created_at: string
+          current_points: number
+          current_streak: number
+          id: string
+          monthly_goal: number
+          name: string
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          best_streak?: number
+          created_at?: string
+          current_points?: number
+          current_streak?: number
+          id?: string
+          monthly_goal?: number
+          name: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          best_streak?: number
+          created_at?: string
+          current_points?: number
+          current_streak?: number
+          id?: string
+          monthly_goal?: number
+          name?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "kids_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      prize_redemptions: {
+        Row: {
+          created_at: string
+          date_processed: string | null
+          date_requested: string
+          id: string
+          kid_id: string
+          notes: string | null
+          prize_id: string
+          processed_by: string | null
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          date_processed?: string | null
+          date_requested?: string
+          id?: string
+          kid_id: string
+          notes?: string | null
+          prize_id: string
+          processed_by?: string | null
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          date_processed?: string | null
+          date_requested?: string
+          id?: string
+          kid_id?: string
+          notes?: string | null
+          prize_id?: string
+          processed_by?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prize_redemptions_kid_id_fkey"
+            columns: ["kid_id"]
+            isOneToOne: false
+            referencedRelation: "kids"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prize_redemptions_prize_id_fkey"
+            columns: ["prize_id"]
+            isOneToOne: false
+            referencedRelation: "prizes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prize_redemptions_processed_by_fkey"
+            columns: ["processed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      prizes: {
+        Row: {
+          active: boolean
+          category: string | null
+          cost: number
+          created_at: string
+          description: string | null
+          id: string
+          image_url: string | null
+          name: string
+          requires_approval: boolean
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          category?: string | null
+          cost: number
+          created_at?: string
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          name: string
+          requires_approval?: boolean
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          category?: string | null
+          cost?: number
+          created_at?: string
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          name?: string
+          requires_approval?: boolean
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          display_name: string | null
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          display_name?: string | null
+          id: string
+          updated_at?: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          display_name?: string | null
+          id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      score_entries: {
+        Row: {
+          activity: string
+          approved: boolean
+          approved_at: string | null
+          approved_by: string | null
+          created_at: string
+          date: string
+          id: string
+          kid_id: string
+          points: number
+          reason: string | null
+        }
+        Insert: {
+          activity: string
+          approved?: boolean
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          date: string
+          id?: string
+          kid_id: string
+          points: number
+          reason?: string | null
+        }
+        Update: {
+          activity?: string
+          approved?: boolean
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          date?: string
+          id?: string
+          kid_id?: string
+          points?: number
+          reason?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "score_entries_approved_by_fkey"
+            columns: ["approved_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "score_entries_kid_id_fkey"
+            columns: ["kid_id"]
+            isOneToOne: false
+            referencedRelation: "kids"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      scoring_rules: {
+        Row: {
+          activity: string
+          bonus: number
+          created_at: string
+          id: string
+          kid_id: string
+          max_daily: number | null
+          points: number
+          streak: number
+          updated_at: string
+        }
+        Insert: {
+          activity: string
+          bonus?: number
+          created_at?: string
+          id?: string
+          kid_id: string
+          max_daily?: number | null
+          points?: number
+          streak?: number
+          updated_at?: string
+        }
+        Update: {
+          activity?: string
+          bonus?: number
+          created_at?: string
+          id?: string
+          kid_id?: string
+          max_daily?: number | null
+          points?: number
+          streak?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scoring_rules_kid_id_fkey"
+            columns: ["kid_id"]
+            isOneToOne: false
+            referencedRelation: "kids"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_roles_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _user_id: string
+          _role: Database["public"]["Enums"]["app_role"]
+        }
+        Returns: boolean
+      }
+      is_family_member: {
+        Args: { _user_id: string; _kid_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "parent" | "kid"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +584,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["parent", "kid"],
+    },
   },
 } as const
