@@ -39,6 +39,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { useEnhancedKidDB } from "@/hooks/useEnhancedKidDB";
+import { EnhancedKid, ScoringRule } from "@/types/scoreSystem";
 import {
   ArrowLeft,
   Award,
@@ -65,6 +66,7 @@ export type Activity = {
   groupId?: string;
   planType?: "daily" | "weekly";
   planValue?: number;
+  scoringRule?: ScoringRule; // added optional scoring rule for typing
 };
 export type Group = { id: string; name: string; type: "project" | "goal" };
 export type DailyReportEntry = { activityId: string; value: number };
@@ -134,15 +136,31 @@ function KidDashboardContent() {
   const [groupName, setGroupName] = useState("");
   const [groupType, setGroupType] = useState<"project" | "goal">("goal");
   const [showManagement, setShowManagement] = useState(false);
-  const [editingActivity, setEditingActivity] = useState<any>(null);
-  const [editingReport, setEditingReport] = useState<any>(null);
-  const [reviewingReport, setReviewingReport] = useState<any>(null);
-  const [deletingReport, setDeletingReport] = useState<any>(null);
+  const [editingActivity, setEditingActivity] = useState<Activity | null>(null);
+  const [editingReport, setEditingReport] = useState<Report | null>(null);
+  const [reviewingReport, setReviewingReport] = useState<Report | null>(null);
+  const [deletingReport, setDeletingReport] = useState<Report | null>(null);
 
   const [openAddGroup, setOpenAddGroup] = useState(false);
   const [openAddActivity, setOpenAddActivity] = useState(false);
   const [openAddReport, setOpenAddReport] = useState(false);
   const reportSaveRef = useRef<(() => void) | null>(null);
+  // NEW: active section for sidebar nav
+  const [activeTab, setActiveTab] = useState("metrics");
+
+  const headerContainerCls =
+    "flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4";
+  const overviewGridCls =
+    "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8";
+  const mainLayoutCls = "flex flex-col md:flex-row gap-6";
+  const sidebarWidthCls = "md:w-48 lg:w-56 shrink-0";
+  const tabsListMobileCls = "grid w-full grid-cols-3 md:hidden";
+  const scoringRulesBoxCls = "space-y-3 p-4 bg-muted/50 rounded-lg";
+  const giftDialogContentCls = "max-w-4xl max-h-[80vh] overflow-y-auto";
+  const addReportBtnGradient =
+    "bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white border-0 shadow-md hover:shadow-lg transition-all duration-200";
+  const manageGiftsBtnGradient =
+    "relative bg-gradient-to-r from-yellow-400 to-yellow-600 hover:from-yellow-500 hover:to-yellow-700 text-white border-0 shadow-md hover:shadow-lg transition-all duration-200";
 
   useEffect(() => {
     document.title = kid
@@ -151,7 +169,7 @@ function KidDashboardContent() {
   }, [kid]);
 
   // Keep the legacy updateKid function for existing metric/group operations - now using database
-  const updateKidLegacy = async (updater: (k: any) => any) => {
+  const updateKidLegacy = async (updater: (k: EnhancedKid) => EnhancedKid) => {
     if (!kid) return;
 
     // For now, activities and groups will be handled locally until we add them to database
@@ -164,7 +182,7 @@ function KidDashboardContent() {
 
   const addActivity = async () => {
     if (!activityName.trim()) return;
-    const activity: any = {
+    const activity: Activity = {
       id: crypto.randomUUID(),
       name: activityName,
       value: 0,
@@ -209,7 +227,7 @@ function KidDashboardContent() {
     });
   };
 
-  const updateActivity = (updatedActivity: any) => {
+  const updateActivity = (updatedActivity: Activity) => {
     updateKidLegacy(k => ({
       ...k,
       activities: k.activities?.map(a =>
@@ -237,7 +255,7 @@ function KidDashboardContent() {
 
   const addGroup = () => {
     if (!groupName.trim()) return;
-    const group: any = {
+    const group: Group = {
       id: crypto.randomUUID(),
       name: groupName,
       type: groupType,
@@ -335,385 +353,425 @@ function KidDashboardContent() {
 
   return (
     <div className="max-w-6xl mx-auto p-6 space-y-8">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div className="flex items-center gap-4">
-          <Link to="/">
-            <Button variant="outline" size="sm">
-              <ArrowLeft className="mr-2 h-4 w-4" /> Back to Kids
-            </Button>
-          </Link>
+      {/* Main Content with Sidebar */}
+      <div className={mainLayoutCls}>
+        {/* Sidebar */}
+        <aside className={sidebarWidthCls}>
           <div>
-            <h1 className="text-3xl font-bold">{kid.name}</h1>
+            <h1 className="text-3xl font-bold mb-4">{kid.name}</h1>
           </div>
-        </div>
-        <div className="flex gap-2">
-          <Button onClick={() => setOpenAddGroup(true)} variant="outline">
-            <Plus className="mr-2 h-4 w-4" /> Add group
-          </Button>
-          <Button onClick={() => setOpenAddActivity(true)} variant="outline">
-            <Plus className="mr-2 h-4 w-4" /> Add activity
-          </Button>
-          <Button
-            onClick={() => setOpenAddReport(true)}
-            variant="outline"
-            className="bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white border-0 shadow-md hover:shadow-lg transition-all duration-200"
-          >
-            <FileText className="mr-2 h-4 w-4" /> Add report
-          </Button>
-          <Button
-            onClick={() => setShowManagement(true)}
-            variant="outline"
-            className="relative bg-gradient-to-r from-yellow-400 to-yellow-600 hover:from-yellow-500 hover:to-yellow-700 text-white border-0 shadow-md hover:shadow-lg transition-all duration-200"
-          >
-            <Coins className="mr-2 h-4 w-4" /> Manage Gifts
-            {pendingRedemptions > 0 && (
-              <Badge
-                variant="destructive"
-                className="absolute -top-2 -right-2 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs animate-pulse"
+          <nav className="space-y-1 sticky top-4">
+            <SidebarNavItem
+              label="Activities"
+              icon={BarChart3}
+              active={activeTab === "metrics"}
+              onClick={() => setActiveTab("metrics")}
+            />
+            <SidebarNavItem
+              label="Reports"
+              icon={Calendar}
+              active={activeTab === "reports"}
+              onClick={() => setActiveTab("reports")}
+              badge={
+                pendingReports.length > 0 ? pendingReports.length : undefined
+              }
+              badgeVariant="destructive"
+            />
+            <SidebarNavItem
+              label="Gift Shop"
+              icon={Coins}
+              active={activeTab === "shop"}
+              onClick={() => setActiveTab("shop")}
+            />
+          </nav>
+        </aside>
+
+        {/* Section Content */}
+        <div className="flex-1 space-y-6">
+          {/* Header */}
+          <div className={headerContainerCls}>
+            <div className="flex items-center gap-4">
+              <Link to="/">
+                <Button variant="outline" size="sm">
+                  <ArrowLeft className="mr-2 h-4 w-4" /> Back to Kids
+                </Button>
+              </Link>
+            </div>
+            <div className="flex gap-2">
+              <Button onClick={() => setOpenAddGroup(true)} variant="outline">
+                <Plus className="mr-2 h-4 w-4" /> Add group
+              </Button>
+              <Button
+                onClick={() => setOpenAddActivity(true)}
+                variant="outline"
               >
-                {pendingRedemptions}
-              </Badge>
-            )}
-          </Button>
-        </div>
-      </div>
-
-      {/* Overview Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Current Points
-            </CardTitle>
-            <Target className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{kid.points}</div>
-            <p className="text-xs text-muted-foreground">
-              {kid.goal - kid.points} left to goal
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Achievements</CardTitle>
-            <Award className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {kid.achievements?.length || 0}
+                <Plus className="mr-2 h-4 w-4" /> Add activity
+              </Button>
+              <Button
+                onClick={() => setOpenAddReport(true)}
+                variant="outline"
+                className={addReportBtnGradient}
+              >
+                <FileText className="mr-2 h-4 w-4" /> Add report
+              </Button>
+              <Button
+                onClick={() => setShowManagement(true)}
+                variant="outline"
+                className={manageGiftsBtnGradient}
+              >
+                <Coins className="mr-2 h-4 w-4" /> Manage Gifts
+                {pendingRedemptions > 0 && (
+                  <Badge
+                    variant="destructive"
+                    className="absolute -top-2 -right-2 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs animate-pulse"
+                  >
+                    {pendingRedemptions}
+                  </Badge>
+                )}
+              </Button>
             </div>
-            <p className="text-xs text-muted-foreground">Badges earned</p>
-          </CardContent>
-        </Card>
+          </div>
+          <Tabs
+            value={activeTab}
+            onValueChange={setActiveTab}
+            className="w-full"
+          >
+            <TabsList className={tabsListMobileCls}>
+              <TabsTrigger value="metrics">Activities</TabsTrigger>
+              <TabsTrigger value="reports">
+                Reports
+                {pendingReports.length > 0 && (
+                  <Badge variant="destructive" className="ml-1 text-xs">
+                    {pendingReports.length}
+                  </Badge>
+                )}
+              </TabsTrigger>
+              <TabsTrigger value="shop">Gift Shop</TabsTrigger>
+            </TabsList>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Active Streaks
-            </CardTitle>
-            <BarChart3 className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {Object.values(kid.streaks || {}).filter(s => s > 0).length}
-            </div>
-            <p className="text-xs text-muted-foreground">Current streaks</p>
-          </CardContent>
-        </Card>
+            <TabsContent value="shop">
+              <GiftShop kid={kid} onRedeemGift={redeemGift} />
+            </TabsContent>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Pending Reports
-            </CardTitle>
-            <Calendar className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{pendingReports.length}</div>
-            <p className="text-xs text-muted-foreground">Awaiting approval</p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Main Content Tabs */}
-      <Tabs defaultValue="metrics" className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="metrics">Activities</TabsTrigger>
-          <TabsTrigger value="reports">
-            Reports
-            {pendingReports.length > 0 && (
-              <Badge variant="destructive" className="ml-1 text-xs">
-                {pendingReports.length}
-              </Badge>
-            )}
-          </TabsTrigger>
-          <TabsTrigger value="shop">Gift Shop</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="shop">
-          <GiftShop kid={kid} onRedeemGift={redeemGift} />
-        </TabsContent>
-
-        <TabsContent value="metrics" className="space-y-6">
-          {/* Metrics Section */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <BarChart3 className="h-5 w-5" />
-                Activities
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {!kid.activities || kid.activities.length === 0 ? (
-                <p className="text-muted-foreground text-center py-4">
-                  No activities configured. Add an activity to start tracking
-                  progress.
-                </p>
-              ) : (
-                <div className="space-y-6">
-                  {groupedActivities.map(({ group, activities }) => (
-                    <div key={group?.id || "ungrouped"}>
-                      <div className="flex items-center justify-between mb-3">
-                        <div className="flex items-center gap-2">
-                          <h3 className="font-medium">
-                            {group?.name || "Ungrouped"}
-                          </h3>
-                          {group && (
-                            <Badge
-                              variant={
-                                group.type === "goal" ? "default" : "secondary"
-                              }
-                            >
-                              {group.type}
-                            </Badge>
-                          )}
-                        </div>
-                        {group && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => removeGroup(group.id)}
-                          >
-                            <Trash2 className="h-3 w-3" />
-                          </Button>
-                        )}
-                      </div>
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead>Activity</TableHead>
-                            <TableHead>Current</TableHead>
-                            <TableHead>Plan</TableHead>
-                            <TableHead>Points</TableHead>
-                            <TableHead>Actions</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {activities.map(activity => {
-                            // Get scoring rule from activity or use default
-                            const scoringRule = activity.scoringRule || {
-                              activityId: activity.id,
-                              basePointsPerUnit: 1,
-                              goalBonusPoints: 5,
-                              streakBonusPoints: 2,
-                              maxDailyPoints: 50,
-                            };
-
-                            const pointsDisplay = `${
-                              scoringRule.basePointsPerUnit
-                            }${
-                              activity.unit ? ` per ${activity.unit}` : ""
-                            } (+${scoringRule.goalBonusPoints} goal)`;
-
-                            return (
-                              <TableRow key={activity.id}>
-                                <TableCell className="font-medium">
-                                  {activity.name}
-                                </TableCell>
-                                <TableCell>
-                                  {activity.value} {activity.unit || ""}
-                                </TableCell>
-                                <TableCell>
-                                  {activity.planValue ? (
-                                    <Badge variant="outline">
-                                      {activity.planValue} {activity.unit || ""}{" "}
-                                      {activity.planType}
-                                    </Badge>
-                                  ) : (
-                                    <span className="text-muted-foreground">
-                                      No plan
-                                    </span>
-                                  )}
-                                </TableCell>
-                                <TableCell>
-                                  <div className="text-sm">
-                                    <div className="font-medium text-primary">
-                                      {pointsDisplay}
-                                    </div>
-                                    <div className="text-xs text-muted-foreground">
-                                      +{scoringRule.streakBonusPoints} streak •
-                                      max {scoringRule.maxDailyPoints}
-                                    </div>
-                                  </div>
-                                </TableCell>
-                                <TableCell>
-                                  <div className="flex gap-1">
-                                    <Button
-                                      variant="outline"
-                                      size="sm"
-                                      onClick={() =>
-                                        setEditingActivity(activity)
-                                      }
-                                    >
-                                      <Edit className="h-3 w-3" />
-                                    </Button>
-                                    <Button
-                                      variant="outline"
-                                      size="sm"
-                                      onClick={() =>
-                                        removeActivity(activity.id)
-                                      }
-                                    >
-                                      <Trash2 className="h-3 w-3" />
-                                    </Button>
-                                  </div>
-                                </TableCell>
+            <TabsContent value="metrics" className="space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <BarChart3 className="h-5 w-5" /> Activities
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {!kid.activities || kid.activities.length === 0 ? (
+                    <p className="text-muted-foreground text-center py-4">
+                      No activities configured. Add an activity to start
+                      tracking progress.
+                    </p>
+                  ) : (
+                    <div className="space-y-6">
+                      {groupedActivities.map(({ group, activities }) => (
+                        <div key={group?.id || "ungrouped"}>
+                          <div className="flex items-center justify-between mb-3">
+                            <div className="flex items-center gap-2">
+                              <h3 className="font-medium">
+                                {group?.name || "Ungrouped"}
+                              </h3>
+                              {group && (
+                                <Badge
+                                  variant={
+                                    group.type === "goal"
+                                      ? "default"
+                                      : "secondary"
+                                  }
+                                >
+                                  {group.type}
+                                </Badge>
+                              )}
+                            </div>
+                            {group && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => removeGroup(group.id)}
+                              >
+                                <Trash2 className="h-3 w-3" />
+                              </Button>
+                            )}
+                          </div>
+                          <Table>
+                            <TableHeader>
+                              <TableRow>
+                                <TableHead>Activity</TableHead>
+                                <TableHead>Current</TableHead>
+                                <TableHead>Plan</TableHead>
+                                <TableHead>Points</TableHead>
+                                <TableHead>Actions</TableHead>
                               </TableRow>
-                            );
-                          })}
-                        </TableBody>
-                      </Table>
-                      {group !==
-                        groupedActivities[groupedActivities.length - 1]
-                          ?.group && <Separator className="mt-4" />}
+                            </TableHeader>
+                            <TableBody>
+                              {activities.map(activity => {
+                                const scoringRule: ScoringRule =
+                                  activity.scoringRule || {
+                                    activityId: activity.id,
+                                    basePointsPerUnit: 1,
+                                    goalBonusPoints: 5,
+                                    streakBonusPoints: 2,
+                                    maxDailyPoints: 50,
+                                  };
+                                const pointsDisplay = `${
+                                  scoringRule.basePointsPerUnit
+                                }${
+                                  activity.unit ? ` per ${activity.unit}` : ""
+                                } (+${scoringRule.goalBonusPoints} goal)`;
+                                return (
+                                  <TableRow key={activity.id}>
+                                    <TableCell className="font-medium">
+                                      {activity.name}
+                                    </TableCell>
+                                    <TableCell>
+                                      {activity.value} {activity.unit || ""}
+                                    </TableCell>
+                                    <TableCell>
+                                      {activity.planValue ? (
+                                        <Badge variant="outline">
+                                          {activity.planValue}{" "}
+                                          {activity.unit || ""}{" "}
+                                          {activity.planType}
+                                        </Badge>
+                                      ) : (
+                                        <span className="text-muted-foreground">
+                                          No plan
+                                        </span>
+                                      )}
+                                    </TableCell>
+                                    <TableCell>
+                                      <div className="text-sm">
+                                        <div className="font-medium text-primary">
+                                          {pointsDisplay}
+                                        </div>
+                                        <div className="text-xs text-muted-foreground">
+                                          +{scoringRule.streakBonusPoints}{" "}
+                                          streak • max{" "}
+                                          {scoringRule.maxDailyPoints}
+                                        </div>
+                                      </div>
+                                    </TableCell>
+                                    <TableCell>
+                                      <div className="flex gap-1">
+                                        <Button
+                                          variant="outline"
+                                          size="sm"
+                                          onClick={() =>
+                                            setEditingActivity(activity)
+                                          }
+                                        >
+                                          <Edit className="h-3 w-3" />
+                                        </Button>
+                                        <Button
+                                          variant="outline"
+                                          size="sm"
+                                          onClick={() =>
+                                            removeActivity(activity.id)
+                                          }
+                                        >
+                                          <Trash2 className="h-3 w-3" />
+                                        </Button>
+                                      </div>
+                                    </TableCell>
+                                  </TableRow>
+                                );
+                              })}
+                            </TableBody>
+                          </Table>
+                          {group !==
+                            groupedActivities[groupedActivities.length - 1]
+                              ?.group && <Separator className="mt-4" />}
+                        </div>
+                      ))}
                     </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
 
-        <TabsContent value="reports" className="space-y-6">
-          {/* Report Approval */}
-          {pendingReports.length > 0 && (
+            <TabsContent value="reports" className="space-y-6">
+              {pendingReports.length > 0 && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Calendar className="h-5 w-5" /> Report Approval
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      {pendingReports.map(report => (
+                        <ReportApprovalCard
+                          key={report.id}
+                          report={report}
+                          kid={kid}
+                          onReview={rid => {
+                            const r = kid.reports?.find(rr => rr.id === rid);
+                            setReviewingReport(r || null);
+                          }}
+                          onEdit={rid => {
+                            const r = kid.reports?.find(rr => rr.id === rid);
+                            setEditingReport(r || null);
+                          }}
+                        />
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Calendar className="h-5 w-5" /> Recent Reports
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {!kid.reports ||
+                  kid.reports.filter(r => r.status !== "pending").length ===
+                    0 ? (
+                    <p className="text-muted-foreground text-center py-4">
+                      No processed reports yet.
+                    </p>
+                  ) : (
+                    <div className="space-y-3">
+                      {kid.reports
+                        .filter(r => r.status !== "pending")
+                        .sort(
+                          (a, b) =>
+                            new Date(b.date).getTime() -
+                            new Date(a.date).getTime()
+                        )
+                        .slice(0, 5)
+                        .map(report => (
+                          <div
+                            key={report.id}
+                            className={`p-4 border rounded-lg ${
+                              report.status === "pending" ? "bg-muted/30" : ""
+                            }`}
+                          >
+                            <div className="flex items-center justify-between mb-2">
+                              <h4 className="font-medium">{report.date}</h4>
+                              <div className="flex gap-2">
+                                {report.status === "approved" && (
+                                  <Badge variant="default">approved</Badge>
+                                )}
+                                {report.status === "rejected" && (
+                                  <Badge variant="destructive">rejected</Badge>
+                                )}
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => setEditingReport(report)}
+                                >
+                                  <Edit className="h-3 w-3" />
+                                </Button>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => setDeletingReport(report)}
+                                >
+                                  <Trash2 className="h-3 w-3" />
+                                </Button>
+                              </div>
+                            </div>
+                            {report.notes && (
+                              <p className="text-sm text-muted-foreground mb-2">
+                                {report.notes}
+                              </p>
+                            )}
+                            <div className="flex flex-wrap gap-2">
+                              {report.entries.map(entry => {
+                                const activity = kid.activities?.find(
+                                  a => a.id === entry.activityId
+                                );
+                                return activity ? (
+                                  <Badge
+                                    key={entry.activityId}
+                                    variant="secondary"
+                                  >
+                                    {activity.name}: {entry.value}{" "}
+                                    {activity.unit || ""}
+                                  </Badge>
+                                ) : null;
+                              })}
+                            </div>
+                          </div>
+                        ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </Tabs>
+          {/* Overview Cards */}
+          <div className={overviewGridCls}>
             <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Calendar className="h-5 w-5" />
-                  Report Approval
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">
+                  Current Points
                 </CardTitle>
+                <Target className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  {pendingReports.map(report => (
-                    <ReportApprovalCard
-                      key={report.id}
-                      report={report}
-                      kid={kid}
-                      onReview={reportId => {
-                        const report = kid.reports?.find(
-                          r => r.id === reportId
-                        );
-                        setReviewingReport(report);
-                      }}
-                      onEdit={reportId => {
-                        const report = kid.reports?.find(
-                          r => r.id === reportId
-                        );
-                        setEditingReport(report);
-                      }}
-                    />
-                  ))}
-                </div>
+                <div className="text-2xl font-bold">{kid.points}</div>
+                <p className="text-xs text-muted-foreground">
+                  {kid.goal - kid.points} left to goal
+                </p>
               </CardContent>
             </Card>
-          )}
 
-          {/* Recent Reports */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Calendar className="h-5 w-5" />
-                Recent Reports
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {!kid.reports ||
-              kid.reports.filter(r => r.status !== "pending").length === 0 ? (
-                <p className="text-muted-foreground text-center py-4">
-                  No processed reports yet.
-                </p>
-              ) : (
-                <div className="space-y-3">
-                  {kid.reports
-                    .filter(report => report.status !== "pending")
-                    .sort(
-                      (a, b) =>
-                        new Date(b.date).getTime() - new Date(a.date).getTime()
-                    )
-                    .slice(0, 5)
-                    .map(report => (
-                      <div
-                        key={report.id}
-                        className={`p-4 border rounded-lg ${
-                          report.status === "pending" ? "bg-muted/30" : ""
-                        }`}
-                      >
-                        <div className="flex items-center justify-between mb-2">
-                          <h4 className="font-medium">{report.date}</h4>
-                          <div className="flex gap-2">
-                            {report.status === "approved" && (
-                              <Badge variant="default">approved</Badge>
-                            )}
-                            {report.status === "rejected" && (
-                              <Badge variant="destructive">rejected</Badge>
-                            )}
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => setEditingReport(report)}
-                            >
-                              <Edit className="h-3 w-3" />
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => setDeletingReport(report)}
-                            >
-                              <Trash2 className="h-3 w-3" />
-                            </Button>
-                          </div>
-                        </div>
-                        {report.notes && (
-                          <p className="text-sm text-muted-foreground mb-2">
-                            {report.notes}
-                          </p>
-                        )}
-                        <div className="flex flex-wrap gap-2">
-                          {report.entries.map(entry => {
-                            const activity = kid.activities?.find(
-                              a => a.id === entry.activityId
-                            );
-                            return activity ? (
-                              <Badge key={entry.activityId} variant="secondary">
-                                {activity.name}: {entry.value}{" "}
-                                {activity.unit || ""}
-                              </Badge>
-                            ) : null;
-                          })}
-                        </div>
-                      </div>
-                    ))}
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">
+                  Achievements
+                </CardTitle>
+                <Award className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">
+                  {kid.achievements?.length || 0}
                 </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+                <p className="text-xs text-muted-foreground">Badges earned</p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">
+                  Active Streaks
+                </CardTitle>
+                <BarChart3 className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">
+                  {Object.values(kid.streaks || {}).filter(s => s > 0).length}
+                </div>
+                <p className="text-xs text-muted-foreground">Current streaks</p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">
+                  Pending Reports
+                </CardTitle>
+                <Calendar className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">
+                  {pendingReports.length}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Awaiting approval
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </div>
 
       {/* Modals */}
       {/* Add Metric Dialog */}
@@ -745,7 +803,7 @@ function KidDashboardContent() {
               <Label>Plan type</Label>
               <Select
                 value={planType}
-                onValueChange={v => setPlanType(v as any)}
+                onValueChange={v => setPlanType(v as "daily" | "weekly")}
               >
                 <SelectTrigger>
                   <SelectValue />
@@ -787,7 +845,7 @@ function KidDashboardContent() {
               </Select>
             </div>
 
-            <div className="space-y-3 p-4 bg-muted/50 rounded-lg">
+            <div className={scoringRulesBoxCls}>
               <h4 className="font-medium text-sm">Scoring Rules</h4>
               <div className="grid grid-cols-2 gap-3 text-sm">
                 <div>
@@ -888,7 +946,7 @@ function KidDashboardContent() {
               <Label>Type</Label>
               <Select
                 value={groupType}
-                onValueChange={v => setGroupType(v as any)}
+                onValueChange={v => setGroupType(v as "project" | "goal")}
               >
                 <SelectTrigger>
                   <SelectValue />
@@ -1021,7 +1079,7 @@ function KidDashboardContent() {
 
       {/* Prize Management Dialog */}
       <Dialog open={showManagement} onOpenChange={setShowManagement}>
-        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+        <DialogContent className={giftDialogContentCls}>
           <DialogHeader>
             <DialogTitle>Gift Management</DialogTitle>
           </DialogHeader>
@@ -1035,5 +1093,43 @@ function KidDashboardContent() {
         </DialogContent>
       </Dialog>
     </div>
+  );
+}
+
+// NEW SidebarItem component (inline for simplicity)
+function SidebarNavItem({
+  label,
+  icon: Icon,
+  active,
+  onClick,
+  badge,
+  badgeVariant,
+}: {
+  label: string;
+  icon: React.ComponentType<{ className?: string }>;
+  active?: boolean;
+  onClick?: () => void;
+  badge?: number;
+  badgeVariant?: "default" | "secondary" | "destructive" | "outline";
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`w-full flex items-center justify-between gap-2 px-3 py-2 rounded-md text-sm border transition-colors ${
+        active
+          ? "bg-primary text-primary-foreground border-primary shadow"
+          : "hover:bg-muted border-transparent"
+      }`}
+    >
+      <span className="flex items-center gap-2">
+        <Icon className="h-4 w-4" /> {label}
+      </span>
+      {badge !== undefined && badge > 0 && (
+        <Badge variant={badgeVariant || "default"} className="ml-auto">
+          {badge}
+        </Badge>
+      )}
+    </button>
   );
 }

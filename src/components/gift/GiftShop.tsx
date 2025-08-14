@@ -133,80 +133,78 @@ export function GiftShop({ kid, onRedeemGift }: GiftShopProps) {
         {/* Current Points */}
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Gift className="h-5 w-5" />
-              Gift Shop
+            <CardTitle className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Gift className="h-5 w-5" />
+                <span className="text-2xl font-semibold">Gift Shop</span>
+              </div>
+              <div className="flex items-center gap-4">
+                <div className="text-right">
+                  <p className="text-2xl font-bold flex items-center gap-2">
+                    {kid.points} <Star className="h-6 w-6" />
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    Available points
+                  </p>
+                </div>
+                {pendingRedemptions.length > 0 && (
+                  <Badge variant="outline" className="flex items-center gap-1">
+                    <Clock className="h-3 w-3" />
+                    {pendingRedemptions.length} pending
+                  </Badge>
+                )}
+              </div>
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-2xl font-bold flex items-center gap-2">
-                  {kid.points} <Star className="h-6 w-6" />
-                </p>
-                <p className="text-muted-foreground">Available points</p>
-              </div>
-              {pendingRedemptions.length > 0 && (
-                <Badge variant="outline" className="flex items-center gap-1">
-                  <Clock className="h-3 w-3" />
-                  {pendingRedemptions.length} pending
-                </Badge>
-              )}
-            </div>
-          </CardContent>
+          <Tabs defaultValue="privileges" className="w-full bg-card ">
+            <TabsList className="grid w-full grid-cols-4 bg-transparent border mb-6">
+              <TabsTrigger
+                value="privileges"
+                className="flex items-center gap-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground transition-colors data-[state=active]:bg-orange-100 data-[state=active]:text-orange-600 data-[state=active]:border-orange-300"
+              >
+                <Gift className="h-4 w-4" />
+                Privileges
+              </TabsTrigger>
+              <TabsTrigger
+                value="treats"
+                className="flex items-center gap-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground transition-colors data-[state=active]:bg-orange-100 data-[state=active]:text-orange-600 data-[state=active]:border-orange-300"
+              >
+                <Star className="h-4 w-4" />
+                Treats
+              </TabsTrigger>
+              <TabsTrigger
+                value="activities"
+                className="flex items-center gap-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground transition-colors data-[state=active]:bg-orange-100 data-[state=active]:text-orange-600 data-[state=active]:border-orange-300"
+              >
+                <Clock className="h-4 w-4" />
+                Activities
+              </TabsTrigger>
+              <TabsTrigger
+                value="items"
+                className="flex items-center gap-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground transition-colors data-[state=active]:bg-orange-100 data-[state=active]:text-orange-600 data-[state=active]:border-orange-300"
+              >
+                <CheckCircle className="h-4 w-4" />
+                Items
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="privileges">
+              {renderGiftGrid(categorizedGifts.privilege, "privilege")}
+            </TabsContent>
+
+            <TabsContent value="treats">
+              {renderGiftGrid(categorizedGifts.treat, "treat")}
+            </TabsContent>
+
+            <TabsContent value="activities">
+              {renderGiftGrid(categorizedGifts.activity, "activity")}
+            </TabsContent>
+
+            <TabsContent value="items">
+              {renderGiftGrid(categorizedGifts.item, "item")}
+            </TabsContent>
+          </Tabs>
         </Card>
-
-        <Tabs
-          defaultValue="privileges"
-          className="w-full bg-card border rounded-lg p-6"
-        >
-          <TabsList className="grid w-full grid-cols-4 bg-transparent border-0 mb-6">
-            <TabsTrigger
-              value="privileges"
-              className="flex items-center gap-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground transition-colors data-[state=active]:bg-orange-100 data-[state=active]:text-orange-600 data-[state=active]:border-orange-300"
-            >
-              <Gift className="h-4 w-4" />
-              Privileges
-            </TabsTrigger>
-            <TabsTrigger
-              value="treats"
-              className="flex items-center gap-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground transition-colors data-[state=active]:bg-orange-100 data-[state=active]:text-orange-600 data-[state=active]:border-orange-300"
-            >
-              <Star className="h-4 w-4" />
-              Treats
-            </TabsTrigger>
-            <TabsTrigger
-              value="activities"
-              className="flex items-center gap-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground transition-colors data-[state=active]:bg-orange-100 data-[state=active]:text-orange-600 data-[state=active]:border-orange-300"
-            >
-              <Clock className="h-4 w-4" />
-              Activities
-            </TabsTrigger>
-            <TabsTrigger
-              value="items"
-              className="flex items-center gap-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground transition-colors data-[state=active]:bg-orange-100 data-[state=active]:text-orange-600 data-[state=active]:border-orange-300"
-            >
-              <CheckCircle className="h-4 w-4" />
-              Items
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="privileges">
-            {renderGiftGrid(categorizedGifts.privilege, "privilege")}
-          </TabsContent>
-
-          <TabsContent value="treats">
-            {renderGiftGrid(categorizedGifts.treat, "treat")}
-          </TabsContent>
-
-          <TabsContent value="activities">
-            {renderGiftGrid(categorizedGifts.activity, "activity")}
-          </TabsContent>
-
-          <TabsContent value="items">
-            {renderGiftGrid(categorizedGifts.item, "item")}
-          </TabsContent>
-        </Tabs>
 
         {/* Redemption History */}
         {(pendingRedemptions.length > 0 || recentRedemptions.length > 0) && (
