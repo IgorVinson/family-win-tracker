@@ -16,7 +16,8 @@ function convertToEnhancedKid(
   reports: any[],
   scoreEntries: any[],
   gifts: any[],
-  redemptions: any[]
+  redemptions: any[],
+  groups: any[] = []
 ): EnhancedKid {
   // Convert database activities to enhanced format
   const enhancedActivities = activities.map(activity => ({
@@ -90,6 +91,13 @@ function convertToEnhancedKid(
     })
   );
 
+  // Convert groups
+  const enhancedGroups = (groups || []).map(group => ({
+    id: group.id,
+    name: group.name,
+    type: group.type as "project" | "goal",
+  }));
+
   return {
     id: dbKid.id,
     name: dbKid.name,
@@ -102,7 +110,7 @@ function convertToEnhancedKid(
       0
     ),
     activities: enhancedActivities,
-    groups: [], // We don't have groups in the database yet
+    groups: enhancedGroups,
     reports: enhancedReports,
     scoreHistory: enhancedScoreHistory,
     availableGifts: enhancedGifts,
@@ -172,6 +180,7 @@ export function useEnhancedKidDB(kidId: string) {
         { data: scoreEntries = [] },
         { data: prizes = [] },
         { data: redemptions = [] },
+        { data: groups = [] },
       ] = await Promise.all([
         supabase.from("scoring_rules").select("*").eq("kid_id", kidId),
         supabase
@@ -194,6 +203,11 @@ export function useEnhancedKidDB(kidId: string) {
           .select("*, gifts(name, cost)")
           .eq("kid_id", kidId)
           .order("created_at", { ascending: false }),
+        supabase
+          .from("groups")
+          .select("*")
+          .eq("kid_id", kidId)
+          .order("name", { ascending: true }),
       ]);
 
       const enhancedKid = convertToEnhancedKid(
@@ -202,7 +216,8 @@ export function useEnhancedKidDB(kidId: string) {
         reports,
         scoreEntries,
         prizes,
-        redemptions
+        redemptions,
+        groups
       );
       setKid(enhancedKid);
     } catch (error) {
@@ -747,6 +762,89 @@ export function useEnhancedKidDB(kidId: string) {
     }
   };
 
+  const addGroup = async (groupData: {
+    name: string;
+    type: "project" | "goal";
+  }) => {
+    if (!user || !kid) return;
+
+    try {
+      const { data, error } = await supabase
+        .from("groups")
+        .insert({
+          kid_id: kidId,
+          name: groupData.name,
+          type: groupData.type,
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      // Optimistically add to local state
+      if (data) {
+        const newGroup = {
+          id: data.id,
+          name: data.name,
+          type: data.type as "project" | "goal",
+        };
+        setKid(prev =>
+          prev ? { ...prev, groups: [...prev.groups, newGroup] } : prev
+        );
+      }
+
+      toast({
+        title: "Group added",
+        description: `${groupData.name} group has been added.`,
+      });
+    } catch (error) {
+      console.error("Error adding group:", error);
+      toast({
+        variant: "destructive",
+        title: "Failed to add group",
+        description: "Could not add the group. Please try again.",
+      });
+    }
+  };
+
+  const removeGroup = async (groupId: string) => {
+    if (!user || !kid) return;
+
+    try {
+      const { error } = await supabase
+        .from("groups")
+        .delete()
+        .eq("id", groupId);
+
+      if (error) throw error;
+
+      // Optimistically remove from local state
+      setKid(prev =>
+        prev
+          ? {
+              ...prev,
+              groups: prev.groups.filter(g => g.id !== groupId),
+              activities: prev.activities?.map(a =>
+                a.groupId === groupId ? { ...a, groupId: undefined } : a
+              ),
+            }
+          : prev
+      );
+
+      toast({
+        title: "Group removed",
+        description: "The group has been removed.",
+      });
+    } catch (error) {
+      console.error("Error removing group:", error);
+      toast({
+        variant: "destructive",
+        title: "Failed to remove group",
+        description: "Could not remove the group. Please try again.",
+      });
+    }
+  };
+
   // Legacy alias for compatibility
   const updateMetricScoringRule = updateActivityScoringRule;
 
@@ -769,5 +867,7 @@ export function useEnhancedKidDB(kidId: string) {
     updateRedemption,
     updateMetricScoringRule,
     updateActivityScoringRule,
+    addGroup,
+    removeGroup,
   };
 }

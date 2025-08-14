@@ -120,6 +120,8 @@ function KidDashboardContent() {
     updateRedemption,
     updateKid,
     updateActivityScoringRule,
+    addGroup: addGroupDB,
+    removeGroup: removeGroupDB,
   } = useEnhancedKidDB(id || "");
 
   const [activityName, setActivityName] = useState("");
@@ -253,35 +255,20 @@ function KidDashboardContent() {
     });
   };
 
-  const addGroup = () => {
+  const addGroup = async () => {
     if (!groupName.trim()) return;
-    const group: Group = {
-      id: crypto.randomUUID(),
+    
+    await addGroupDB({
       name: groupName,
       type: groupType,
-    };
-    updateKidLegacy(k => ({ ...k, groups: [...(k.groups ?? []), group] }));
+    });
+    
     setGroupName("");
     setOpenAddGroup(false);
-    toast({
-      title: "Group added",
-      description: `${groupName} group has been added.`,
-    });
   };
 
-  const removeGroup = (groupId: string) => {
-    const groupName = kid?.groups?.find(g => g.id === groupId)?.name || "";
-    updateKidLegacy(k => ({
-      ...k,
-      groups: k.groups?.filter(g => g.id !== groupId),
-      activities: k.activities?.map(a =>
-        a.groupId === groupId ? { ...a, groupId: undefined } : a
-      ),
-    }));
-    toast({
-      title: "Group removed",
-      description: `${groupName} group has been removed.`,
-    });
+  const removeGroup = async (groupId: string) => {
+    await removeGroupDB(groupId);
   };
 
   const groupedActivities = useMemo(() => {
