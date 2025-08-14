@@ -11,16 +11,20 @@ export const useAuth = () => {
   const [userRole, setUserRole] = useState<'parent' | 'kid' | null>(null);
 
   useEffect(() => {
+    console.log("🔧 useAuth: Setting up auth state listener");
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        console.log("🔧 useAuth: Auth state changed", { event, hasSession: !!session });
         setSession(session);
         setUser(session?.user ?? null);
         
         if (session?.user) {
+          console.log("🔧 useAuth: User found, getting role for:", session.user.id);
           // Get user role with retry logic
           try {
             const role = await getUserRole(session.user.id);
+            console.log("🔧 useAuth: Got user role:", role);
             setUserRole(role);
             
             // Check for migration on sign in
@@ -36,32 +40,39 @@ export const useAuth = () => {
               }
             }
           } catch (error) {
-            console.error("Error getting user role:", error);
+            console.error("🔧 useAuth: Error getting user role:", error);
             setUserRole(null);
           }
         } else {
+          console.log("🔧 useAuth: No user session");
           setUserRole(null);
         }
 
+        console.log("🔧 useAuth: Setting loading to false");
         setLoading(false);
       }
     );
 
     // Check for existing session
+    console.log("🔧 useAuth: Checking for existing session");
     supabase.auth.getSession().then(async ({ data: { session } }) => {
+      console.log("🔧 useAuth: Initial session check", { hasSession: !!session });
       setSession(session);
       setUser(session?.user ?? null);
       
       if (session?.user) {
+        console.log("🔧 useAuth: Initial user found, getting role for:", session.user.id);
         try {
           const role = await getUserRole(session.user.id);
+          console.log("🔧 useAuth: Initial user role:", role);
           setUserRole(role);
         } catch (error) {
-          console.error("Error getting user role on init:", error);
+          console.error("🔧 useAuth: Error getting user role on init:", error);
           setUserRole(null);
         }
       }
       
+      console.log("🔧 useAuth: Initial loading set to false");
       setLoading(false);
     });
 

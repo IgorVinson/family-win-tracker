@@ -343,6 +343,7 @@ export const migrateLocalStorageToSupabase = async (userId: string, userRole: 'p
 
 export const getUserRole = async (userId: string): Promise<'parent' | 'kid' | null> => {
   try {
+    console.log("🔧 getUserRole: Fetching role for user:", userId);
     const { data, error } = await supabase
       .from("user_roles")
       .select("role")
@@ -350,13 +351,16 @@ export const getUserRole = async (userId: string): Promise<'parent' | 'kid' | nu
       .maybeSingle(); // Use maybeSingle instead of single to handle 0 rows gracefully
 
     if (error) {
-      console.error("Error fetching user role:", error);
+      console.error("🔧 getUserRole: Error fetching user role:", error);
       return null;
     }
 
-    return data?.role as 'parent' | 'kid' || null;
+    console.log("🔧 getUserRole: Raw data:", data);
+    const role = data?.role as 'parent' | 'kid' || null;
+    console.log("🔧 getUserRole: Returning role:", role);
+    return role;
   } catch (error) {
-    console.error("Error in getUserRole:", error);
+    console.error("🔧 getUserRole: Error in getUserRole:", error);
     return null;
   }
 };
