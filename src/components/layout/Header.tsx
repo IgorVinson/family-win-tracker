@@ -31,7 +31,10 @@ export function Header() {
   return (
     <div className="w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-40">
       <div className="container flex h-14 items-center justify-between">
-        <Link to="/" className="flex items-center gap-2 font-semibold">
+        <Link
+          to={userRole === "kid" ? (user ? "/" : "/") : "/"}
+          className="flex items-center gap-2 font-semibold"
+        >
           {/* <img
             src="/lovable-uploads/dd5214b6-f0ae-465c-be62-f98bdadb9881.png"
             alt="KidsRise Logo"
@@ -46,6 +49,11 @@ export function Header() {
               <Link to="/auth">
                 <UserRound className="h-4 w-4 mr-1" /> Sign In
               </Link>
+            </Button>
+          )}
+          {isAuthenticated && userRole === "kid" && (
+            <Button asChild size="sm" variant="secondary">
+              <Link to="/">My Dashboard</Link>
             </Button>
           )}
           {isAuthenticated && (

@@ -1,10 +1,13 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { useAuth } from "@/hooks/useAuth";
+import { useFamilyKids } from "@/hooks/useFamilyKids";
 import { Loader2 } from "lucide-react";
+import { Navigate } from "react-router-dom";
 import Index from "./Index";
 
 export default function IndexWrapper() {
-  const { loading, isAuthenticated } = useAuth();
+  const { loading, isAuthenticated, userRole } = useAuth();
+  const { kids } = useFamilyKids();
 
   if (loading) {
     return (
@@ -24,9 +27,14 @@ export default function IndexWrapper() {
     );
   }
 
-  // If not authenticated, show the existing Index page with localStorage functionality
   if (!isAuthenticated) {
     return <Index />;
+  }
+
+  // Redirect authenticated kid role to their dashboard (hide main page)
+  if (isAuthenticated && userRole === "kid") {
+    if (kids.length === 0) return null; // fallback empty until kid profile loads
+    return <Navigate to={`/kid/${kids[0].id}`} replace />;
   }
 
   // If authenticated, redirect to a database-powered dashboard

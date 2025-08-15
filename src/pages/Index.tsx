@@ -76,6 +76,7 @@ const pastelHues = [
 
 const Index = () => {
   const { isAuthenticated, user, signOut, loading: authLoading } = useAuth();
+  const { userRole } = useAuth();
 
   // Only use database for authenticated users
   const {
@@ -126,6 +127,10 @@ const Index = () => {
         </Card>
       </div>
     );
+  }
+
+  if (isAuthenticated && userRole === "kid") {
+    return null; // hidden; wrapper will redirect
   }
 
   return (
@@ -236,52 +241,54 @@ const Index = () => {
         )}
 
         {/* Leaderboard */}
-        <section className="mt-12">
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="text-2xl font-semibold flex items-center gap-2">
-              <Trophy className="h-5 w-5" /> Leaderboard
-            </h2>
-            <span className="text-sm text-muted-foreground">
-              Total points: {totalPoints}
-            </span>
-          </div>
-          <Card className="card-elevated">
-            <CardContent className="pt-6">
-              {leaderboard.length === 0 ? (
-                <p className="text-muted-foreground">
-                  No points yet. Time to earn some stars!
-                </p>
-              ) : (
-                <ul className="divide-y">
-                  {leaderboard.map((k, i) => (
-                    <li
-                      key={k.id}
-                      className="py-3 flex items-center justify-between"
-                    >
-                      <div className="flex items-center gap-3">
-                        <div
-                          className="h-9 w-9 rounded-full flex items-center justify-center border"
-                          style={{ backgroundColor: `hsl(${k.color} / 0.1)` }}
-                        >
-                          <UserRound className="h-5 w-5" />
+        {userRole !== "kid" && (
+          <section className="mt-12">
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-2xl font-semibold flex items-center gap-2">
+                <Trophy className="h-5 w-5" /> Leaderboard
+              </h2>
+              <span className="text-sm text-muted-foreground">
+                Total points: {totalPoints}
+              </span>
+            </div>
+            <Card className="card-elevated">
+              <CardContent className="pt-6">
+                {leaderboard.length === 0 ? (
+                  <p className="text-muted-foreground">
+                    No points yet. Time to earn some stars!
+                  </p>
+                ) : (
+                  <ul className="divide-y">
+                    {leaderboard.map((k, i) => (
+                      <li
+                        key={k.id}
+                        className="py-3 flex items-center justify-between"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div
+                            className="h-9 w-9 rounded-full flex items-center justify-center border"
+                            style={{ backgroundColor: `hsl(${k.color} / 0.1)` }}
+                          >
+                            <UserRound className="h-5 w-5" />
+                          </div>
+                          <span className="font-medium">
+                            {i + 1}. {k.name}
+                          </span>
                         </div>
-                        <span className="font-medium">
-                          {i + 1}. {k.name}
-                        </span>
-                      </div>
-                      <div className="text-sm text-muted-foreground">
-                        {k.points} pts{" "}
-                        {k.goal ? (
-                          <span className="ml-2">/ Goal {k.goal}</span>
-                        ) : null}
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </CardContent>
-          </Card>
-        </section>
+                        <div className="text-sm text-muted-foreground">
+                          {k.points} pts{" "}
+                          {k.goal ? (
+                            <span className="ml-2">/ Goal {k.goal}</span>
+                          ) : null}
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </CardContent>
+            </Card>
+          </section>
+        )}
       </main>
     </div>
   );

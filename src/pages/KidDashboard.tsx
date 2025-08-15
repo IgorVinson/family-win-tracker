@@ -39,6 +39,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { useEnhancedKidDB } from "@/hooks/useEnhancedKidDB";
+import { supabase } from "@/integrations/supabase/client";
 import { EnhancedKid, ScoringRule } from "@/types/scoreSystem";
 import {
   ArrowLeft,
@@ -53,6 +54,7 @@ import {
   Save,
   Target,
   Trash2,
+  Trophy,
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
@@ -104,7 +106,7 @@ export default function KidDashboard() {
 function KidDashboardContent() {
   const { id } = useParams<{ id: string }>();
   const { toast } = useToast();
-  const { loading: authLoading } = useAuth();
+  const { loading: authLoading, userRole } = useAuth();
   const {
     kid,
     loading,
@@ -155,6 +157,11 @@ function KidDashboardContent() {
   const reportSaveRef = useRef<(() => void) | null>(null);
   // NEW: active section for sidebar nav
   const [activeTab, setActiveTab] = useState("metrics");
+  // kid leaderboard state
+  const [leaderboardKids, setLeaderboardKids] = useState<
+    Array<{ id: string; name: string; points: number; goal: number }>
+  >([]);
+  const [leaderboardLoading, setLeaderboardLoading] = useState(false);
 
   const headerContainerCls =
     "flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4";
@@ -175,6 +182,36 @@ function KidDashboardContent() {
       ? `${kid.name} Dashboard – Kids Tracker`
       : "Kid Dashboard – Kids Tracker";
   }, [kid]);
+
+  useEffect(() => {
+    if (userRole === "kid") {
+      (async () => {
+        setLeaderboardLoading(true);
+        try {
+          type Row = {
+            id: string;
+            name: string;
+            current_points: number | null;
+            monthly_goal: number | null;
+          };
+          const { data } = await supabase
+            .from("kids")
+            .select("id,name,current_points,monthly_goal")
+            .order("current_points", { ascending: false });
+          setLeaderboardKids(
+            ((data as Row[]) || []).map(k => ({
+              id: k.id,
+              name: k.name,
+              points: k.current_points || 0,
+              goal: k.monthly_goal || 0,
+            }))
+          );
+        } finally {
+          setLeaderboardLoading(false);
+        }
+      })();
+    }
+  }, [userRole]);
 
   // Keep the legacy updateKid function for existing metric/group operations - now using database
   const updateKidLegacy = async (updater: (k: EnhancedKid) => EnhancedKid) => {
@@ -352,6 +389,14 @@ function KidDashboardContent() {
               active={activeTab === "shop"}
               onClick={() => setActiveTab("shop")}
             />
+            {userRole === "kid" && (
+              <SidebarNavItem
+                label="Leaderboard"
+                icon={Trophy}
+                active={activeTab === "leaderboard"}
+                onClick={() => setActiveTab("leaderboard")}
+              />
+            )}
           </nav>
         </aside>
 
@@ -674,6 +719,49 @@ function KidDashboardContent() {
                 </CardContent>
               </Card>
             </TabsContent>
+            {activeTab === "leaderboard" && userRole === "kid" && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Trophy className="h-5 w-5" /> Leaderboard
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {leaderboardLoading ? (
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <Loader2 className="h-4 w-4 animate-spin" /> Loading
+                      leaderboard...
+                    </div>
+                  ) : leaderboardKids.length === 0 ? (
+                    <p className="text-muted-foreground text-sm">
+                      No data yet.
+                    </p>
+                  ) : (
+                    <ul className="divide-y">
+                      {leaderboardKids.map((k, i) => (
+                        <li
+                          key={k.id}
+                          className="py-2 flex items-center justify-between"
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className="h-8 w-8 rounded-full border flex items-center justify-center text-xs font-medium bg-muted/40">
+                              {i + 1}
+                            </div>
+                            <span className="font-medium">{k.name}</span>
+                          </div>
+                          <div className="text-sm text-muted-foreground">
+                            {k.points} pts{" "}
+                            {k.goal ? (
+                              <span className="ml-1">/ {k.goal}</span>
+                            ) : null}
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </CardContent>
+              </Card>
+            )}
           </Tabs>
           {/* Overview Cards */}
           <div className={overviewGridCls}>
