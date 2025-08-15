@@ -43,15 +43,9 @@ type DailyReport = {
   status?: string; // backend may return other statuses; loosen for dashboard list
 };
 type Metric = { id: string; name: string; unit?: string; groupId?: string };
-type PrizeRedemption = {
+type GiftRedemption = {
   id: string;
-  prizeId: string;
-  prizeName: string;
-  pointsCost: number;
-  status: "pending" | "approved" | "rejected" | "completed";
-  requestedAt: string;
-  processedAt?: string;
-  notes?: string;
+  status: "pending" | "approved" | "rejected" | "completed" | string | null;
 };
 
 type Kid = {
@@ -63,7 +57,7 @@ type Kid = {
   createdAt: string;
   reports?: DailyReport[];
   metrics?: Metric[];
-  prizeRedemptions?: PrizeRedemption[];
+  giftRedemptions?: GiftRedemption[]; // lite version (id/status only)
 };
 
 const pastelHues = [
@@ -322,7 +316,7 @@ function KidCard({
 
   // Count pending redemptions for notification
   const pendingRedemptions =
-    kid.prizeRedemptions?.filter(r => r.status === "pending").length || 0;
+    kid.giftRedemptions?.filter(r => r.status === "pending").length || 0;
 
   // Count pending reports for notification
   const pendingReports =
@@ -415,7 +409,7 @@ function KidCard({
           );
         })()}
 
-        {/* Prize Redemption Notification */}
+        {/* Gift Redemption Notification */}
         {pendingRedemptions > 0 && (
           <div className="mt-4 p-3 bg-orange-50 border border-orange-200 rounded-lg">
             <div className="flex items-center gap-2 text-orange-700">
@@ -423,7 +417,7 @@ function KidCard({
               <div className="text-xs">
                 <p className="font-semibold">Parent Review Needed</p>
                 <p className="text-orange-600">
-                  {pendingRedemptions} prize redemption
+                  {pendingRedemptions} gift redemption request
                   {pendingRedemptions > 1 ? "s" : ""} awaiting approval
                 </p>
               </div>
