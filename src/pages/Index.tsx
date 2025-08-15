@@ -18,11 +18,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { useFamilyKids } from "@/hooks/useFamilyKids";
-import {
-  rpcCreateKidWithInvite,
-  supabase,
-  rpcCreateKidInvitation,
-} from "@/integrations/supabase/client";
+import { rpcCreateKidInvitation } from "@/integrations/supabase/client";
 import {
   AlertCircle,
   BarChart3,
@@ -537,9 +533,14 @@ function AddKidDialog({
       }
     } catch (err: unknown) {
       console.error(err);
-      const message = err instanceof Error ? err.message : "Could not create invitation.";
+      const message =
+        err instanceof Error ? err.message : "Could not create invitation.";
       setInviteError(message);
-      toast({ variant: "destructive", title: "Create failed", description: message });
+      toast({
+        variant: "destructive",
+        title: "Create failed",
+        description: message,
+      });
     } finally {
       setLoading(false);
     }

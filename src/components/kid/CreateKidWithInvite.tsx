@@ -1,6 +1,6 @@
 // filepath: src/components/kid/CreateKidWithInvite.tsx
 import { toast } from "@/hooks/use-toast";
-import { rpcCreateKidWithInvite, rpcCreateKidInvitation } from "@/integrations/supabase/client";
+import { rpcCreateKidInvitation } from "@/integrations/supabase/client";
 import { useState } from "react";
 
 export const CreateKidWithInvite = () => {
