@@ -19,6 +19,10 @@ import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { useFamilyKids } from "@/hooks/useFamilyKids";
 import {
+  rpcCreateKidWithInvite,
+  supabase,
+} from "@/integrations/supabase/client";
+import {
   AlertCircle,
   BarChart3,
   Edit,
@@ -31,7 +35,6 @@ import {
 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { rpcCreateKidWithInvite, supabase } from "@/integrations/supabase/client";
 
 type DailyReportEntry = { metricId: string; value: number };
 type DailyReport = {
@@ -552,14 +555,25 @@ function AddKidDialog({
         setInviteLink(link);
         toast({ title: "Kid created", description: "Invitation link ready." });
       } else {
-        setInviteError("Invitation token not returned. Please try again or create manually.");
-        toast({ variant: "destructive", title: "Missing token", description: "Could not generate invite link." });
+        setInviteError(
+          "Invitation token not returned. Please try again or create manually."
+        );
+        toast({
+          variant: "destructive",
+          title: "Missing token",
+          description: "Could not generate invite link.",
+        });
       }
     } catch (err: unknown) {
       console.error(err);
-      const message = err instanceof Error ? err.message : "Could not create kid.";
+      const message =
+        err instanceof Error ? err.message : "Could not create kid.";
       setInviteError(message);
-      toast({ variant: "destructive", title: "Create failed", description: message });
+      toast({
+        variant: "destructive",
+        title: "Create failed",
+        description: message,
+      });
     } finally {
       setLoading(false);
     }
@@ -599,7 +613,9 @@ function AddKidDialog({
               </div>
             </div>
           ) : loading ? (
-            <div className="text-sm text-muted-foreground">Generating invite link...</div>
+            <div className="text-sm text-muted-foreground">
+              Generating invite link...
+            </div>
           ) : inviteError ? (
             <div className="space-y-3">
               <p className="text-sm text-destructive">{inviteError}</p>
@@ -649,12 +665,12 @@ function AddKidDialog({
         </div>
         <div className="grid gap-2">
           <Label htmlFor="kid-goal">Goal (points)</Label>
-            <Input
-              id="kid-goal"
-              type="number"
-              value={goal}
-              onChange={e => setGoal(Number(e.target.value))}
-            />
+          <Input
+            id="kid-goal"
+            type="number"
+            value={goal}
+            onChange={e => setGoal(Number(e.target.value))}
+          />
         </div>
         <div className="grid gap-2 sm:grid-cols-2 sm:gap-4">
           <div className="grid gap-2">
@@ -663,7 +679,9 @@ function AddKidDialog({
               id="kid-age"
               type="number"
               value={age}
-              onChange={e => setAge(e.target.value ? Number(e.target.value) : "")}
+              onChange={e =>
+                setAge(e.target.value ? Number(e.target.value) : "")
+              }
               placeholder="e.g., 9"
             />
           </div>
@@ -696,7 +714,10 @@ function AddKidDialog({
             placeholder="Short description, strengths, focus areas..."
           />
         </div>
-        <p className="text-[11px] text-muted-foreground">Age, hobbies and description fields are currently UI-only. Backend columns would be needed to persist them.</p>
+        <p className="text-[11px] text-muted-foreground">
+          Age, hobbies and description fields are currently UI-only. Backend
+          columns would be needed to persist them.
+        </p>
       </div>
       <DialogFooter className="flex flex-col sm:flex-row gap-2 sm:gap-3">
         <Button
