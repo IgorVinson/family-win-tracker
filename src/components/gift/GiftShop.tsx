@@ -30,12 +30,12 @@ export function GiftShop({ kid, onRedeemGift }: GiftShopProps) {
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const { toast } = useToast();
 
-  const activeGifts = kid.availableGifts.filter(g => g.isActive);
+  // Show ALL gifts (including inactive) so shop isn't empty; mark inactive ones
   const categorizedGifts = {
-    privilege: activeGifts.filter(g => g.category === "privilege"),
-    treat: activeGifts.filter(g => g.category === "treat"),
-    activity: activeGifts.filter(g => g.category === "activity"),
-    item: activeGifts.filter(g => g.category === "item"),
+    privilege: kid.availableGifts.filter(g => g.category === "privilege"),
+    treat: kid.availableGifts.filter(g => g.category === "treat"),
+    activity: kid.availableGifts.filter(g => g.category === "activity"),
+    item: kid.availableGifts.filter(g => g.category === "item"),
   };
 
   const pendingRedemptions = kid.giftRedemptions.filter(
@@ -89,40 +89,72 @@ export function GiftShop({ kid, onRedeemGift }: GiftShopProps) {
     }
   };
 
+  const giftGridCls = "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4";
+
   const renderGiftGrid = (gifts: GiftType[], category: string) => (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+    <div className={giftGridCls}>
       {gifts.length === 0 ? (
         <div className="col-span-full text-center py-8 text-muted-foreground">
           No {category} gifts available right now
         </div>
       ) : (
-        gifts.map(gift => (
-          <Card key={gift.id} className="relative">
-            <CardHeader>
-              <div className="flex items-start justify-between">
-                <CardTitle className="text-lg">{gift.name}</CardTitle>
-                <Badge
-                  variant={
-                    kid.points >= gift.pointsCost ? "default" : "secondary"
-                  }
+        gifts.map(gift => {
+          const canRedeem = kid.points >= gift.pointsCost && gift.isActive;
+          return (
+            <Card key={gift.id} className="relative">
+              <CardHeader>
+                <div className="flex items-start justify-between">
+                  <CardTitle className="text-lg flex flex-col gap-1">
+                    <span>{gift.name}</span>
+                    {!gift.isActive && (
+                      <span className="text-xs font-normal text-muted-foreground">
+                        Inactive
+                      </span>
+                    )}
+                  </CardTitle>
+                  <div className="flex flex-col items-end gap-1">
+                    <Badge
+                      variant={
+                        kid.points >= gift.pointsCost ? "default" : "secondary"
+                      }
+                      className="flex items-center"
+                    >
+                      {gift.pointsCost} <Star className="h-3 w-3 ml-1" />
+                    </Badge>
+                    {!gift.isActive && (
+                      <Badge variant="outline" className="text-xs">
+                        Hidden
+                      </Badge>
+                    )}
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground mb-4 line-clamp-4">
+                  {gift.description}
+                </p>
+                <Button
+                  onClick={() => handleRedeemClick(gift)}
+                  disabled={!canRedeem}
+                  className="w-full"
+                  variant={canRedeem ? "default" : "outline"}
                 >
-                  {gift.pointsCost} <Star className="h-3 w-3 ml-1" />
-                </Badge>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <p className="text-muted-foreground mb-4">{gift.description}</p>
-              <Button
-                onClick={() => handleRedeemClick(gift)}
-                disabled={kid.points < gift.pointsCost}
-                className="w-full"
-                variant={kid.points >= gift.pointsCost ? "default" : "outline"}
-              >
-                {kid.points >= gift.pointsCost ? "Redeem" : "Not enough points"}
-              </Button>
-            </CardContent>
-          </Card>
-        ))
+                  {gift.isActive
+                    ? kid.points >= gift.pointsCost
+                      ? "Redeem"
+                      : "Not enough points"
+                    : "Not available"}
+                </Button>
+                {!gift.isActive && (
+                  <p className="mt-2 text-xs text-muted-foreground">
+                    This gift is currently inactive. Ask a parent to activate
+                    it.
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+          );
+        })
       )}
     </div>
   );
