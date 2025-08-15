@@ -50,14 +50,6 @@ export function Header() {
           )}
           {isAuthenticated && (
             <>
-              {userRole === "kid" && (
-                <Link
-                  to="/accept-invite"
-                  className="text-sm text-muted-foreground hover:text-foreground"
-                >
-                  Accept Invite
-                </Link>
-              )}
               <DropdownMenu open={open} onOpenChange={setOpen}>
                 <DropdownMenuTrigger asChild>
                   <button
