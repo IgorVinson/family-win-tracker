@@ -206,10 +206,8 @@ export const migrateLocalStorageToSupabase = async (
             .from("scoring_rules")
             .insert({
               kid_id: kidId,
-              activity: metric.name,
-              points: 10, // Default points
-              bonus: 0,
-              streak: 0,
+              activity_id: metric.id, // assuming local metric id maps or will create activity elsewhere
+              points: 10,
             });
 
           if (scoringError) {
@@ -273,44 +271,45 @@ export const migrateLocalStorageToSupabase = async (
         }
       }
 
-      // Migrate prize redemptions
-      if (localKid.prizeRedemptions && localKid.prizeRedemptions.length > 0) {
-        for (const redemption of localKid.prizeRedemptions) {
-          // Find or create prize
-          let prizeId: string;
-          const { data: existingPrize } = await supabase
-            .from("prizes")
+      // Migrate gift redemptions (legacy naming was prizeRedemptions)
+      if (localKid.giftRedemptions && localKid.giftRedemptions.length > 0) {
+        for (const redemption of localKid.giftRedemptions) {
+          // Find or create gift (was prize)
+          let giftId: string;
+          const { data: existingGift } = await supabase
+            .from("gifts")
             .select("id")
-            .eq("name", redemption.prizeName)
+            .eq("name", redemption.giftName)
             .single();
 
-          if (existingPrize) {
-            prizeId = existingPrize.id;
+          if (existingGift) {
+            giftId = existingGift.id;
           } else {
-            const { data: newPrize, error: prizeError } = await supabase
-              .from("prizes")
+            const { data: newGift, error: giftError } = await supabase
+              .from("gifts")
               .insert({
-                name: redemption.prizeName,
+                name: redemption.giftName,
                 cost: redemption.pointsCost,
-                description: "Migrated prize",
+                description: "Migrated gift",
                 category: "Custom",
                 requires_approval: true,
+                active: true,
               })
               .select("id")
               .single();
 
-            if (prizeError) {
-              console.error("Error creating prize:", prizeError);
+            if (giftError) {
+              console.error("Error creating gift:", giftError);
               continue;
             }
-            prizeId = newPrize.id;
+            giftId = newGift.id;
           }
 
           const { error: redemptionError } = await supabase
-            .from("prize_redemptions")
+            .from("gift_redemptions")
             .insert({
               kid_id: kidId,
-              prize_id: prizeId,
+              gift_id: giftId,
               status: redemption.status,
               date_processed: redemption.processedAt
                 ? new Date(redemption.processedAt).toISOString()
@@ -320,7 +319,7 @@ export const migrateLocalStorageToSupabase = async (
             });
 
           if (redemptionError) {
-            console.error("Error inserting prize redemption:", redemptionError);
+            console.error("Error inserting gift redemption:", redemptionError);
           }
         }
       }
