@@ -19,11 +19,14 @@ import {
 } from "@/lib/dataMigration";
 import { Lock, Mail, UserRound, Users } from "lucide-react";
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 
 const Auth = () => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const inviteToken = searchParams.get("inviteToken") || "";
+  const justVerified = searchParams.get("verified") === "1";
 
   // Sign Up Form
   const [signUpEmail, setSignUpEmail] = useState("");
@@ -42,11 +45,16 @@ const Auth = () => {
         data: { session },
       } = await supabase.auth.getSession();
       if (session) {
-        navigate("/");
+        if (inviteToken) {
+          localStorage.setItem("pendingKidInvitation", inviteToken);
+          navigate(`/accept-invite?token=${inviteToken}`);
+        } else {
+          navigate("/");
+        }
       }
     };
     checkAuth();
-  }, [navigate]);
+  }, [navigate, inviteToken]);
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -154,6 +162,12 @@ const Auth = () => {
           description: "You have successfully signed in.",
         });
 
+        if (inviteToken) {
+          localStorage.setItem("pendingKidInvitation", inviteToken);
+          navigate(`/accept-invite?token=${inviteToken}`);
+          return;
+        }
+
         // Check if migration is needed
         if (checkIfMigrationNeeded()) {
           const userRole = await fetchUserRole(data.user.id);
@@ -185,6 +199,18 @@ const Auth = () => {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-muted/20 p-4">
       <div className="w-full max-w-md">
+        {inviteToken && (
+          <div className="mb-4 p-3 rounded bg-green-50 border border-green-200 text-sm text-green-800">
+            {justVerified ? (
+              <p>Email verified! Now sign in to finish joining your family.</p>
+            ) : (
+              <p>
+                You have a pending family invitation. Sign in (or sign up) with
+                your kid account, then you will be redirected to link it.
+              </p>
+            )}
+          </div>
+        )}
         <div className="text-center mb-8">
           <img
             src="/lovable-uploads/dd5214b6-f0ae-465c-be62-f98bdadb9881.png"

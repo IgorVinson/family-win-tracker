@@ -1,4 +1,5 @@
 // filepath: src/pages/AcceptInvite.tsx
+
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -10,7 +11,7 @@ import {
   supabase,
 } from "@/integrations/supabase/client";
 import { Lock, Mail, UserRound } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 
 export default function AcceptInvite() {
@@ -25,46 +26,12 @@ export default function AcceptInvite() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [claimed, setClaimed] = useState(false);
-  const [autoClaiming, setAutoClaiming] = useState(false);
 
   // Signup form state
   const [signUpEmail, setSignUpEmail] = useState("");
   const [signUpPassword, setSignUpPassword] = useState("");
   const [signUpDisplayName, setSignUpDisplayName] = useState("");
   const [signUpLoading, setSignUpLoading] = useState(false);
-
-  useEffect(() => {
-    if (!token) return;
-    if (user && !claimed && user.user_metadata?.role === "kid") {
-      (async () => {
-        try {
-          setAutoClaiming(true);
-          const { data, error } = await rpcClaimKidInvitation(token);
-          if (error) {
-            console.error("Auto-claim failed:", error);
-            toast({
-              variant: "destructive",
-              title: "Auto-link failed",
-              description: error.message,
-            });
-            return;
-          }
-          const kidId = data?.[0]?.kid_id;
-          toast({
-            title: "Invitation accepted",
-            description: "Your account is now linked.",
-          });
-          if (kidId) {
-            localStorage.removeItem("pendingKidInvitation");
-            setClaimed(true);
-            navigate(`/kid/${kidId}`);
-          }
-        } finally {
-          setAutoClaiming(false);
-        }
-      })();
-    }
-  }, [token, user, claimed, navigate]);
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -79,8 +46,8 @@ export default function AcceptInvite() {
 
     setSignUpLoading(true);
     try {
-      const redirectUrl = `${window.location.origin}/accept-invite?token=${token}`;
-
+      // Redirect to Auth page AFTER email verification so kid must sign in manually
+      const redirectUrl = `${window.location.origin}/auth?inviteToken=${token}&verified=1`;
       const { data, error } = await supabase.auth.signUp({
         email: signUpEmail,
         password: signUpPassword,
@@ -100,7 +67,7 @@ export default function AcceptInvite() {
         toast({
           title: "Account created! Verify your email",
           description:
-            "Open the verification link we emailed you. When you return, we will automatically connect you.",
+            "Check your email, click the verification link, then sign in on the next page to finish joining your family.",
         });
       }
     } catch (error: unknown) {
@@ -120,8 +87,7 @@ export default function AcceptInvite() {
   };
 
   const claim = async () => {
-    if (claimed || autoClaiming) return;
-    if (!token) return;
+    if (claimed || !token) return;
     setLoading(true);
     const { data, error } = await rpcClaimKidInvitation(token);
     setLoading(false);
@@ -148,7 +114,7 @@ export default function AcceptInvite() {
 
   if (!token) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-muted/20 p-4">
+      <div className="min-h-screen flex items-center justify-center bg-background p-4">
         <Card className="w-full max-w-md">
           <CardHeader>
             <CardTitle className="text-center text-red-600">
@@ -166,7 +132,7 @@ export default function AcceptInvite() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-muted/20 p-4">
+    <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <img
@@ -245,11 +211,13 @@ export default function AcceptInvite() {
                 <div className="text-sm text-muted-foreground bg-muted p-3 rounded">
                   <p className="font-medium mb-1">What happens next:</p>
                   <ol className="list-decimal list-inside space-y-1">
-                    <li>You'll receive an email to confirm your account</li>
-                    <li>Click the link in the email to verify</li>
+                    <li>We email you a verification link</li>
                     <li>
-                      You'll be automatically signed in and connected to your
-                      family
+                      You confirm your email (redirect goes to the sign-in page)
+                    </li>
+                    <li>You sign in manually</li>
+                    <li>
+                      Return here (or we redirect you) and press Join Family
                     </li>
                   </ol>
                 </div>
@@ -261,8 +229,8 @@ export default function AcceptInvite() {
                   {signUpLoading ? "Creating account..." : "Create Kid Account"}
                 </Button>
                 <p className="text-xs text-muted-foreground text-center">
-                  After verifying your email you'll return here and be linked
-                  automatically.
+                  After verifying your email you must sign in, then come back to
+                  link your account.
                 </p>
               </form>
             </CardContent>
@@ -278,15 +246,15 @@ export default function AcceptInvite() {
             </CardHeader>
             <CardContent className="text-center space-y-4">
               <p className="text-muted-foreground">
-                You're signed in! Click below to connect to your family account.
+                Signed in! Click below to connect to your family account.
               </p>
               <Button
                 onClick={claim}
-                disabled={loading || autoClaiming}
+                disabled={loading}
                 className="w-full"
                 size="lg"
               >
-                {loading || autoClaiming ? "Connecting..." : "Join Family"}
+                {loading ? "Connecting..." : "Join Family"}
               </Button>
             </CardContent>
           </Card>
