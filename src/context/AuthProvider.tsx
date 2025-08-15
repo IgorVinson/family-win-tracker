@@ -1,5 +1,5 @@
 import { toast } from "@/hooks/use-toast";
-import { rpcClaimKidInvitation, supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/integrations/supabase/client";
 import { Session, User } from "@supabase/supabase-js";
 import { createContext, ReactNode, useEffect, useState } from "react";
 
@@ -29,33 +29,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     // Single global auth listener
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (event, session) => {
+    } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
-      
-      // Check for pending kid invitation when user signs in
-      if (event === 'SIGNED_IN' && session?.user) {
-        const pendingToken = localStorage.getItem('pendingKidInvitation');
-        if (pendingToken) {
-          try {
-            const { data, error } = await rpcClaimKidInvitation(pendingToken);
-            if (!error && data?.[0]?.kid_id) {
-              localStorage.removeItem('pendingKidInvitation');
-              toast({
-                title: "Welcome to your family!",
-                description: "Your account has been connected successfully.",
-              });
-              // Redirect to kid dashboard
-              const kidId = data[0].kid_id;
-              window.location.href = `/kid/${kidId}`;
-            }
-          } catch (error) {
-            console.error('Failed to claim pending invitation:', error);
-            localStorage.removeItem('pendingKidInvitation');
-          }
-        }
-      }
     });
 
     return () => subscription.unsubscribe();
