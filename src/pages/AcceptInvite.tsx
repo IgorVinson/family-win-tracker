@@ -5,18 +5,28 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
-import { rpcClaimKidInvitation, supabase } from "@/integrations/supabase/client";
+import {
+  rpcClaimKidInvitation,
+  supabase,
+} from "@/integrations/supabase/client";
 import { Lock, Mail, UserRound } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 
 export default function AcceptInvite() {
   const [search] = useSearchParams();
-  const token = search.get("token") || "";
+  const urlToken = search.get("token") || "";
+  const storedToken =
+    typeof window !== "undefined"
+      ? localStorage.getItem("pendingKidInvitation") || ""
+      : "";
+  const token = urlToken || storedToken;
   const { user } = useAuth();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
-  
+  const [claimed, setClaimed] = useState(false);
+  const [autoClaiming, setAutoClaiming] = useState(false);
+
   // Signup form state
   const [signUpEmail, setSignUpEmail] = useState("");
   const [signUpPassword, setSignUpPassword] = useState("");
@@ -25,8 +35,36 @@ export default function AcceptInvite() {
 
   useEffect(() => {
     if (!token) return;
-    if (!user) return; // wait until logged in / registration done
-  }, [token, user]);
+    if (user && !claimed && user.user_metadata?.role === "kid") {
+      (async () => {
+        try {
+          setAutoClaiming(true);
+          const { data, error } = await rpcClaimKidInvitation(token);
+          if (error) {
+            console.error("Auto-claim failed:", error);
+            toast({
+              variant: "destructive",
+              title: "Auto-link failed",
+              description: error.message,
+            });
+            return;
+          }
+          const kidId = data?.[0]?.kid_id;
+          toast({
+            title: "Invitation accepted",
+            description: "Your account is now linked.",
+          });
+          if (kidId) {
+            localStorage.removeItem("pendingKidInvitation");
+            setClaimed(true);
+            navigate(`/kid/${kidId}`);
+          }
+        } finally {
+          setAutoClaiming(false);
+        }
+      })();
+    }
+  }, [token, user, claimed, navigate]);
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -41,7 +79,7 @@ export default function AcceptInvite() {
 
     setSignUpLoading(true);
     try {
-      const redirectUrl = `${window.location.origin}/`;
+      const redirectUrl = `${window.location.origin}/accept-invite?token=${token}`;
 
       const { data, error } = await supabase.auth.signUp({
         email: signUpEmail,
@@ -58,12 +96,11 @@ export default function AcceptInvite() {
       if (error) throw error;
 
       if (data.user) {
-        // Store the invitation token for after email confirmation
-        localStorage.setItem('pendingKidInvitation', token);
-        
+        localStorage.setItem("pendingKidInvitation", token);
         toast({
-          title: "Account created!",
-          description: "Please check your email to confirm your account, then you'll be automatically signed in.",
+          title: "Account created! Verify your email",
+          description:
+            "Open the verification link we emailed you. When you return, we will automatically connect you.",
         });
       }
     } catch (error: unknown) {
@@ -83,6 +120,7 @@ export default function AcceptInvite() {
   };
 
   const claim = async () => {
+    if (claimed || autoClaiming) return;
     if (!token) return;
     setLoading(true);
     const { data, error } = await rpcClaimKidInvitation(token);
@@ -101,7 +139,11 @@ export default function AcceptInvite() {
       title: "Invitation accepted",
       description: "Your account is now linked.",
     });
-    if (kidId) navigate(`/kid/${kidId}`);
+    if (kidId) {
+      localStorage.removeItem("pendingKidInvitation");
+      setClaimed(true);
+      navigate(`/kid/${kidId}`);
+    }
   };
 
   if (!token) {
@@ -109,10 +151,14 @@ export default function AcceptInvite() {
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-muted/20 p-4">
         <Card className="w-full max-w-md">
           <CardHeader>
-            <CardTitle className="text-center text-red-600">Invalid Invitation</CardTitle>
+            <CardTitle className="text-center text-red-600">
+              Invalid Invitation
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-center text-muted-foreground">This invitation link is invalid or has expired.</p>
+            <p className="text-center text-muted-foreground">
+              This invitation link is invalid or has expired.
+            </p>
           </CardContent>
         </Card>
       </div>
@@ -145,7 +191,10 @@ export default function AcceptInvite() {
             <CardContent>
               <form onSubmit={handleSignUp} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="signup-name" className="flex items-center gap-2">
+                  <Label
+                    htmlFor="signup-name"
+                    className="flex items-center gap-2"
+                  >
                     <UserRound className="h-4 w-4" />
                     Display Name
                   </Label>
@@ -159,7 +208,10 @@ export default function AcceptInvite() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="signup-email" className="flex items-center gap-2">
+                  <Label
+                    htmlFor="signup-email"
+                    className="flex items-center gap-2"
+                  >
                     <Mail className="h-4 w-4" />
                     Email
                   </Label>
@@ -173,7 +225,10 @@ export default function AcceptInvite() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="signup-password" className="flex items-center gap-2">
+                  <Label
+                    htmlFor="signup-password"
+                    className="flex items-center gap-2"
+                  >
                     <Lock className="h-4 w-4" />
                     Password
                   </Label>
@@ -192,21 +247,34 @@ export default function AcceptInvite() {
                   <ol className="list-decimal list-inside space-y-1">
                     <li>You'll receive an email to confirm your account</li>
                     <li>Click the link in the email to verify</li>
-                    <li>You'll be automatically signed in and connected to your family</li>
+                    <li>
+                      You'll be automatically signed in and connected to your
+                      family
+                    </li>
                   </ol>
                 </div>
-                <Button type="submit" className="w-full" disabled={signUpLoading}>
+                <Button
+                  type="submit"
+                  className="w-full"
+                  disabled={signUpLoading}
+                >
                   {signUpLoading ? "Creating account..." : "Create Kid Account"}
                 </Button>
+                <p className="text-xs text-muted-foreground text-center">
+                  After verifying your email you'll return here and be linked
+                  automatically.
+                </p>
               </form>
             </CardContent>
           </Card>
         )}
 
-        {user && (
+        {user && !claimed && (
           <Card className="card-elevated">
             <CardHeader>
-              <CardTitle className="text-center text-green-600">Ready to Join!</CardTitle>
+              <CardTitle className="text-center text-green-600">
+                Ready to Join!
+              </CardTitle>
             </CardHeader>
             <CardContent className="text-center space-y-4">
               <p className="text-muted-foreground">
@@ -214,12 +282,26 @@ export default function AcceptInvite() {
               </p>
               <Button
                 onClick={claim}
-                disabled={loading}
+                disabled={loading || autoClaiming}
                 className="w-full"
                 size="lg"
               >
-                {loading ? "Connecting..." : "Join Family"}
+                {loading || autoClaiming ? "Connecting..." : "Join Family"}
               </Button>
+            </CardContent>
+          </Card>
+        )}
+        {user && claimed && (
+          <Card className="card-elevated">
+            <CardHeader>
+              <CardTitle className="text-center text-green-600">
+                Linked!
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="text-center space-y-4">
+              <p className="text-muted-foreground">
+                Redirecting to your dashboard...
+              </p>
             </CardContent>
           </Card>
         )}

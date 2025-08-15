@@ -585,6 +585,10 @@ export type Database = {
         Args: { _token: string };
         Returns: { kid_id: string }[];
       };
+      create_kid_invitation: {
+        Args: { _name: string; _invited_email: string | null; _goal?: number };
+        Returns: { token: string }[];
+      };
     };
     Enums: {
       app_role: "parent" | "kid";

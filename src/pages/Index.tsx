@@ -21,6 +21,7 @@ import { useFamilyKids } from "@/hooks/useFamilyKids";
 import {
   rpcCreateKidWithInvite,
   supabase,
+  rpcCreateKidInvitation,
 } from "@/integrations/supabase/client";
 import {
   AlertCircle,
@@ -514,66 +515,31 @@ function AddKidDialog({
       toast({ title: "Please enter a name" });
       return;
     }
-    // Immediately switch to invite mode so user sees second modal view
     setMode("invite");
     setInviteLink(null);
     setInviteError(null);
     try {
       setLoading(true);
-      const { data, error } = await rpcCreateKidWithInvite(
+      const { data, error } = await rpcCreateKidInvitation(
         name.trim(),
-        email.trim() || undefined
+        email.trim() || undefined,
+        Math.max(0, goal)
       );
       if (error) throw error;
-      const kidId: string | undefined = data?.[0]?.kid_id;
-      let token: string | undefined = data?.[0]?.token;
-
-      // Update goal if changed from default
-      if (kidId && goal !== 50) {
-        await supabase
-          .from("kids")
-          .update({ monthly_goal: Math.max(0, goal) })
-          .eq("id", kidId);
-      }
-
-      if (kidId) setPendingRefresh(true); // defer refresh until user closes invite view
-
-      // Fallback: fetch invitation token if not returned
-      if (!token && kidId) {
-        const { data: invRows } = await supabase
-          .from("kid_invitations")
-          .select("token")
-          .eq("kid_id", kidId)
-          .order("created_at", { ascending: false })
-          .limit(1)
-          .maybeSingle();
-        token = invRows?.token;
-      }
-
+      const token: string | undefined = data?.[0]?.token;
       if (token) {
         const link = `${window.location.origin}/accept-invite?token=${token}`;
         setInviteLink(link);
-        toast({ title: "Kid created", description: "Invitation link ready." });
+        toast({ title: "Invitation created", description: "Share this link." });
       } else {
-        setInviteError(
-          "Invitation token not returned. Please try again or create manually."
-        );
-        toast({
-          variant: "destructive",
-          title: "Missing token",
-          description: "Could not generate invite link.",
-        });
+        setInviteError("Token not returned. Please retry.");
+        toast({ variant: "destructive", title: "Missing token" });
       }
     } catch (err: unknown) {
       console.error(err);
-      const message =
-        err instanceof Error ? err.message : "Could not create kid.";
+      const message = err instanceof Error ? err.message : "Could not create invitation.";
       setInviteError(message);
-      toast({
-        variant: "destructive",
-        title: "Create failed",
-        description: message,
-      });
+      toast({ variant: "destructive", title: "Create failed", description: message });
     } finally {
       setLoading(false);
     }
@@ -603,7 +569,7 @@ function AddKidDialog({
                 <Button
                   size="sm"
                   onClick={() => {
-                    if (pendingRefresh) onAfterCreate?.();
+                    onAfterCreate?.();
                     resetForm();
                     onClose();
                   }}
@@ -631,7 +597,6 @@ function AddKidDialog({
                   size="sm"
                   variant="secondary"
                   onClick={() => {
-                    if (pendingRefresh) onAfterCreate?.();
                     resetForm();
                     onClose();
                   }}

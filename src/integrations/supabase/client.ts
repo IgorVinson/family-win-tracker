@@ -31,6 +31,18 @@ export async function rpcCreateKidWithInvite(
   });
 }
 
+export async function rpcCreateKidInvitation(
+  name: string,
+  invitedEmail?: string,
+  goal: number = 50
+) {
+  return supabase.rpc("create_kid_invitation", {
+    _name: name,
+    _invited_email: invitedEmail || null,
+    _goal: goal,
+  });
+}
+
 export async function rpcClaimKidInvitation(token: string) {
   return supabase.rpc("claim_kid_invitation", { _token: token });
 }

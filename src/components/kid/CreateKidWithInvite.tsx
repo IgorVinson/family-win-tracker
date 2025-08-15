@@ -1,6 +1,6 @@
 // filepath: src/components/kid/CreateKidWithInvite.tsx
 import { toast } from "@/hooks/use-toast";
-import { rpcCreateKidWithInvite } from "@/integrations/supabase/client";
+import { rpcCreateKidWithInvite, rpcCreateKidInvitation } from "@/integrations/supabase/client";
 import { useState } from "react";
 
 export const CreateKidWithInvite = () => {
@@ -13,9 +13,10 @@ export const CreateKidWithInvite = () => {
     e.preventDefault();
     if (!name) return;
     setLoading(true);
-    const { data, error } = await rpcCreateKidWithInvite(
+    const { data, error } = await rpcCreateKidInvitation(
       name,
-      email || undefined
+      email || undefined,
+      50
     );
     setLoading(false);
     if (error) {
@@ -27,7 +28,6 @@ export const CreateKidWithInvite = () => {
       });
       return;
     }
-    const kidId = data?.[0]?.kid_id;
     const token = data?.[0]?.token;
     if (token) {
       const link = `${window.location.origin}/accept-invite?token=${token}`;
