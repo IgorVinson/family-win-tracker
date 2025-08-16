@@ -504,7 +504,8 @@ function KidDashboardContent() {
           <div className={headerContainerCls}>
             <div className="flex items-center gap-4">
               {userRole !== "kid" && (
-                <Link to="/">
+                // hide on mobile
+                <Link to="/" className="hidden md:block">
                   <Button variant="outline" size="sm">
                     <ArrowLeft className="mr-2 h-4 w-4" /> Back to Kids
                   </Button>
@@ -517,56 +518,35 @@ function KidDashboardContent() {
                 <Button
                   onClick={() => setAddSheetOpen(true)}
                   variant="outline"
-                  className={addTriggerBtnCls}
+                  size="lg"
+                  className={addTriggerBtnCls + " h-16 text-lg px-8"}
                   aria-haspopup="dialog"
                   aria-expanded={addSheetOpen}
                   aria-controls="add-actions-sheet"
                 >
-                  <Plus className="mr-2 h-4 w-4" /> Add
+                  <Plus className="mr-3 h-7 w-7" /> Add
                 </Button>
                 {userRole === "parent" && (
                   <Button
                     onClick={() => setShowManagement(true)}
                     variant="outline"
-                    className={manageGiftsBtnGradient + " relative"}
+                    size="lg"
+                    className={
+                      manageGiftsBtnGradient + " relative h-16 text-lg px-8"
+                    }
                     aria-label={
                       pendingRedemptions > 0
                         ? `Manage gifts (${pendingRedemptions} pending redemptions)`
                         : "Manage gifts"
                     }
                   >
-                    <Coins className="mr-2 h-4 w-4" /> Gifts
-                    {pendingRedemptions > 0 && (
-                      <Badge
-                        variant="destructive"
-                        className="absolute -top-2 -right-2 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs animate-pulse"
-                      >
-                        {pendingRedemptions}
-                      </Badge>
-                    )}
+                    <Coins className="mr-3 h-7 w-7" /> Gifts
                   </Button>
                 )}
               </div>
               {/* Desktop: separate buttons */}
               <div className={desktopOnlyFlexGapCls}>
-                {userRole === "parent" && (
-                  <>
-                    <Button
-                      onClick={() => setOpenAddGroup(true)}
-                      variant="outline"
-                      aria-label="Add group"
-                    >
-                      <Plus className="mr-2 h-4 w-4" /> Add group
-                    </Button>
-                    <Button
-                      onClick={() => setOpenAddActivity(true)}
-                      variant="outline"
-                      aria-label="Add activity"
-                    >
-                      <BarChart3 className="mr-2 h-4 w-4" /> Add activity
-                    </Button>
-                  </>
-                )}
+                {userRole === "parent" && <></>}
                 <Button
                   onClick={() => setOpenAddReport(true)}
                   variant="outline"
@@ -579,18 +559,11 @@ function KidDashboardContent() {
                   <Button
                     onClick={() => setShowManagement(true)}
                     variant="outline"
+                    size="lg" /* bigger */
                     className={manageGiftsBtnGradient}
                     aria-label="Manage gifts"
                   >
-                    <Coins className="mr-2 h-4 w-4" /> Manage Gifts
-                    {pendingRedemptions > 0 && (
-                      <Badge
-                        variant="destructive"
-                        className={manageGiftsPendingBadgeCls}
-                      >
-                        {pendingRedemptions}
-                      </Badge>
-                    )}
+                    <Coins className="mr-2 h-5 w-5" /> Manage Gifts
                   </Button>
                 )}
               </div>
