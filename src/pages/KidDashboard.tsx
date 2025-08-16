@@ -55,7 +55,6 @@ import {
   Target,
   Trash2,
   Trophy,
-  X,
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
@@ -165,10 +164,10 @@ function KidDashboardContent() {
   const [leaderboardLoading, setLeaderboardLoading] = useState(false);
   // state for consolidated add menu (dropdown removed)
   // const [addMenuOpen, setAddMenuOpen] = useState(false); // removed
-  const [addSheetOpen, setAddSheetOpen] = useState(false); // replaces mobile dropdown
-  const lastFocusedElementRef = useRef<HTMLElement | null>(null); // to restore focus after sheet closes
-  const sheetPanelRef = useRef<HTMLDivElement | null>(null);
-  const touchStartYRef = useRef<number | null>(null); // for swipe-to-dismiss
+  // const [addSheetOpen, setAddSheetOpen] = useState(false); // replaces mobile dropdown
+  // const lastFocusedElementRef = useRef<HTMLElement | null>(null); // to restore focus after sheet closes
+  // const sheetPanelRef = useRef<HTMLDivElement | null>(null);
+  // const touchStartYRef = useRef<number | null>(null); // for swipe-to-dismiss
 
   const headerContainerCls =
     "flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4";
@@ -180,28 +179,19 @@ function KidDashboardContent() {
   const giftDialogContentCls = "max-w-4xl max-h-[80vh] overflow-y-auto";
   const addReportBtnGradient =
     "bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white border-0 shadow-md hover:shadow-lg transition-all duration-200"; // desktop Add report button
-  const addTriggerBtnCls =
-    "bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white border-0 shadow-md hover:shadow-lg transition-all duration-200"; // mobile add sheet trigger
+  // const addTriggerBtnCls =
+  //   "bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white border-0 shadow-md hover:shadow-lg transition-all duration-200"; // mobile add sheet trigger
   const manageGiftsBtnGradient =
     "relative bg-gradient-to-r from-yellow-400 to-yellow-600 hover:from-yellow-500 hover:to-yellow-700 text-white border-0 shadow-md hover:shadow-lg transition-all duration-200";
-  const manageGiftsActionIconWrapCls =
-    "h-10 w-10 rounded-md flex items-center justify-center bg-gradient-to-br from-yellow-400 to-yellow-600 text-white shadow"; // icon wrapper for Manage Gifts mobile action
-  const manageGiftsPendingBadgeCls =
-    "h-5 min-w-[1.25rem] px-1 rounded-full p-0 flex items-center justify-center text-[10px]"; // extracted to satisfy linter
+  // const manageGiftsActionIconWrapCls =
+  //   "h-10 w-10 rounded-md flex items-center justify-center bg-gradient-to-br from-yellow-400 to-yellow-600 text-white shadow"; // icon wrapper for Manage Gifts mobile action
+  // const manageGiftsPendingBadgeCls =
+  //   "h-5 min-w-[1.25rem] px-1 rounded-full p-0 flex items-center justify-center text-[10px]"; // extracted to satisfy linter
   const pageContainerCls =
     "max-w-6xl mx-auto p-4 sm:p-6 space-y-8 pb-28 md:pb-8 overflow-x-hidden"; // updated to hide horizontal overflow
-  const mobileOnlyCls = "md:hidden"; // extracted to satisfy linter
-  const desktopOnlyFlexGapCls = "hidden md:flex gap-2"; // extracted
-  const addSheetBackdropCls =
-    "fixed inset-0 z-50 bg-black/40 backdrop-blur-sm data-[state=closed]:pointer-events-none";
-  const addSheetPanelCls =
-    "fixed inset-x-0 top-0 z-50 rounded-b-2xl bg-background border-b shadow-xl max-h-[70vh] flex flex-col data-[state=closed]:-translate-y-full data-[state=open]:translate-y-0 transition-transform duration-300 motion-reduce:duration-0 motion-reduce:transform-none"; // changed to top sheet animation
-  const addSheetHandleCls = "mx-auto mt-2 h-1.5 w-12 rounded-full bg-muted"; // adjusted spacing for top sheet
-  const addSheetActionsGridCls = "p-4 grid gap-3";
-  const largeActionBtnCls =
-    "w-full flex items-center justify-start gap-3 rounded-lg px-4 py-5 text-base font-medium border hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring transition-colors";
-  const largeActionIconWrapCls =
-    "h-10 w-10 rounded-md flex items-center justify-center bg-gradient-to-br from-purple-500 to-purple-600 text-white shadow";
+  // removed mobileOnlyCls & desktopOnlyFlexGapCls (no longer needed)
+  const actionsToolbarCls =
+    "flex flex-nowrap gap-3 overflow-x-auto md:overflow-x-visible md:flex-wrap max-w-full py-1 -mx-2 px-2 sm:mx-0 sm:px-0 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"; // horizontal scroll container for action buttons on mobile only, wrap on desktop
   const mobileActivitiesListCls = "block md:hidden space-y-3"; // utility wrapper for mobile activities cards
   const desktopActivitiesTableWrapperCls = "hidden md:block"; // wrapper for desktop table
 
@@ -242,74 +232,74 @@ function KidDashboardContent() {
   }, [userRole]);
 
   // Prevent body scroll & manage focus when sheet open
-  useEffect(() => {
-    if (addSheetOpen) {
-      lastFocusedElementRef.current =
-        document.activeElement as HTMLElement | null;
-      // lock scroll
-      const originalOverflow = document.body.style.overflow;
-      document.body.style.overflow = "hidden";
-      // focus first actionable element after open
-      requestAnimationFrame(() => {
-        const panel = sheetPanelRef.current;
-        if (!panel) return;
-        const focusables = panel.querySelectorAll<HTMLElement>(
-          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
-        );
-        if (focusables.length) focusables[0].focus();
-      });
+  // useEffect(() => {
+  //   if (addSheetOpen) {
+  //     lastFocusedElementRef.current =
+  //       document.activeElement as HTMLElement | null;
+  //     // lock scroll
+  //     const originalOverflow = document.body.style.overflow;
+  //     document.body.style.overflow = "hidden";
+  //     // focus first actionable element after open
+  //     requestAnimationFrame(() => {
+  //       const panel = sheetPanelRef.current;
+  //       if (!panel) return;
+  //       const focusables = panel.querySelectorAll<HTMLElement>(
+  //         'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+  //       );
+  //       if (focusables.length) focusables[0].focus();
+  //     });
 
-      const handleKeyDown = (e: KeyboardEvent) => {
-        if (e.key === "Escape") {
-          setAddSheetOpen(false);
-        } else if (e.key === "Tab") {
-          // basic focus trap
-          const panel = sheetPanelRef.current;
-          if (!panel) return;
-          const focusables = Array.from(
-            panel.querySelectorAll<HTMLElement>(
-              'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
-            )
-          ).filter(el => !el.hasAttribute("disabled"));
-          if (focusables.length === 0) return;
-          const first = focusables[0];
-          const last = focusables[focusables.length - 1];
-          if (e.shiftKey && document.activeElement === first) {
-            e.preventDefault();
-            last.focus();
-          } else if (!e.shiftKey && document.activeElement === last) {
-            e.preventDefault();
-            first.focus();
-          }
-        }
-      };
-      document.addEventListener("keydown", handleKeyDown);
-      return () => {
-        document.body.style.overflow = originalOverflow;
-        document.removeEventListener("keydown", handleKeyDown);
-      };
-    } else {
-      // restore focus
-      if (lastFocusedElementRef.current) {
-        lastFocusedElementRef.current.focus();
-      }
-    }
-  }, [addSheetOpen]);
+  //     const handleKeyDown = (e: KeyboardEvent) => {
+  //       if (e.key === "Escape") {
+  //         setAddSheetOpen(false);
+  //       } else if (e.key === "Tab") {
+  //         // basic focus trap
+  //         const panel = sheetPanelRef.current;
+  //         if (!panel) return;
+  //         const focusables = Array.from(
+  //           panel.querySelectorAll<HTMLElement>(
+  //             'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+  //           )
+  //         ).filter(el => !el.hasAttribute("disabled"));
+  //         if (focusables.length === 0) return;
+  //         const first = focusables[0];
+  //         const last = focusables[focusables.length - 1];
+  //         if (e.shiftKey && document.activeElement === first) {
+  //           e.preventDefault();
+  //           last.focus();
+  //         } else if (!e.shiftKey && document.activeElement === last) {
+  //           e.preventDefault();
+  //           first.focus();
+  //         }
+  //       }
+  //     };
+  //     document.addEventListener("keydown", handleKeyDown);
+  //     return () => {
+  //       document.body.style.overflow = originalOverflow;
+  //       document.removeEventListener("keydown", handleKeyDown);
+  //     };
+  //   } else {
+  //     // restore focus
+  //     if (lastFocusedElementRef.current) {
+  //       lastFocusedElementRef.current.focus();
+  //     }
+  //   }
+  // }, [addSheetOpen]);
 
   // Swipe-to-dismiss (basic downward swipe)
-  const handleTouchStart = (e: React.TouchEvent) => {
-    touchStartYRef.current = e.touches[0].clientY;
-  };
-  const handleTouchMove = (e: React.TouchEvent) => {
-    // optional: could add visual feedback
-  };
-  const handleTouchEnd = (e: React.TouchEvent) => {
-    if (touchStartYRef.current !== null) {
-      const delta = e.changedTouches[0].clientY - touchStartYRef.current;
-      if (delta > 60) setAddSheetOpen(false);
-    }
-    touchStartYRef.current = null;
-  };
+  // const handleTouchStart = (e: React.TouchEvent) => {
+  //   touchStartYRef.current = e.touches[0].clientY;
+  // };
+  // const handleTouchMove = (e: React.TouchEvent) => {
+  //   // optional: could add visual feedback
+  // };
+  // const handleTouchEnd = (e: React.TouchEvent) => {
+  //   if (touchStartYRef.current !== null) {
+  //     const delta = e.changedTouches[0].clientY - touchStartYRef.current;
+  //     if (delta > 60) setAddSheetOpen(false);
+  //   }
+  //   touchStartYRef.current = null;
+  // };
 
   // Keep the legacy updateKid function for existing metric/group operations - now using database
   const updateKidLegacy = async (updater: (k: EnhancedKid) => EnhancedKid) => {
@@ -512,61 +502,70 @@ function KidDashboardContent() {
                 </Link>
               )}
             </div>
-            <div className="flex gap-2">
-              {/* Mobile: Add sheet trigger + Manage Gifts */}
-              <div className={mobileOnlyCls + " flex gap-2"}>
+            {/* Unified inline action buttons: large, single scrollable row */}
+            <div
+              className={actionsToolbarCls}
+              role="toolbar"
+              aria-label="Quick actions"
+            >
+              <Button
+                onClick={() => setOpenAddReport(true)}
+                variant="outline"
+                size="lg"
+                className={
+                  addReportBtnGradient +
+                  " h-14 px-8 text-base font-semibold whitespace-nowrap flex-shrink-0 lg:h-10 lg:px-4 lg:text-sm"
+                }
+                aria-label="Add report"
+              >
+                <FileText className="mr-3 h-6 w-6 lg:mr-2 lg:h-4 lg:w-4" /> Add
+                Report
+              </Button>
+              {userRole === "parent" && (
                 <Button
-                  onClick={() => setAddSheetOpen(true)}
+                  onClick={() => setOpenAddActivity(true)}
                   variant="outline"
                   size="lg"
-                  className={addTriggerBtnCls + " h-16 text-lg px-8"}
-                  aria-haspopup="dialog"
-                  aria-expanded={addSheetOpen}
-                  aria-controls="add-actions-sheet"
+                  className={
+                    addReportBtnGradient +
+                    " h-14 px-8 text-base font-semibold whitespace-nowrap flex-shrink-0 lg:h-10 lg:px-4 lg:text-sm"
+                  }
+                  aria-label="Add activity"
                 >
-                  <Plus className="mr-3 h-7 w-7" /> Add
+                  <BarChart3 className="mr-3 h-6 w-6 lg:mr-2 lg:h-4 lg:w-4" />{" "}
+                  Add Activity
                 </Button>
-                {userRole === "parent" && (
-                  <Button
-                    onClick={() => setShowManagement(true)}
-                    variant="outline"
-                    size="lg"
-                    className={
-                      manageGiftsBtnGradient + " relative h-16 text-lg px-8"
-                    }
-                    aria-label={
-                      pendingRedemptions > 0
-                        ? `Manage gifts (${pendingRedemptions} pending redemptions)`
-                        : "Manage gifts"
-                    }
-                  >
-                    <Coins className="mr-3 h-7 w-7" /> Gifts
-                  </Button>
-                )}
-              </div>
-              {/* Desktop: separate buttons */}
-              <div className={desktopOnlyFlexGapCls}>
-                {userRole === "parent" && <></>}
+              )}
+              {userRole === "parent" && (
                 <Button
-                  onClick={() => setOpenAddReport(true)}
+                  onClick={() => setOpenAddGroup(true)}
                   variant="outline"
-                  className={addReportBtnGradient}
-                  aria-label="Add report"
+                  size="lg"
+                  className={
+                    addReportBtnGradient +
+                    " h-14 px-8 text-base font-semibold whitespace-nowrap flex-shrink-0 lg:h-10 lg:px-4 lg:text-sm"
+                  }
+                  aria-label="Add group"
                 >
-                  <FileText className="mr-2 h-4 w-4" /> Add report
+                  <Plus className="mr-3 h-6 w-6 lg:mr-2 lg:h-4 lg:w-4" /> Add
+                  Group
                 </Button>
-                {userRole === "parent" && (
-                  <Button
-                    onClick={() => setShowManagement(true)}
-                    variant="outline"
-                    size="lg" /* bigger */
-                    className={manageGiftsBtnGradient}
-                    aria-label="Manage gifts"
-                  >
-                    <Coins className="mr-2 h-5 w-5" /> Manage Gifts
-                  </Button>
-                )}
-              </div>
+              )}
+              {userRole === "parent" && (
+                <Button
+                  onClick={() => setShowManagement(true)}
+                  variant="outline"
+                  size="lg"
+                  className={
+                    manageGiftsBtnGradient +
+                    " h-14 px-8 text-base font-semibold whitespace-nowrap flex-shrink-0 lg:h-10 lg:px-4 lg:text-sm"
+                  }
+                  aria-label="Manage gifts"
+                >
+                  <Coins className="mr-3 h-7 w-7 lg:mr-2 lg:h-4 lg:w-4" />{" "}
+                  Manage Gifts
+                </Button>
+              )}
             </div>
           </div>
           <Tabs
@@ -1390,118 +1389,6 @@ function KidDashboardContent() {
           />
         </DialogContent>
       </Dialog>
-
-      {/* Mobile Add Action Sheet */}
-      {addSheetOpen && (
-        <div
-          className={addSheetBackdropCls}
-          role="presentation"
-          aria-hidden={false}
-          onClick={() => setAddSheetOpen(false)}
-          data-state={addSheetOpen ? "open" : "closed"}
-        >
-          <div
-            id="add-actions-sheet"
-            ref={sheetPanelRef}
-            className={addSheetPanelCls}
-            data-state={addSheetOpen ? "open" : "closed"}
-            onClick={e => e.stopPropagation()}
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="add-actions-title"
-            tabIndex={-1}
-            onTouchStart={handleTouchStart}
-            onTouchMove={handleTouchMove}
-            onTouchEnd={handleTouchEnd}
-          >
-            <div className={addSheetHandleCls} aria-hidden="true" />
-            <div className="flex items-center justify-between px-5 pt-4 pb-2">
-              <h2
-                id="add-actions-title"
-                className="text-sm font-medium uppercase tracking-wide text-muted-foreground"
-              >
-                Quick Add
-              </h2>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setAddSheetOpen(false)}
-                aria-label="Close add actions"
-              >
-                <X className="h-5 w-5" />
-              </Button>
-            </div>
-            <div
-              className={
-                addSheetActionsGridCls +
-                " pb-[calc(env(safe-area-inset-bottom)+1rem)]"
-              }
-            >
-              <button
-                type="button"
-                className={largeActionBtnCls}
-                onClick={() => {
-                  setOpenAddReport(true);
-                  setAddSheetOpen(false);
-                }}
-              >
-                <span className={largeActionIconWrapCls}>
-                  <FileText className="h-5 w-5" />
-                </span>
-                <span className="flex flex-col text-left">
-                  <span>Add Report</span>
-                  <span className="text-xs font-normal text-muted-foreground">
-                    Daily progress entry
-                  </span>
-                </span>
-              </button>
-              {userRole === "parent" && (
-                <button
-                  type="button"
-                  className={largeActionBtnCls}
-                  onClick={() => {
-                    setOpenAddActivity(true);
-                    setAddSheetOpen(false);
-                  }}
-                >
-                  <span className={largeActionIconWrapCls}>
-                    <BarChart3 className="h-5 w-5" />
-                  </span>
-                  <span className="flex flex-col text-left">
-                    <span>Add Activity</span>
-                    <span className="text-xs font-normal text-muted-foreground">
-                      Trackable task
-                    </span>
-                  </span>
-                </button>
-              )}
-              {userRole === "parent" && (
-                <button
-                  type="button"
-                  className={largeActionBtnCls}
-                  onClick={() => {
-                    setOpenAddGroup(true);
-                    setAddSheetOpen(false);
-                  }}
-                >
-                  <span className={largeActionIconWrapCls}>
-                    <Plus className="h-5 w-5" />
-                  </span>
-                  <span className="flex flex-col text-left">
-                    <span>Add Group</span>
-                    <span className="text-xs font-normal text-muted-foreground">
-                      Organize activities
-                    </span>
-                  </span>
-                </button>
-              )}
-              <Button variant="outline" onClick={() => setAddSheetOpen(false)}>
-                Cancel
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

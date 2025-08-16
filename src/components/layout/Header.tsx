@@ -40,7 +40,7 @@ export function Header() {
             alt="KidsRise Logo"
             className="h-8 w-auto"
           /> */}
-          <span className="hidden sm:inline-block text-lg">KidsRise</span>
+          <span className="sm:inline-block text-lg">KidsRise</span>
         </Link>
 
         <div className="flex items-center gap-4">
