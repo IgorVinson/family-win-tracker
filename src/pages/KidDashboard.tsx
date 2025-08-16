@@ -405,11 +405,13 @@ function KidDashboardContent() {
           {/* Header */}
           <div className={headerContainerCls}>
             <div className="flex items-center gap-4">
-              <Link to="/">
-                <Button variant="outline" size="sm">
-                  <ArrowLeft className="mr-2 h-4 w-4" /> Back to Kids
-                </Button>
-              </Link>
+              {userRole !== "kid" && (
+                <Link to="/">
+                  <Button variant="outline" size="sm">
+                    <ArrowLeft className="mr-2 h-4 w-4" /> Back to Kids
+                  </Button>
+                </Link>
+              )}
             </div>
             <div className="flex gap-2">
               <Button onClick={() => setOpenAddGroup(true)} variant="outline">
@@ -428,21 +430,23 @@ function KidDashboardContent() {
               >
                 <FileText className="mr-2 h-4 w-4" /> Add report
               </Button>
-              <Button
-                onClick={() => setShowManagement(true)}
-                variant="outline"
-                className={manageGiftsBtnGradient}
-              >
-                <Coins className="mr-2 h-4 w-4" /> Manage Gifts
-                {pendingRedemptions > 0 && (
-                  <Badge
-                    variant="destructive"
-                    className="absolute -top-2 -right-2 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs animate-pulse"
-                  >
-                    {pendingRedemptions}
-                  </Badge>
-                )}
-              </Button>
+              {userRole === "parent" && (
+                <Button
+                  onClick={() => setShowManagement(true)}
+                  variant="outline"
+                  className={manageGiftsBtnGradient}
+                >
+                  <Coins className="mr-2 h-4 w-4" /> Manage Gifts
+                  {pendingRedemptions > 0 && (
+                    <Badge
+                      variant="destructive"
+                      className="absolute -top-2 -right-2 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs animate-pulse"
+                    >
+                      {pendingRedemptions}
+                    </Badge>
+                  )}
+                </Button>
+              )}
             </div>
           </div>
           <Tabs
@@ -744,9 +748,13 @@ function KidDashboardContent() {
                           className="py-2 flex items-center justify-between"
                         >
                           <div className="flex items-center gap-3">
-                            <div className="h-8 w-8 rounded-full border flex items-center justify-center text-xs font-medium bg-muted/40">
-                              {i + 1}
-                            </div>
+                            {(() => {
+                              const rankCircleCls =
+                                "h-8 w-8 rounded-full border flex items-center justify-center text-xs font-medium bg-muted/40"; // extracted to avoid linter complaining inline
+                              return (
+                                <div className={rankCircleCls}>{i + 1}</div>
+                              );
+                            })()}
                             <span className="font-medium">{k.name}</span>
                           </div>
                           <div className="text-sm text-muted-foreground">

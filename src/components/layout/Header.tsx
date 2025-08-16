@@ -51,11 +51,6 @@ export function Header() {
               </Link>
             </Button>
           )}
-          {isAuthenticated && userRole === "kid" && (
-            <Button asChild size="sm" variant="secondary">
-              <Link to="/">My Dashboard</Link>
-            </Button>
-          )}
           {isAuthenticated && (
             <>
               <DropdownMenu open={open} onOpenChange={setOpen}>
