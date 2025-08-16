@@ -694,6 +694,10 @@ function KidDashboardContent() {
                                   variant="outline"
                                   size="sm"
                                   onClick={() => setEditingReport(report)}
+                                  disabled={
+                                    userRole === "kid" &&
+                                    report.status === "approved"
+                                  }
                                 >
                                   <Edit className="h-3 w-3" />
                                 </Button>
@@ -701,6 +705,10 @@ function KidDashboardContent() {
                                   variant="outline"
                                   size="sm"
                                   onClick={() => setDeletingReport(report)}
+                                  disabled={
+                                    userRole === "kid" &&
+                                    report.status === "approved"
+                                  }
                                 >
                                   <Trash2 className="h-3 w-3" />
                                 </Button>
@@ -1110,6 +1118,7 @@ function KidDashboardContent() {
           updateReport(reportId, updates);
           setReviewingReport(null);
         }}
+        userRole={userRole}
       />
 
       {/* Edit Report Modal */}
