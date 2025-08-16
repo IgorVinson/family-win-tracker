@@ -414,15 +414,22 @@ function KidDashboardContent() {
               )}
             </div>
             <div className="flex gap-2">
-              <Button onClick={() => setOpenAddGroup(true)} variant="outline">
-                <Plus className="mr-2 h-4 w-4" /> Add group
-              </Button>
-              <Button
-                onClick={() => setOpenAddActivity(true)}
-                variant="outline"
-              >
-                <Plus className="mr-2 h-4 w-4" /> Add activity
-              </Button>
+              {userRole === "parent" && (
+                <>
+                  <Button
+                    onClick={() => setOpenAddGroup(true)}
+                    variant="outline"
+                  >
+                    <Plus className="mr-2 h-4 w-4" /> Add group
+                  </Button>
+                  <Button
+                    onClick={() => setOpenAddActivity(true)}
+                    variant="outline"
+                  >
+                    <Plus className="mr-2 h-4 w-4" /> Add activity
+                  </Button>
+                </>
+              )}
               <Button
                 onClick={() => setOpenAddReport(true)}
                 variant="outline"
@@ -522,7 +529,9 @@ function KidDashboardContent() {
                                 <TableHead>Current</TableHead>
                                 <TableHead>Plan</TableHead>
                                 <TableHead>Points</TableHead>
-                                <TableHead>Actions</TableHead>
+                                {userRole === "parent" && (
+                                  <TableHead>Actions</TableHead>
+                                )}
                               </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -573,28 +582,30 @@ function KidDashboardContent() {
                                         </div>
                                       </div>
                                     </TableCell>
-                                    <TableCell>
-                                      <div className="flex gap-1">
-                                        <Button
-                                          variant="outline"
-                                          size="sm"
-                                          onClick={() =>
-                                            setEditingActivity(activity)
-                                          }
-                                        >
-                                          <Edit className="h-3 w-3" />
-                                        </Button>
-                                        <Button
-                                          variant="outline"
-                                          size="sm"
-                                          onClick={() =>
-                                            setDeletingActivity(activity)
-                                          }
-                                        >
-                                          <Trash2 className="h-3 w-3" />
-                                        </Button>
-                                      </div>
-                                    </TableCell>
+                                    {userRole === "parent" && (
+                                      <TableCell>
+                                        <div className="flex gap-1">
+                                          <Button
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={() =>
+                                              setEditingActivity(activity)
+                                            }
+                                          >
+                                            <Edit className="h-3 w-3" />
+                                          </Button>
+                                          <Button
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={() =>
+                                              setDeletingActivity(activity)
+                                            }
+                                          >
+                                            <Trash2 className="h-3 w-3" />
+                                          </Button>
+                                        </div>
+                                      </TableCell>
+                                    )}
                                   </TableRow>
                                 );
                               })}
