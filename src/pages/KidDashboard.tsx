@@ -55,6 +55,7 @@ import {
   Target,
   Trash2,
   Trophy,
+  X,
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
@@ -162,6 +163,12 @@ function KidDashboardContent() {
     Array<{ id: string; name: string; points: number; goal: number }>
   >([]);
   const [leaderboardLoading, setLeaderboardLoading] = useState(false);
+  // state for consolidated add menu (dropdown removed)
+  // const [addMenuOpen, setAddMenuOpen] = useState(false); // removed
+  const [addSheetOpen, setAddSheetOpen] = useState(false); // replaces mobile dropdown
+  const lastFocusedElementRef = useRef<HTMLElement | null>(null); // to restore focus after sheet closes
+  const sheetPanelRef = useRef<HTMLDivElement | null>(null);
+  const touchStartYRef = useRef<number | null>(null); // for swipe-to-dismiss
 
   const headerContainerCls =
     "flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4";
@@ -169,15 +176,34 @@ function KidDashboardContent() {
     "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8";
   const mainLayoutCls = "flex flex-col md:flex-row gap-6";
   const sidebarWidthCls = "md:w-48 lg:w-56 shrink-0";
-  const tabsListMobileCls = "grid w-full grid-cols-3 md:hidden hidden"; // hidden now; replaced by bottom tab bar
   const scoringRulesBoxCls = "space-y-3 p-4 bg-muted/50 rounded-lg";
   const giftDialogContentCls = "max-w-4xl max-h-[80vh] overflow-y-auto";
   const addReportBtnGradient =
-    "bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white border-0 shadow-md hover:shadow-lg transition-all duration-200";
+    "bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white border-0 shadow-md hover:shadow-lg transition-all duration-200"; // desktop Add report button
+  const addTriggerBtnCls =
+    "bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white border-0 shadow-md hover:shadow-lg transition-all duration-200"; // mobile add sheet trigger
   const manageGiftsBtnGradient =
     "relative bg-gradient-to-r from-yellow-400 to-yellow-600 hover:from-yellow-500 hover:to-yellow-700 text-white border-0 shadow-md hover:shadow-lg transition-all duration-200";
+  const manageGiftsActionIconWrapCls =
+    "h-10 w-10 rounded-md flex items-center justify-center bg-gradient-to-br from-yellow-400 to-yellow-600 text-white shadow"; // icon wrapper for Manage Gifts mobile action
+  const manageGiftsPendingBadgeCls =
+    "h-5 min-w-[1.25rem] px-1 rounded-full p-0 flex items-center justify-center text-[10px]"; // extracted to satisfy linter
   const pageContainerCls =
     "max-w-6xl mx-auto p-4 sm:p-6 space-y-8 pb-28 md:pb-8 overflow-x-hidden"; // updated to hide horizontal overflow
+  const mobileOnlyCls = "md:hidden"; // extracted to satisfy linter
+  const desktopOnlyFlexGapCls = "hidden md:flex gap-2"; // extracted
+  const addSheetBackdropCls =
+    "fixed inset-0 z-50 bg-black/40 backdrop-blur-sm data-[state=closed]:pointer-events-none";
+  const addSheetPanelCls =
+    "fixed inset-x-0 top-0 z-50 rounded-b-2xl bg-background border-b shadow-xl max-h-[70vh] flex flex-col data-[state=closed]:-translate-y-full data-[state=open]:translate-y-0 transition-transform duration-300 motion-reduce:duration-0 motion-reduce:transform-none"; // changed to top sheet animation
+  const addSheetHandleCls = "mx-auto mt-2 h-1.5 w-12 rounded-full bg-muted"; // adjusted spacing for top sheet
+  const addSheetActionsGridCls = "p-4 grid gap-3";
+  const largeActionBtnCls =
+    "w-full flex items-center justify-start gap-3 rounded-lg px-4 py-5 text-base font-medium border hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring transition-colors";
+  const largeActionIconWrapCls =
+    "h-10 w-10 rounded-md flex items-center justify-center bg-gradient-to-br from-purple-500 to-purple-600 text-white shadow";
+  const mobileActivitiesListCls = "block md:hidden space-y-3"; // utility wrapper for mobile activities cards
+  const desktopActivitiesTableWrapperCls = "hidden md:block"; // wrapper for desktop table
 
   useEffect(() => {
     document.title = kid
@@ -214,6 +240,76 @@ function KidDashboardContent() {
       })();
     }
   }, [userRole]);
+
+  // Prevent body scroll & manage focus when sheet open
+  useEffect(() => {
+    if (addSheetOpen) {
+      lastFocusedElementRef.current =
+        document.activeElement as HTMLElement | null;
+      // lock scroll
+      const originalOverflow = document.body.style.overflow;
+      document.body.style.overflow = "hidden";
+      // focus first actionable element after open
+      requestAnimationFrame(() => {
+        const panel = sheetPanelRef.current;
+        if (!panel) return;
+        const focusables = panel.querySelectorAll<HTMLElement>(
+          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+        );
+        if (focusables.length) focusables[0].focus();
+      });
+
+      const handleKeyDown = (e: KeyboardEvent) => {
+        if (e.key === "Escape") {
+          setAddSheetOpen(false);
+        } else if (e.key === "Tab") {
+          // basic focus trap
+          const panel = sheetPanelRef.current;
+          if (!panel) return;
+          const focusables = Array.from(
+            panel.querySelectorAll<HTMLElement>(
+              'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+            )
+          ).filter(el => !el.hasAttribute("disabled"));
+          if (focusables.length === 0) return;
+          const first = focusables[0];
+          const last = focusables[focusables.length - 1];
+          if (e.shiftKey && document.activeElement === first) {
+            e.preventDefault();
+            last.focus();
+          } else if (!e.shiftKey && document.activeElement === last) {
+            e.preventDefault();
+            first.focus();
+          }
+        }
+      };
+      document.addEventListener("keydown", handleKeyDown);
+      return () => {
+        document.body.style.overflow = originalOverflow;
+        document.removeEventListener("keydown", handleKeyDown);
+      };
+    } else {
+      // restore focus
+      if (lastFocusedElementRef.current) {
+        lastFocusedElementRef.current.focus();
+      }
+    }
+  }, [addSheetOpen]);
+
+  // Swipe-to-dismiss (basic downward swipe)
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartYRef.current = e.touches[0].clientY;
+  };
+  const handleTouchMove = (e: React.TouchEvent) => {
+    // optional: could add visual feedback
+  };
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (touchStartYRef.current !== null) {
+      const delta = e.changedTouches[0].clientY - touchStartYRef.current;
+      if (delta > 60) setAddSheetOpen(false);
+    }
+    touchStartYRef.current = null;
+  };
 
   // Keep the legacy updateKid function for existing metric/group operations - now using database
   const updateKidLegacy = async (updater: (k: EnhancedKid) => EnhancedKid) => {
@@ -416,46 +512,88 @@ function KidDashboardContent() {
               )}
             </div>
             <div className="flex gap-2">
-              {userRole === "parent" && (
-                <>
-                  <Button
-                    onClick={() => setOpenAddGroup(true)}
-                    variant="outline"
-                  >
-                    <Plus className="mr-2 h-4 w-4" /> Add group
-                  </Button>
-                  <Button
-                    onClick={() => setOpenAddActivity(true)}
-                    variant="outline"
-                  >
-                    <Plus className="mr-2 h-4 w-4" /> Add activity
-                  </Button>
-                </>
-              )}
-              <Button
-                onClick={() => setOpenAddReport(true)}
-                variant="outline"
-                className={addReportBtnGradient}
-              >
-                <FileText className="mr-2 h-4 w-4" /> Add report
-              </Button>
-              {userRole === "parent" && (
+              {/* Mobile: Add sheet trigger + Manage Gifts */}
+              <div className={mobileOnlyCls + " flex gap-2"}>
                 <Button
-                  onClick={() => setShowManagement(true)}
+                  onClick={() => setAddSheetOpen(true)}
                   variant="outline"
-                  className={manageGiftsBtnGradient}
+                  className={addTriggerBtnCls}
+                  aria-haspopup="dialog"
+                  aria-expanded={addSheetOpen}
+                  aria-controls="add-actions-sheet"
                 >
-                  <Coins className="mr-2 h-4 w-4" /> Manage Gifts
-                  {pendingRedemptions > 0 && (
-                    <Badge
-                      variant="destructive"
-                      className="absolute -top-2 -right-2 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs animate-pulse"
-                    >
-                      {pendingRedemptions}
-                    </Badge>
-                  )}
+                  <Plus className="mr-2 h-4 w-4" /> Add
                 </Button>
-              )}
+                {userRole === "parent" && (
+                  <Button
+                    onClick={() => setShowManagement(true)}
+                    variant="outline"
+                    className={manageGiftsBtnGradient + " relative"}
+                    aria-label={
+                      pendingRedemptions > 0
+                        ? `Manage gifts (${pendingRedemptions} pending redemptions)`
+                        : "Manage gifts"
+                    }
+                  >
+                    <Coins className="mr-2 h-4 w-4" /> Gifts
+                    {pendingRedemptions > 0 && (
+                      <Badge
+                        variant="destructive"
+                        className="absolute -top-2 -right-2 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs animate-pulse"
+                      >
+                        {pendingRedemptions}
+                      </Badge>
+                    )}
+                  </Button>
+                )}
+              </div>
+              {/* Desktop: separate buttons */}
+              <div className={desktopOnlyFlexGapCls}>
+                {userRole === "parent" && (
+                  <>
+                    <Button
+                      onClick={() => setOpenAddGroup(true)}
+                      variant="outline"
+                      aria-label="Add group"
+                    >
+                      <Plus className="mr-2 h-4 w-4" /> Add group
+                    </Button>
+                    <Button
+                      onClick={() => setOpenAddActivity(true)}
+                      variant="outline"
+                      aria-label="Add activity"
+                    >
+                      <BarChart3 className="mr-2 h-4 w-4" /> Add activity
+                    </Button>
+                  </>
+                )}
+                <Button
+                  onClick={() => setOpenAddReport(true)}
+                  variant="outline"
+                  className={addReportBtnGradient}
+                  aria-label="Add report"
+                >
+                  <FileText className="mr-2 h-4 w-4" /> Add report
+                </Button>
+                {userRole === "parent" && (
+                  <Button
+                    onClick={() => setShowManagement(true)}
+                    variant="outline"
+                    className={manageGiftsBtnGradient}
+                    aria-label="Manage gifts"
+                  >
+                    <Coins className="mr-2 h-4 w-4" /> Manage Gifts
+                    {pendingRedemptions > 0 && (
+                      <Badge
+                        variant="destructive"
+                        className={manageGiftsPendingBadgeCls}
+                      >
+                        {pendingRedemptions}
+                      </Badge>
+                    )}
+                  </Button>
+                )}
+              </div>
             </div>
           </div>
           <Tabs
@@ -511,95 +649,167 @@ function KidDashboardContent() {
                               </Button>
                             )}
                           </div>
-                          <Table>
-                            <TableHeader>
-                              <TableRow>
-                                <TableHead>Activity</TableHead>
-                                <TableHead>Current</TableHead>
-                                <TableHead>Plan</TableHead>
-                                <TableHead>Points</TableHead>
-                                {userRole === "parent" && (
-                                  <TableHead>Actions</TableHead>
-                                )}
-                              </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                              {activities.map(activity => {
-                                const scoringRule: ScoringRule =
-                                  activity.scoringRule || {
-                                    activityId: activity.id,
-                                    basePointsPerUnit: 1,
-                                    goalBonusPoints: 5,
-                                    streakBonusPoints: 2,
-                                    maxDailyPoints: 50,
-                                  };
-                                const pointsDisplay = `${
-                                  scoringRule.basePointsPerUnit
-                                }${
-                                  activity.unit ? ` per ${activity.unit}` : ""
-                                } (+${scoringRule.goalBonusPoints} goal)`;
-                                return (
-                                  <TableRow key={activity.id}>
-                                    <TableCell className="font-medium">
-                                      {activity.name}
-                                    </TableCell>
-                                    <TableCell>
-                                      {activity.value} {activity.unit || ""}
-                                    </TableCell>
-                                    <TableCell>
-                                      {activity.planValue ? (
-                                        <Badge variant="outline">
-                                          {activity.planValue}{" "}
-                                          {activity.unit || ""}{" "}
-                                          {activity.planType}
-                                        </Badge>
-                                      ) : (
-                                        <span className="text-muted-foreground">
-                                          No plan
+                          {/* Mobile card list */}
+                          <div className={mobileActivitiesListCls}>
+                            {activities.map(activity => {
+                              return (
+                                <div
+                                  key={activity.id}
+                                  className="p-4 border rounded-lg bg-card flex flex-col gap-2"
+                                  role="group"
+                                  aria-label={activity.name}
+                                >
+                                  <div className="flex items-start justify-between gap-3">
+                                    <div className="flex-1 min-w-0">
+                                      <h4 className="font-medium text-sm leading-tight truncate">
+                                        {activity.name}
+                                      </h4>
+                                      <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                                        <span>
+                                          Current: {activity.value}{" "}
+                                          {activity.unit || ""}
                                         </span>
-                                      )}
-                                    </TableCell>
-                                    <TableCell>
-                                      <div className="text-sm">
-                                        <div className="font-medium text-primary">
-                                          {pointsDisplay}
-                                        </div>
-                                        <div className="text-xs text-muted-foreground">
-                                          +{scoringRule.streakBonusPoints}{" "}
-                                          streak • max{" "}
-                                          {scoringRule.maxDailyPoints}
-                                        </div>
+                                        {activity.planValue ? (
+                                          <Badge
+                                            variant="outline"
+                                            className="px-1 py-0 text-xs"
+                                          >
+                                            {activity.planValue}{" "}
+                                            {activity.unit || ""}{" "}
+                                            {activity.planType}
+                                          </Badge>
+                                        ) : (
+                                          <span className="opacity-70">
+                                            No plan
+                                          </span>
+                                        )}
                                       </div>
-                                    </TableCell>
+                                    </div>
                                     {userRole === "parent" && (
+                                      <div className="flex flex-none gap-1">
+                                        <Button
+                                          variant="outline"
+                                          size="sm"
+                                          aria-label={`Edit ${activity.name}`}
+                                          onClick={() =>
+                                            setEditingActivity(activity)
+                                          }
+                                        >
+                                          <Edit className="h-3 w-3" />
+                                        </Button>
+                                        <Button
+                                          variant="outline"
+                                          size="sm"
+                                          aria-label={`Delete ${activity.name}`}
+                                          onClick={() =>
+                                            setDeletingActivity(activity)
+                                          }
+                                        >
+                                          <Trash2 className="h-3 w-3" />
+                                        </Button>
+                                      </div>
+                                    )}
+                                  </div>
+                                  {/* Points & streak info removed for mobile for cleaner view */}
+                                </div>
+                              );
+                            })}
+                          </div>
+                          {/* Desktop table */}
+                          <div className={desktopActivitiesTableWrapperCls}>
+                            <Table>
+                              <TableHeader>
+                                <TableRow>
+                                  <TableHead>Activity</TableHead>
+                                  <TableHead>Current</TableHead>
+                                  <TableHead>Plan</TableHead>
+                                  <TableHead>Points</TableHead>
+                                  {userRole === "parent" && (
+                                    <TableHead>Actions</TableHead>
+                                  )}
+                                </TableRow>
+                              </TableHeader>
+                              <TableBody>
+                                {activities.map(activity => {
+                                  const scoringRule: ScoringRule =
+                                    activity.scoringRule || {
+                                      activityId: activity.id,
+                                      basePointsPerUnit: 1,
+                                      goalBonusPoints: 5,
+                                      streakBonusPoints: 2,
+                                      maxDailyPoints: 50,
+                                    };
+                                  const pointsDisplay = `${
+                                    scoringRule.basePointsPerUnit
+                                  }${
+                                    activity.unit ? ` per ${activity.unit}` : ""
+                                  } (+${scoringRule.goalBonusPoints} goal)`;
+                                  return (
+                                    <TableRow key={activity.id}>
+                                      <TableCell className="font-medium">
+                                        {activity.name}
+                                      </TableCell>
                                       <TableCell>
-                                        <div className="flex gap-1">
-                                          <Button
+                                        {activity.value} {activity.unit || ""}
+                                      </TableCell>
+                                      <TableCell>
+                                        {activity.planValue ? (
+                                          <Badge
                                             variant="outline"
-                                            size="sm"
-                                            onClick={() =>
-                                              setEditingActivity(activity)
-                                            }
+                                            className="px-1 py-0 text-xs"
                                           >
-                                            <Edit className="h-3 w-3" />
-                                          </Button>
-                                          <Button
-                                            variant="outline"
-                                            size="sm"
-                                            onClick={() =>
-                                              setDeletingActivity(activity)
-                                            }
-                                          >
-                                            <Trash2 className="h-3 w-3" />
-                                          </Button>
+                                            {activity.planValue}{" "}
+                                            {activity.unit || ""}{" "}
+                                            {activity.planType}
+                                          </Badge>
+                                        ) : (
+                                          <span className="text-muted-foreground">
+                                            No plan
+                                          </span>
+                                        )}
+                                      </TableCell>
+                                      <TableCell>
+                                        <div className="text-sm">
+                                          <div className="font-medium text-primary">
+                                            {pointsDisplay}
+                                          </div>
+                                          <div className="text-xs text-muted-foreground">
+                                            +{scoringRule.streakBonusPoints}{" "}
+                                            streak • max{" "}
+                                            {scoringRule.maxDailyPoints}
+                                          </div>
                                         </div>
                                       </TableCell>
-                                    )}
-                                  </TableRow>
-                                );
-                              })}
-                            </TableBody>
-                          </Table>
+                                      {userRole === "parent" && (
+                                        <TableCell>
+                                          <div className="flex gap-1">
+                                            <Button
+                                              variant="outline"
+                                              size="sm"
+                                              onClick={() =>
+                                                setEditingActivity(activity)
+                                              }
+                                            >
+                                              <Edit className="h-3 w-3" />
+                                            </Button>
+                                            <Button
+                                              variant="outline"
+                                              size="sm"
+                                              onClick={() =>
+                                                setDeletingActivity(activity)
+                                              }
+                                            >
+                                              <Trash2 className="h-3 w-3" />
+                                            </Button>
+                                          </div>
+                                        </TableCell>
+                                      )}
+                                    </TableRow>
+                                  );
+                                })}
+                              </TableBody>
+                            </Table>
+                          </div>
                           {group !==
                             groupedActivities[groupedActivities.length - 1]
                               ?.group && <Separator className="mt-4" />}
@@ -1207,6 +1417,118 @@ function KidDashboardContent() {
           />
         </DialogContent>
       </Dialog>
+
+      {/* Mobile Add Action Sheet */}
+      {addSheetOpen && (
+        <div
+          className={addSheetBackdropCls}
+          role="presentation"
+          aria-hidden={false}
+          onClick={() => setAddSheetOpen(false)}
+          data-state={addSheetOpen ? "open" : "closed"}
+        >
+          <div
+            id="add-actions-sheet"
+            ref={sheetPanelRef}
+            className={addSheetPanelCls}
+            data-state={addSheetOpen ? "open" : "closed"}
+            onClick={e => e.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="add-actions-title"
+            tabIndex={-1}
+            onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}
+          >
+            <div className={addSheetHandleCls} aria-hidden="true" />
+            <div className="flex items-center justify-between px-5 pt-4 pb-2">
+              <h2
+                id="add-actions-title"
+                className="text-sm font-medium uppercase tracking-wide text-muted-foreground"
+              >
+                Quick Add
+              </h2>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setAddSheetOpen(false)}
+                aria-label="Close add actions"
+              >
+                <X className="h-5 w-5" />
+              </Button>
+            </div>
+            <div
+              className={
+                addSheetActionsGridCls +
+                " pb-[calc(env(safe-area-inset-bottom)+1rem)]"
+              }
+            >
+              <button
+                type="button"
+                className={largeActionBtnCls}
+                onClick={() => {
+                  setOpenAddReport(true);
+                  setAddSheetOpen(false);
+                }}
+              >
+                <span className={largeActionIconWrapCls}>
+                  <FileText className="h-5 w-5" />
+                </span>
+                <span className="flex flex-col text-left">
+                  <span>Add Report</span>
+                  <span className="text-xs font-normal text-muted-foreground">
+                    Daily progress entry
+                  </span>
+                </span>
+              </button>
+              {userRole === "parent" && (
+                <button
+                  type="button"
+                  className={largeActionBtnCls}
+                  onClick={() => {
+                    setOpenAddActivity(true);
+                    setAddSheetOpen(false);
+                  }}
+                >
+                  <span className={largeActionIconWrapCls}>
+                    <BarChart3 className="h-5 w-5" />
+                  </span>
+                  <span className="flex flex-col text-left">
+                    <span>Add Activity</span>
+                    <span className="text-xs font-normal text-muted-foreground">
+                      Trackable task
+                    </span>
+                  </span>
+                </button>
+              )}
+              {userRole === "parent" && (
+                <button
+                  type="button"
+                  className={largeActionBtnCls}
+                  onClick={() => {
+                    setOpenAddGroup(true);
+                    setAddSheetOpen(false);
+                  }}
+                >
+                  <span className={largeActionIconWrapCls}>
+                    <Plus className="h-5 w-5" />
+                  </span>
+                  <span className="flex flex-col text-left">
+                    <span>Add Group</span>
+                    <span className="text-xs font-normal text-muted-foreground">
+                      Organize activities
+                    </span>
+                  </span>
+                </button>
+              )}
+              <Button variant="outline" onClick={() => setAddSheetOpen(false)}>
+                Cancel
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -1269,7 +1591,7 @@ function MobileTabBar({
     "absolute top-0 right-2 h-5 min-w-[1.25rem] px-1 rounded-full text-[10px] flex items-center justify-center bg-destructive text-destructive-foreground"; // adjusted to avoid negative offsets
   const navRootCls =
     "md:hidden fixed bottom-0 inset-x-0 z-50 border-t bg-background/95 backdrop-blur w-full overflow-hidden"; // ensure full width and hide overflow
-  const safeAreaSpacerCls = "h-safe-area"; // custom utility could map to safe area if configured
+  // safe area spacer now uses env(safe-area-inset-bottom)
   const items: Array<{
     key: string;
     label: string;
@@ -1315,7 +1637,10 @@ function MobileTabBar({
           );
         })}
       </div>
-      <div className={safeAreaSpacerCls} aria-hidden="true" />
+      <div
+        style={{ height: "env(safe-area-inset-bottom)" }}
+        aria-hidden="true"
+      />
     </nav>
   );
 }
