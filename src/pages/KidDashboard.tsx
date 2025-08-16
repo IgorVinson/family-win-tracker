@@ -35,7 +35,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { useEnhancedKidDB } from "@/hooks/useEnhancedKidDB";
@@ -169,13 +169,15 @@ function KidDashboardContent() {
     "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8";
   const mainLayoutCls = "flex flex-col md:flex-row gap-6";
   const sidebarWidthCls = "md:w-48 lg:w-56 shrink-0";
-  const tabsListMobileCls = "grid w-full grid-cols-3 md:hidden";
+  const tabsListMobileCls = "grid w-full grid-cols-3 md:hidden hidden"; // hidden now; replaced by bottom tab bar
   const scoringRulesBoxCls = "space-y-3 p-4 bg-muted/50 rounded-lg";
   const giftDialogContentCls = "max-w-4xl max-h-[80vh] overflow-y-auto";
   const addReportBtnGradient =
     "bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white border-0 shadow-md hover:shadow-lg transition-all duration-200";
   const manageGiftsBtnGradient =
     "relative bg-gradient-to-r from-yellow-400 to-yellow-600 hover:from-yellow-500 hover:to-yellow-700 text-white border-0 shadow-md hover:shadow-lg transition-all duration-200";
+  const pageContainerCls =
+    "max-w-6xl mx-auto p-4 sm:p-6 space-y-8 pb-28 md:pb-8 overflow-x-hidden"; // updated to hide horizontal overflow
 
   useEffect(() => {
     document.title = kid
@@ -358,11 +360,11 @@ function KidDashboardContent() {
   }
 
   return (
-    <div className="max-w-6xl mx-auto p-6 space-y-8">
+    <div className={pageContainerCls}>
       {/* Main Content with Sidebar */}
       <div className={mainLayoutCls}>
         {/* Sidebar */}
-        <aside className={sidebarWidthCls}>
+        <aside className={sidebarWidthCls + " hidden md:block"}>
           <div>
             <h1 className="text-3xl font-bold mb-4">{kid.name}</h1>
           </div>
@@ -461,19 +463,6 @@ function KidDashboardContent() {
             onValueChange={setActiveTab}
             className="w-full"
           >
-            <TabsList className={tabsListMobileCls}>
-              <TabsTrigger value="metrics">Activities</TabsTrigger>
-              <TabsTrigger value="reports">
-                Reports
-                {pendingReports.length > 0 && (
-                  <Badge variant="destructive" className="ml-1 text-xs">
-                    {pendingReports.length}
-                  </Badge>
-                )}
-              </TabsTrigger>
-              <TabsTrigger value="shop">Gift Shop</TabsTrigger>
-            </TabsList>
-
             <TabsContent value="shop">
               <GiftShop kid={kid} onRedeemGift={redeemGift} />
             </TabsContent>
@@ -856,6 +845,15 @@ function KidDashboardContent() {
           </div>
         </div>
       </div>
+
+      {/* Mobile Bottom Tab Bar */}
+      <MobileTabBar
+        activeTab={activeTab}
+        onChange={setActiveTab}
+        pendingReports={pendingReports.length}
+        pendingRedemptions={pendingRedemptions}
+        showLeaderboard={userRole === "kid"}
+      />
 
       {/* Modals */}
       {/* Add Metric Dialog */}
@@ -1248,5 +1246,76 @@ function SidebarNavItem({
         </Badge>
       )}
     </button>
+  );
+}
+
+function MobileTabBar({
+  activeTab,
+  onChange,
+  pendingReports,
+  pendingRedemptions,
+  showLeaderboard,
+}: {
+  activeTab: string;
+  onChange: (v: string) => void;
+  pendingReports: number;
+  pendingRedemptions: number;
+  showLeaderboard: boolean;
+}) {
+  const baseBtnCls =
+    "flex flex-col items-center justify-center gap-1 flex-1 py-2 text-xs font-medium transition-colors relative";
+  const iconCls = "h-5 w-5";
+  const badgeCls =
+    "absolute top-0 right-2 h-5 min-w-[1.25rem] px-1 rounded-full text-[10px] flex items-center justify-center bg-destructive text-destructive-foreground"; // adjusted to avoid negative offsets
+  const navRootCls =
+    "md:hidden fixed bottom-0 inset-x-0 z-50 border-t bg-background/95 backdrop-blur w-full overflow-hidden"; // ensure full width and hide overflow
+  const safeAreaSpacerCls = "h-safe-area"; // custom utility could map to safe area if configured
+  const items: Array<{
+    key: string;
+    label: string;
+    icon: React.ComponentType<{ className?: string }>;
+    badge?: number;
+  }> = [
+    { key: "metrics", label: "Activities", icon: BarChart3 },
+    { key: "reports", label: "Reports", icon: Calendar, badge: pendingReports },
+    { key: "shop", label: "Shop", icon: Coins, badge: pendingRedemptions },
+  ];
+  if (showLeaderboard) {
+    items.push({ key: "leaderboard", label: "Leaders", icon: Trophy });
+  }
+  return (
+    <nav
+      className={navRootCls}
+      role="tablist"
+      aria-label="Kid dashboard navigation"
+    >
+      <div className="flex">
+        {items.map(item => {
+          const active = activeTab === item.key;
+          return (
+            <button
+              key={item.key}
+              type="button"
+              onClick={() => onChange(item.key)}
+              className={
+                baseBtnCls +
+                (active
+                  ? " text-primary" // rely on icon color via text-primary
+                  : " text-muted-foreground hover:text-foreground")
+              }
+              aria-label={item.label}
+              aria-current={active ? "page" : undefined}
+            >
+              <item.icon className={iconCls} />
+              <span>{item.label}</span>
+              {item.badge && item.badge > 0 && (
+                <span className={badgeCls}>{item.badge}</span>
+              )}
+            </button>
+          );
+        })}
+      </div>
+      <div className={safeAreaSpacerCls} aria-hidden="true" />
+    </nav>
   );
 }
