@@ -4,7 +4,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Calendar } from "@/components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { Calendar as CalendarIcon, Save } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "@/hooks/use-toast";
@@ -19,7 +23,16 @@ export type DailyReport = {
   entries: DailyReportEntry[];
 };
 
-export type Activity = { id: string; name: string; unit?: string; groupId?: string };
+import { ScoringRule } from "@/types/scoreSystem";
+
+export type Activity = {
+  id: string;
+  name: string;
+  unit?: string;
+  groupId?: string;
+  planValue?: number;
+  scoringRule?: ScoringRule;
+};
 export type Group = { id: string; name: string; type: "project" | "goal" };
 
 export type KidLike = {
@@ -37,12 +50,20 @@ function formatYMD(d: Date) {
   return `${y}-${m}-${da}`;
 }
 
-export function DailyReportForm({ kid, onSave, onSaveRef }: { kid: KidLike; onSave: (report: DailyReport) => void; onSaveRef?: React.MutableRefObject<(() => void) | null> }) {
+export function DailyReportForm({
+  kid,
+  onSave,
+  onSaveRef,
+}: {
+  kid: KidLike;
+  onSave: (report: DailyReport) => void;
+  onSaveRef?: React.MutableRefObject<(() => void) | null>;
+}) {
   const [date, setDate] = useState<Date>(new Date());
   const [notes, setNotes] = useState("");
   const [values, setValues] = useState<Record<string, number>>(() => {
     const v: Record<string, number> = {};
-    (kid.activities ?? []).forEach((m) => (v[m.id] = 0));
+    (kid.activities ?? []).forEach(m => (v[m.id] = 0));
     return v;
   });
 
@@ -50,19 +71,26 @@ export function DailyReportForm({ kid, onSave, onSaveRef }: { kid: KidLike; onSa
   const groups = kid.groups ?? [];
 
   const sections = useMemo(() => {
-    const ungrouped = activities.filter((m) => !m.groupId);
-    const result: { id: string; title: string; items: typeof activities }[] = [];
-    if (ungrouped.length > 0) result.push({ id: "__ungrouped__", title: "Ungrouped", items: ungrouped });
+    const ungrouped = activities.filter(m => !m.groupId);
+    const result: { id: string; title: string; items: typeof activities }[] =
+      [];
+    if (ungrouped.length > 0)
+      result.push({
+        id: "__ungrouped__",
+        title: "Ungrouped",
+        items: ungrouped,
+      });
     for (const g of groups) {
-      const items = activities.filter((m) => m.groupId === g.id);
-      if (items.length > 0) result.push({ id: g.id, title: `${g.name} (${g.type})`, items });
+      const items = activities.filter(m => m.groupId === g.id);
+      if (items.length > 0)
+        result.push({ id: g.id, title: `${g.name} (${g.type})`, items });
     }
     return result;
   }, [activities, groups]);
 
   const handleChange = (activityId: string, val: string) => {
     const n = Math.max(0, Number(val || 0));
-    setValues((prev) => ({ ...prev, [activityId]: Number.isFinite(n) ? n : 0 }));
+    setValues(prev => ({ ...prev, [activityId]: Number.isFinite(n) ? n : 0 }));
   };
 
   const handleSave = () => {
@@ -71,15 +99,21 @@ export function DailyReportForm({ kid, onSave, onSaveRef }: { kid: KidLike; onSa
       date: formatYMD(date),
       createdAt: new Date().toISOString(),
       notes: notes.trim() || undefined,
-      entries: activities.map((m) => ({ activityId: m.id, value: Number(values[m.id] ?? 0) })),
+      entries: activities.map(m => ({
+        activityId: m.id,
+        value: Number(values[m.id] ?? 0),
+      })),
     };
     onSave(payload);
-    toast({ title: "Report saved", description: `${kid.name}'s daily report was saved.` });
+    toast({
+      title: "Report saved",
+      description: `${kid.name}'s daily report was saved.`,
+    });
     // reset values after save
     setNotes("");
-    setValues((prev) => {
+    setValues(prev => {
       const next: Record<string, number> = {};
-      (kid.activities ?? []).forEach((m) => (next[m.id] = 0));
+      (kid.activities ?? []).forEach(m => (next[m.id] = 0));
       return next;
     });
   };
@@ -99,7 +133,10 @@ export function DailyReportForm({ kid, onSave, onSaveRef }: { kid: KidLike; onSa
             <PopoverTrigger asChild>
               <Button
                 variant="outline"
-                className={cn("w-[240px] justify-start text-left font-normal", !date && "text-muted-foreground")}
+                className={cn(
+                  "w-[240px] justify-start text-left font-normal",
+                  !date && "text-muted-foreground"
+                )}
               >
                 <CalendarIcon className="mr-2 h-4 w-4" />
                 {date ? date.toLocaleDateString() : <span>Pick a date</span>}
@@ -109,7 +146,7 @@ export function DailyReportForm({ kid, onSave, onSaveRef }: { kid: KidLike; onSa
               <Calendar
                 mode="single"
                 selected={date}
-                onSelect={(d) => d && setDate(d)}
+                onSelect={d => d && setDate(d)}
                 initialFocus
                 className={cn("p-3 pointer-events-auto")}
               />
@@ -121,54 +158,71 @@ export function DailyReportForm({ kid, onSave, onSaveRef }: { kid: KidLike; onSa
       <Separator />
 
       {sections.length === 0 ? (
-        <p className="text-muted-foreground text-sm">No activities configured yet. Add activities above to start reporting.</p>
+        <p className="text-muted-foreground text-sm">
+          No activities configured yet. Add activities above to start reporting.
+        </p>
       ) : (
         <div className="space-y-6">
-          {sections.map((section) => (
+          {sections.map(section => (
             <div key={section.id}>
-              <h4 className="text-sm font-semibold text-muted-foreground mb-2">{section.title}</h4>
+              <h4 className="text-sm font-semibold text-muted-foreground mb-2">
+                {section.title}
+              </h4>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                {section.items.map((m) => {
+                {section.items.map(m => {
                   const value = Number(values[m.id] ?? 0);
-                  const scoringRule = {
+                  const scoringRule = m.scoringRule || {
+                    activityId: m.id,
                     basePointsPerUnit: 1,
                     goalBonusPoints: 5,
                     streakBonusPoints: 2,
-                    maxDailyPoints: 50
+                    maxDailyPoints: 50,
                   };
-                  
-                  const basePoints = Math.floor(value * scoringRule.basePointsPerUnit);
-                  const meetsGoal = value > 0; // Simple check for now
-                  const goalBonus = meetsGoal ? scoringRule.goalBonusPoints : 0;
-                  const expectedPoints = Math.min(basePoints + goalBonus, scoringRule.maxDailyPoints);
-                  
+
+                  const basePoints = Math.floor(
+                    value * scoringRule.basePointsPerUnit
+                  );
+                  const meetsGoal = m.planValue ? value >= m.planValue : false;
+                  const goalBonus = meetsGoal
+                    ? scoringRule.goalBonusPoints || 0
+                    : 0;
+                  const expectedPoints = Math.min(
+                    basePoints + goalBonus,
+                    scoringRule.maxDailyPoints || 50
+                  );
+
                   return (
-                  <div key={m.id} className="grid gap-2">
-                    <Label htmlFor={`activity-${m.id}`} className="flex items-center justify-between">
-                      <span>
-                        {m.name} {m.unit ? `(${m.unit})` : ""}
-                      </span>
-                      {value > 0 && (
-                        <span className="text-sm font-medium text-primary">
-                          {expectedPoints} pts
+                    <div key={m.id} className="grid gap-2">
+                      <Label
+                        htmlFor={`activity-${m.id}`}
+                        className="flex items-center justify-between"
+                      >
+                        <span>
+                          {m.name} {m.unit ? `(${m.unit})` : ""}
                         </span>
+                        {value > 0 && (
+                          <span className="text-sm font-medium text-primary">
+                            {expectedPoints} pts
+                          </span>
+                        )}
+                      </Label>
+                      <Input
+                        id={`activity-${m.id}`}
+                        type="number"
+                        min={0}
+                        value={values[m.id] ?? 0}
+                        onChange={e => handleChange(m.id, e.target.value)}
+                      />
+                      {value > 0 && (
+                        <div className="text-xs text-muted-foreground">
+                          {basePoints} base pts
+                          {` + ${goalBonus} goal bonus`}
+                          {` + ${
+                            scoringRule.streakBonusPoints || 0
+                          } possible streak bonus`}
+                        </div>
                       )}
-                    </Label>
-                    <Input
-                      id={`activity-${m.id}`}
-                      type="number"
-                      min={0}
-                      value={values[m.id] ?? 0}
-                      onChange={(e) => handleChange(m.id, e.target.value)}
-                    />
-                    {value > 0 && (
-                      <div className="text-xs text-muted-foreground">
-                        {basePoints} base pts
-                        {meetsGoal && ` + ${goalBonus} goal bonus`}
-                        {` + ${scoringRule.streakBonusPoints} possible streak bonus`}
-                      </div>
-                    )}
-                  </div>
+                    </div>
                   );
                 })}
               </div>
@@ -183,7 +237,7 @@ export function DailyReportForm({ kid, onSave, onSaveRef }: { kid: KidLike; onSa
           id="report-notes"
           placeholder="Highlights from today..."
           value={notes}
-          onChange={(e) => setNotes(e.target.value)}
+          onChange={e => setNotes(e.target.value)}
         />
       </div>
     </div>

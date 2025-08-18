@@ -595,7 +595,9 @@ function KidDashboardContent() {
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
-                    <BarChart3 className="h-5 w-5" /> Activities
+                    <BarChart3 className="h-5 w-5" />{" "}
+                    {userRole === "parent" ? kid.name + "'s" : "Your"}{" "}
+                    Activities
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
@@ -625,7 +627,7 @@ function KidDashboardContent() {
                                 </Badge>
                               )}
                             </div>
-                            {group && (
+                            {userRole === "parent" && group && (
                               <Button
                                 variant="outline"
                                 size="sm"
@@ -833,6 +835,7 @@ function KidDashboardContent() {
                             const r = kid.reports?.find(rr => rr.id === rid);
                             setEditingReport(r || null);
                           }}
+                          userRole={userRole}
                         />
                       ))}
                     </div>
@@ -1257,12 +1260,16 @@ function KidDashboardContent() {
                 id: kid.id,
                 name: kid.name,
                 activities:
-                  kid.activities?.map(({ id, name, unit, groupId }) => ({
-                    id,
-                    name,
-                    unit,
-                    groupId,
-                  })) || [],
+                  kid.activities?.map(
+                    ({ id, name, unit, groupId, planValue, scoringRule }) => ({
+                      id,
+                      name,
+                      unit,
+                      groupId,
+                      planValue,
+                      scoringRule,
+                    })
+                  ) || [],
                 groups: kid.groups || [],
               }}
               onSave={report => {

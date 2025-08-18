@@ -255,6 +255,10 @@ export function ReviewReportModal({
                         <Label htmlFor={`activity-${a.id}`}>
                           {a.name} {a.unit ? `(${a.unit})` : ""}
                         </Label>
+                        {a.scoringRule && (
+                          <div className="text-xs text-muted-foreground"></div>
+                        )}
+
                         <Input
                           id={`activity-${a.id}`}
                           type="number"
@@ -289,12 +293,16 @@ export function ReviewReportModal({
         </div>
 
         <DialogFooter className="gap-2">
-          <Button variant="destructive" onClick={onClose}>
-            Cancel
-          </Button>
-          <Button variant="outline" onClick={handleSave}>
-            Save
-          </Button>
+          {userRole === "kid" && (
+            <>
+              <Button variant="destructive" onClick={onClose}>
+                Cancel
+              </Button>
+              <Button variant="outline" onClick={handleSave}>
+                Save
+              </Button>
+            </>
+          )}
           {userRole !== "kid" && (
             <>
               <Button variant="destructive" onClick={handleReject}>
