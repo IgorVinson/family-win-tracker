@@ -17,7 +17,7 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { toast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
-import { EnhancedKid } from "@/types/scoreSystem";
+import { EnhancedKid, ScoringRule } from "@/types/scoreSystem";
 import { Calendar as CalendarIcon, Check, X } from "lucide-react";
 import { useEffect, useState } from "react";
 
@@ -250,27 +250,117 @@ export function ReviewReportModal({
                     {section.title}
                   </h4>
                   <div className={activityGridClass}>
-                    {section.items.map(a => (
-                      <div key={a.id} className="grid gap-2">
-                        <Label htmlFor={`activity-${a.id}`}>
-                          {a.name} {a.unit ? `(${a.unit})` : ""}
-                        </Label>
-                        {a.scoringRule && (
-                          <div className="text-xs text-muted-foreground"></div>
-                        )}
+                    {section.items.map(a => {
+                      const value = Number(values[a.id] ?? 0);
+                      const scoringRule = a.scoringRule || {
+                        activityId: a.id,
+                        basePointsPerUnit: 1,
+                        goalBonusPoints: 5,
+                        streakBonusPoints: 2,
+                        maxDailyPoints: 50,
+                      };
 
-                        <Input
-                          id={`activity-${a.id}`}
-                          type="number"
-                          min={0}
-                          value={values[a.id] ?? 0}
-                          onChange={e => handleChange(a.id, e.target.value)}
-                        />
-                      </div>
-                    ))}
+                      const basePoints = Math.floor(
+                        value * scoringRule.basePointsPerUnit
+                      );
+                      const meetsGoal = a.planValue ? value >= a.planValue : false;
+                      const goalBonus = meetsGoal
+                        ? scoringRule.goalBonusPoints || 0
+                        : 0;
+                      const expectedPoints = Math.min(
+                        basePoints + goalBonus,
+                        scoringRule.maxDailyPoints || 50
+                      );
+
+                      return (
+                        <div key={a.id} className="grid gap-2">
+                          <Label
+                            htmlFor={`activity-${a.id}`}
+                            className="flex items-center justify-between"
+                          >
+                            <span>
+                              {a.name} {a.unit ? `(${a.unit})` : ""}
+                            </span>
+                            {value > 0 && (
+                              <span className="text-sm font-medium text-primary">
+                                {expectedPoints} pts
+                              </span>
+                            )}
+                          </Label>
+                          <Input
+                            id={`activity-${a.id}`}
+                            type="number"
+                            min={0}
+                            value={values[a.id] ?? 0}
+                            onChange={e => handleChange(a.id, e.target.value)}
+                          />
+                          {value > 0 && (
+                            <div className="text-xs text-muted-foreground">
+                              {basePoints} base pts
+                              {meetsGoal && ` + ${goalBonus} goal bonus`}
+                              {` + ${
+                                scoringRule.streakBonusPoints || 0
+                              } possible streak bonus`}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               ))}
+            </div>
+          )}
+
+          {/* Total Score Summary */}
+          {Object.values(values).some(v => v > 0) && (
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <h4 className="text-sm font-semibold text-blue-900 mb-2">
+                Expected Points Summary
+              </h4>
+              <div className="text-sm text-blue-800">
+                {(() => {
+                  let totalPoints = 0;
+                  const breakdown: string[] = [];
+                  
+                  activities.forEach(a => {
+                    const value = Number(values[a.id] ?? 0);
+                    if (value > 0) {
+                      const scoringRule = a.scoringRule || {
+                        activityId: a.id,
+                        basePointsPerUnit: 1,
+                        goalBonusPoints: 5,
+                        streakBonusPoints: 2,
+                        maxDailyPoints: 50,
+                      };
+                      
+                      const basePoints = Math.floor(value * scoringRule.basePointsPerUnit);
+                      const meetsGoal = a.planValue ? value >= a.planValue : false;
+                      const goalBonus = meetsGoal ? (scoringRule.goalBonusPoints || 0) : 0;
+                      const activityPoints = Math.min(
+                        basePoints + goalBonus,
+                        scoringRule.maxDailyPoints || 50
+                      );
+                      
+                      totalPoints += activityPoints;
+                      breakdown.push(`${a.name}: ${activityPoints} pts`);
+                    }
+                  });
+                  
+                  return (
+                    <div>
+                      <div className="font-medium text-lg text-blue-900 mb-1">
+                        Total: {totalPoints} points
+                      </div>
+                      <div className="text-xs space-y-1">
+                        {breakdown.map((item, index) => (
+                          <div key={index}>{item}</div>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })()}
+              </div>
             </div>
           )}
 
