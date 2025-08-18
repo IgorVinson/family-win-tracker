@@ -172,7 +172,7 @@ function KidDashboardContent() {
   const headerContainerCls =
     "flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4";
   const overviewGridCls =
-    "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8";
+    "grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8";
   const mainLayoutCls = "flex flex-col md:flex-row gap-6";
   const sidebarWidthCls = "md:w-48 lg:w-56 shrink-0";
   const scoringRulesBoxCls = "space-y-3 p-4 bg-muted/50 rounded-lg";
@@ -190,8 +190,6 @@ function KidDashboardContent() {
   const pageContainerCls =
     "max-w-6xl mx-auto p-4 sm:p-6 space-y-8 pb-28 md:pb-8 overflow-x-hidden"; // updated to hide horizontal overflow
   // removed mobileOnlyCls & desktopOnlyFlexGapCls (no longer needed)
-  const actionsToolbarCls =
-    "flex flex-nowrap gap-3 overflow-x-auto md:overflow-x-visible md:flex-wrap max-w-full py-1 -mx-2 px-2 sm:mx-0 sm:px-0 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"; // horizontal scroll container for action buttons on mobile only, wrap on desktop
   const mobileActivitiesListCls = "block md:hidden space-y-3"; // utility wrapper for mobile activities cards
   const desktopActivitiesTableWrapperCls = "hidden md:block"; // wrapper for desktop table
 
@@ -477,6 +475,7 @@ function KidDashboardContent() {
               active={activeTab === "shop"}
               onClick={() => setActiveTab("shop")}
             />
+
             {userRole === "kid" && (
               <SidebarNavItem
                 label="Leaderboard"
@@ -492,7 +491,7 @@ function KidDashboardContent() {
         <div className="flex-1 space-y-6">
           {/* Header */}
           <div className={headerContainerCls}>
-            <div className="flex items-center gap-4">
+            {/* <div className="flex items-center gap-4">
               {userRole !== "kid" && (
                 // hide on mobile
                 <Link to="/" className="hidden md:block">
@@ -501,69 +500,84 @@ function KidDashboardContent() {
                   </Button>
                 </Link>
               )}
-            </div>
+            </div> */}
             {/* Unified inline action buttons: large, single scrollable row */}
-            <div
-              className={actionsToolbarCls}
-              role="toolbar"
-              aria-label="Quick actions"
-            >
+            <div className="flex sm:flex-wrap gap-4 w-full py-1 -mx-2 px-2 sm:mx-0 flex-nowrap overflow-x-auto md:overflow-x-visible [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
               <Button
                 onClick={() => setOpenAddReport(true)}
                 variant="outline"
-                size="lg"
-                className={
-                  addReportBtnGradient +
-                  " h-14 px-8 text-base font-semibold whitespace-nowrap flex-shrink-0 lg:h-10 lg:px-4 lg:text-sm"
-                }
+                className="h-20 w-44 p-4 flex items-center justify-start gap-4 bg-white hover:bg-gray-50 border-gray-200 flex-shrink-0  md:flex-1 md:min-w-0"
                 aria-label="Add report"
               >
-                <FileText className="mr-3 h-6 w-6 lg:mr-2 lg:h-4 lg:w-4" /> Add
-                Report
+                <div className="h-12 w-12 rounded-2xl bg-purple-500 flex items-center justify-center flex-shrink-0">
+                  <FileText className="h-6 w-6 text-white" />
+                </div>
+                <div className="text-left min-w-0">
+                  <div className="font-semibold text-gray-900 truncate">
+                    Reporting
+                  </div>
+                </div>
               </Button>
+
               {userRole === "parent" && (
                 <Button
                   onClick={() => setOpenAddActivity(true)}
                   variant="outline"
-                  size="lg"
-                  className={
-                    addReportBtnGradient +
-                    " h-14 px-8 text-base font-semibold whitespace-nowrap flex-shrink-0 lg:h-10 lg:px-4 lg:text-sm"
-                  }
+                  className="h-20 p-4 flex items-center justify-start gap-4 bg-white hover:bg-gray-50 border-gray-200 flex-shrink-0 w-44 md:flex-1 md:min-w-0"
                   aria-label="Add activity"
                 >
-                  <BarChart3 className="mr-3 h-6 w-6 lg:mr-2 lg:h-4 lg:w-4" />{" "}
-                  Add Activity
+                  <div className="h-12 w-12 rounded-2xl bg-purple-500 flex items-center justify-center flex-shrink-0">
+                    <BarChart3 className="h-6 w-6 text-white" />
+                  </div>
+                  <div className="text-left min-w-0">
+                    <div className="font-semibold text-gray-900 truncate">
+                      Activities
+                    </div>
+                  </div>
                 </Button>
               )}
-              {userRole === "parent" && (
-                <Button
-                  onClick={() => setOpenAddGroup(true)}
-                  variant="outline"
-                  size="lg"
-                  className={
-                    addReportBtnGradient +
-                    " h-14 px-8 text-base font-semibold whitespace-nowrap flex-shrink-0 lg:h-10 lg:px-4 lg:text-sm"
-                  }
-                  aria-label="Add group"
-                >
-                  <Plus className="mr-3 h-6 w-6 lg:mr-2 lg:h-4 lg:w-4" /> Add
-                  Group
-                </Button>
-              )}
+
               {userRole === "parent" && (
                 <Button
                   onClick={() => setShowManagement(true)}
                   variant="outline"
-                  size="lg"
-                  className={
-                    manageGiftsBtnGradient +
-                    " h-14 px-8 text-base font-semibold whitespace-nowrap flex-shrink-0 lg:h-10 lg:px-4 lg:text-sm"
-                  }
+                  className="h-20 p-4 flex items-center justify-start gap-2 bg-white hover:bg-gray-50 border-gray-200 relative flex-shrink-0 w-44 md:flex-1 md:min-w-0"
                   aria-label="Manage gifts"
                 >
-                  <Coins className="mr-3 h-7 w-7 lg:mr-2 lg:h-4 lg:w-4" />{" "}
-                  Manage Gifts
+                  <div className="h-12 w-12 rounded-2xl bg-yellow-500 flex items-center justify-center flex-shrink-0">
+                    <Coins className="h-6 w-6 text-white" />
+                  </div>
+                  <div className="text-left min-w-0">
+                    <div className="font-semibold text-gray-900 truncate">
+                      Gifts
+                    </div>
+                  </div>
+                  {pendingRedemptions > 0 && (
+                    <Badge
+                      variant="destructive"
+                      className="absolute top-2 right-2 h-5 min-w-[1.25rem] px-1 rounded-full text-[10px] flex-shrink-0"
+                    >
+                      {pendingRedemptions}
+                    </Badge>
+                  )}
+                </Button>
+              )}
+
+              {userRole === "parent" && (
+                <Button
+                  onClick={() => setOpenAddGroup(true)}
+                  variant="outline"
+                  className="h-20 p-4 flex items-center justify-start gap-4 bg-white hover:bg-gray-50 border-gray-200 flex-shrink-0 w-44 md:flex-1 md:min-w-0"
+                  aria-label="Add group"
+                >
+                  <div className="h-12 w-12 rounded-2xl bg-purple-500 flex items-center justify-center flex-shrink-0">
+                    <Plus className="h-6 w-6 text-white" />
+                  </div>
+                  <div className="text-left min-w-0">
+                    <div className="font-semibold text-gray-900 truncate">
+                      Groups
+                    </div>
+                  </div>
                 </Button>
               )}
             </div>
@@ -627,7 +641,7 @@ function KidDashboardContent() {
                               return (
                                 <div
                                   key={activity.id}
-                                  className="p-4 border rounded-lg bg-card flex flex-col gap-2"
+                                  className="p-4 border rounded-lg bg-purple-50 shadow-sm hover:shadow-md transition-shadow duration-200 flex flex-col gap-2"
                                   role="group"
                                   aria-label={activity.name}
                                 >
@@ -717,7 +731,10 @@ function KidDashboardContent() {
                                     activity.unit ? ` per ${activity.unit}` : ""
                                   } (+${scoringRule.goalBonusPoints} goal)`;
                                   return (
-                                    <TableRow key={activity.id}>
+                                    <TableRow
+                                      key={activity.id}
+                                      className="bg-purple-50 hover:bg-muted/50 transition-colors"
+                                    >
                                       <TableCell className="font-medium">
                                         {activity.name}
                                       </TableCell>
@@ -1377,9 +1394,6 @@ function KidDashboardContent() {
       {/* Prize Management Dialog */}
       <Dialog open={showManagement} onOpenChange={setShowManagement}>
         <DialogContent className={giftDialogContentCls}>
-          <DialogHeader>
-            <DialogTitle>Gift Management</DialogTitle>
-          </DialogHeader>
           <GiftManagement
             kid={kid}
             onAddGift={addGift}
@@ -1490,8 +1504,10 @@ function MobileTabBar({
             >
               <item.icon className={iconCls} />
               <span>{item.label}</span>
-              {item.badge && item.badge > 0 && (
-                <span className={badgeCls}>{item.badge}</span>
+              {item.badge > 0 && (
+                <span className="absolute top-0 right-8 h-5 min-w-[1.25rem] px-1 rounded-full text-[10px] flex items-center justify-center bg-destructive text-destructive-foreground">
+                  {item.badge}
+                </span>
               )}
             </button>
           );

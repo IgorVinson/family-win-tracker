@@ -193,20 +193,20 @@ export function GiftManagement({
   return (
     <>
       <div className="space-y-6">
-        <Card>
-          <CardHeader>
+        <div>
+          <div className="p-4">
             <div className="flex items-center justify-between">
               <CardTitle className="flex items-center gap-2">
                 <Settings className="h-5 w-5" />
-                Gift Management for {kid.name}
+                Gift Management
               </CardTitle>
               <Button onClick={() => setShowAddDialog(true)}>
                 <Plus className="h-4 w-4 mr-2" />
                 Add Gift
               </Button>
             </div>
-          </CardHeader>
-        </Card>
+          </div>
+        </div>
 
         <Tabs defaultValue="gifts" className="w-full">
           <TabsList className="grid w-full grid-cols-2">
