@@ -137,9 +137,9 @@ function KidDashboardContent() {
 
   // Scoring rule states for new activities
   const [newBasePointsPerUnit, setNewBasePointsPerUnit] = useState("1");
-  const [newGoalBonusPoints, setNewGoalBonusPoints] = useState("5");
+  const [newGoalBonusPoints, setNewGoalBonusPoints] = useState("2");
   const [newStreakBonusPoints, setNewStreakBonusPoints] = useState("2");
-  const [newMaxDailyPoints, setNewMaxDailyPoints] = useState("50");
+  const [newMaxDailyPoints, setNewMaxDailyPoints] = useState("5");
   const [groupName, setGroupName] = useState("");
   const [groupType, setGroupType] = useState<"project" | "goal">("goal");
   const [showManagement, setShowManagement] = useState(false);
@@ -228,76 +228,6 @@ function KidDashboardContent() {
       })();
     }
   }, [userRole]);
-
-  // Prevent body scroll & manage focus when sheet open
-  // useEffect(() => {
-  //   if (addSheetOpen) {
-  //     lastFocusedElementRef.current =
-  //       document.activeElement as HTMLElement | null;
-  //     // lock scroll
-  //     const originalOverflow = document.body.style.overflow;
-  //     document.body.style.overflow = "hidden";
-  //     // focus first actionable element after open
-  //     requestAnimationFrame(() => {
-  //       const panel = sheetPanelRef.current;
-  //       if (!panel) return;
-  //       const focusables = panel.querySelectorAll<HTMLElement>(
-  //         'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
-  //       );
-  //       if (focusables.length) focusables[0].focus();
-  //     });
-
-  //     const handleKeyDown = (e: KeyboardEvent) => {
-  //       if (e.key === "Escape") {
-  //         setAddSheetOpen(false);
-  //       } else if (e.key === "Tab") {
-  //         // basic focus trap
-  //         const panel = sheetPanelRef.current;
-  //         if (!panel) return;
-  //         const focusables = Array.from(
-  //           panel.querySelectorAll<HTMLElement>(
-  //             'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
-  //           )
-  //         ).filter(el => !el.hasAttribute("disabled"));
-  //         if (focusables.length === 0) return;
-  //         const first = focusables[0];
-  //         const last = focusables[focusables.length - 1];
-  //         if (e.shiftKey && document.activeElement === first) {
-  //           e.preventDefault();
-  //           last.focus();
-  //         } else if (!e.shiftKey && document.activeElement === last) {
-  //           e.preventDefault();
-  //           first.focus();
-  //         }
-  //       }
-  //     };
-  //     document.addEventListener("keydown", handleKeyDown);
-  //     return () => {
-  //       document.body.style.overflow = originalOverflow;
-  //       document.removeEventListener("keydown", handleKeyDown);
-  //     };
-  //   } else {
-  //     // restore focus
-  //     if (lastFocusedElementRef.current) {
-  //       lastFocusedElementRef.current.focus();
-  //     }
-  //   }
-  // }, [addSheetOpen]);
-
-  // Swipe-to-dismiss (basic downward swipe)
-  // const handleTouchStart = (e: React.TouchEvent) => {
-  //   touchStartYRef.current = e.touches[0].clientY;
-  // };
-  // const handleTouchMove = (e: React.TouchEvent) => {
-  //   // optional: could add visual feedback
-  // };
-  // const handleTouchEnd = (e: React.TouchEvent) => {
-  //   if (touchStartYRef.current !== null) {
-  //     const delta = e.changedTouches[0].clientY - touchStartYRef.current;
-  //     if (delta > 60) setAddSheetOpen(false);
-  //   }
-  //   touchStartYRef.current = null;
-  // };
 
   // Keep the legacy updateKid function for existing metric/group operations - now using database
   const updateKidLegacy = async (updater: (k: EnhancedKid) => EnhancedKid) => {
