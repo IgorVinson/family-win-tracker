@@ -342,21 +342,30 @@ export function useEnhancedKidDB(kidId: string) {
   }) => {
     if (!kid || !user) return;
 
+    const computePoints = (
+      value: number,
+      activity?: { planValue?: number; scoringRule?: ScoringRule }
+    ) => {
+      if (!activity?.scoringRule) return 0;
+      const sr = activity.scoringRule;
+      const base = Math.floor(value * sr.basePointsPerUnit);
+      const meetsGoal = activity.planValue ? value >= activity.planValue : false;
+      const goalBonus = meetsGoal ? sr.goalBonusPoints || 0 : 0;
+      const subtotal = base + goalBonus;
+      return Math.min(subtotal, sr.maxDailyPoints || subtotal);
+    };
+
     try {
-      // Convert entries to activities object
       const activities: Record<string, number> = {};
       let totalPoints = 0;
 
       for (const entry of reportData.entries) {
         activities[entry.activityId] = entry.value;
-        // Calculate points based on scoring rules
         const activity = kid.activities?.find(a => a.id === entry.activityId);
-        if (activity?.scoringRule) {
-          totalPoints += entry.value * activity.scoringRule.basePointsPerUnit;
-        }
+        totalPoints += computePoints(entry.value, activity);
       }
 
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from("daily_reports")
         .insert({
           kid_id: kidId,
@@ -365,13 +374,10 @@ export function useEnhancedKidDB(kidId: string) {
           total_points: totalPoints,
           status: "pending",
           notes: reportData.notes,
-        })
-        .select()
-        .single();
+        });
 
       if (error) throw error;
 
-      // Refresh data
       await loadKidData();
 
       toast({
@@ -391,6 +397,19 @@ export function useEnhancedKidDB(kidId: string) {
   const approveReport = async (reportId: string) => {
     if (!kid || !user || userRole !== "parent") return;
 
+    const computePoints = (
+      value: number,
+      activity?: { planValue?: number; scoringRule?: ScoringRule }
+    ) => {
+      if (!activity?.scoringRule) return 0;
+      const sr = activity.scoringRule;
+      const base = Math.floor(value * sr.basePointsPerUnit);
+      const meetsGoal = activity.planValue ? value >= activity.planValue : false;
+      const goalBonus = meetsGoal ? sr.goalBonusPoints || 0 : 0;
+      const subtotal = base + goalBonus;
+      return Math.min(subtotal, sr.maxDailyPoints || subtotal);
+    };
+
     try {
       const { error } = await supabase
         .from("daily_reports")
@@ -402,15 +421,11 @@ export function useEnhancedKidDB(kidId: string) {
 
       if (error) throw error;
 
-      // Find the report and create score entries
       const report = kid.reports?.find(r => r.id === reportId);
       if (report) {
         for (const entry of report.entries) {
           const activity = kid.activities?.find(a => a.id === entry.activityId);
-          const points = activity?.scoringRule
-            ? entry.value * activity.scoringRule.basePointsPerUnit
-            : entry.value * 10;
-
+          const points = computePoints(entry.value, activity);
           await supabase.from("score_entries").insert({
             kid_id: kidId,
             date: report.date,
@@ -422,13 +437,9 @@ export function useEnhancedKidDB(kidId: string) {
           });
         }
 
-        // Update kid's current points
         const totalReportPoints = report.entries.reduce((sum, entry) => {
           const activity = kid.activities?.find(a => a.id === entry.activityId);
-          const points = activity?.scoringRule
-            ? entry.value * activity.scoringRule.basePointsPerUnit
-            : entry.value * 10;
-          return sum + points;
+            return sum + computePoints(entry.value, activity);
         }, 0);
 
         await supabase
@@ -488,35 +499,39 @@ export function useEnhancedKidDB(kidId: string) {
 
   const updateReport = async (
     reportId: string,
-    updates: {
-      date?: string;
-      notes?: string;
-      entries?: Array<{ activityId: string; value: number }>;
-    }
+    updates: { date?: string; notes?: string; entries?: Array<{ activityId: string; value: number }>; }
   ) => {
     if (!kid || !user) return;
 
+    const computePoints = (
+      value: number,
+      activity?: { planValue?: number; scoringRule?: ScoringRule }
+    ) => {
+      if (!activity?.scoringRule) return 0;
+      const sr = activity.scoringRule;
+      const base = Math.floor(value * sr.basePointsPerUnit);
+      const meetsGoal = activity.planValue ? value >= activity.planValue : false;
+      const goalBonus = meetsGoal ? sr.goalBonusPoints || 0 : 0;
+      const subtotal = base + goalBonus;
+      return Math.min(subtotal, sr.maxDailyPoints || subtotal);
+    };
+
     try {
       const updateData: Record<string, unknown> = {};
-
       if (updates.date) updateData.date = updates.date;
       if (updates.notes !== undefined) updateData.notes = updates.notes;
 
       if (updates.entries) {
         const activities: Record<string, number> = {};
         let totalPoints = 0;
-
         for (const entry of updates.entries) {
           activities[entry.activityId] = entry.value;
           const activity = kid.activities?.find(a => a.id === entry.activityId);
-          if (activity?.scoringRule) {
-            totalPoints += entry.value * activity.scoringRule.basePointsPerUnit;
-          }
+          totalPoints += computePoints(entry.value, activity);
         }
-
         updateData.activities = activities;
         updateData.total_points = totalPoints;
-        updateData.status = "pending"; // Reset to pending if entries changed
+        updateData.status = "pending";
       }
 
       const { error } = await supabase
