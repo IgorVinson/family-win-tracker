@@ -422,45 +422,74 @@ export function useEnhancedKidDB(kidId: string) {
     };
 
     try {
-      const { error } = await supabase
+      // Always fetch a fresh version of the report so we capture any parent edits
+      const { data: freshReport, error: fetchErr } = await supabase
+        .from("daily_reports")
+        .select("id, date, activities, status")
+        .eq("id", reportId)
+        .single();
+
+      if (fetchErr || !freshReport) {
+        console.error("Error fetching fresh report before approval", fetchErr);
+        toast({
+          variant: "destructive",
+          title: "Approve failed",
+          description: "Could not fetch latest report data.",
+        });
+        return;
+      }
+
+      // Build entries array from latest activities JSON
+      const activityMap = (freshReport.activities || {}) as Record<
+        string,
+        number
+      >;
+      const entries = Object.entries(activityMap).map(
+        ([activityId, value]) => ({
+          activityId,
+          value: Number(value) || 0,
+        })
+      );
+
+      // Recompute total points from fresh entries
+      let totalReportPoints = 0;
+      for (const entry of entries) {
+        const activity = kid.activities?.find(a => a.id === entry.activityId);
+        const points = computePoints(entry.value, activity);
+        totalReportPoints += points;
+
+        // Insert score entry per activity (same as before)
+        await supabase.from("score_entries").insert({
+          kid_id: kidId,
+          date: freshReport.date,
+          activity: entry.activityId,
+          points,
+          reason: "Daily report approved",
+          approved: true,
+          approved_by: user.id,
+        });
+      }
+
+      // Mark report approved (after awarding to avoid partial state if update fails first)
+      const { error: updateErr } = await supabase
         .from("daily_reports")
         .update({
           status: "approved",
+          total_points: totalReportPoints, // sync stored aggregate with recomputed value
           updated_at: new Date().toISOString(),
         })
         .eq("id", reportId);
 
-      if (error) throw error;
+      if (updateErr) throw updateErr;
 
-      const report = kid.reports?.find(r => r.id === reportId);
-      if (report) {
-        for (const entry of report.entries) {
-          const activity = kid.activities?.find(a => a.id === entry.activityId);
-          const points = computePoints(entry.value, activity);
-          await supabase.from("score_entries").insert({
-            kid_id: kidId,
-            date: report.date,
-            activity: entry.activityId,
-            points,
-            reason: "Daily report approved",
-            approved: true,
-            approved_by: user.id,
-          });
-        }
-
-        const totalReportPoints = report.entries.reduce((sum, entry) => {
-          const activity = kid.activities?.find(a => a.id === entry.activityId);
-          return sum + computePoints(entry.value, activity);
-        }, 0);
-
-        await supabase
-          .from("kids")
-          .update({
-            current_points: kid.points + totalReportPoints,
-            updated_at: new Date().toISOString(),
-          })
-          .eq("id", kidId);
-      }
+      // Update kid points using fresh value + newly earned points
+      await supabase
+        .from("kids")
+        .update({
+          current_points: kid.points + totalReportPoints,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", kidId);
 
       await loadKidData();
 
