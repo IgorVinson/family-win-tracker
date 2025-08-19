@@ -349,7 +349,9 @@ export function useEnhancedKidDB(kidId: string) {
       if (!activity?.scoringRule) return 0;
       const sr = activity.scoringRule;
       const base = Math.floor(value * sr.basePointsPerUnit);
-      const meetsGoal = activity.planValue ? value >= activity.planValue : false;
+      const meetsGoal = activity.planValue
+        ? value >= activity.planValue
+        : false;
       const goalBonus = meetsGoal ? sr.goalBonusPoints || 0 : 0;
       const subtotal = base + goalBonus;
       return Math.min(subtotal, sr.maxDailyPoints || subtotal);
@@ -365,16 +367,14 @@ export function useEnhancedKidDB(kidId: string) {
         totalPoints += computePoints(entry.value, activity);
       }
 
-      const { error } = await supabase
-        .from("daily_reports")
-        .insert({
-          kid_id: kidId,
-          date: reportData.date,
-          activities,
-          total_points: totalPoints,
-          status: "pending",
-          notes: reportData.notes,
-        });
+      const { error } = await supabase.from("daily_reports").insert({
+        kid_id: kidId,
+        date: reportData.date,
+        activities,
+        total_points: totalPoints,
+        status: "pending",
+        notes: reportData.notes,
+      });
 
       if (error) throw error;
 
@@ -386,11 +386,20 @@ export function useEnhancedKidDB(kidId: string) {
       });
     } catch (error) {
       console.error("Error adding report:", error);
-      toast({
-        variant: "destructive",
-        title: "Failed to add report",
-        description: "Could not submit your report. Please try again.",
-      });
+
+      if (error.code === "23505") {
+        toast({
+          variant: "destructive",
+          title: "Report already exists",
+          description:
+            "You have already submitted a report for this date, please edit your existing reports.",
+        });
+      } else
+        toast({
+          variant: "destructive",
+          title: "Failed to add report",
+          description: "Could not submit your report. Please try again.",
+        });
     }
   };
 
@@ -404,7 +413,9 @@ export function useEnhancedKidDB(kidId: string) {
       if (!activity?.scoringRule) return 0;
       const sr = activity.scoringRule;
       const base = Math.floor(value * sr.basePointsPerUnit);
-      const meetsGoal = activity.planValue ? value >= activity.planValue : false;
+      const meetsGoal = activity.planValue
+        ? value >= activity.planValue
+        : false;
       const goalBonus = meetsGoal ? sr.goalBonusPoints || 0 : 0;
       const subtotal = base + goalBonus;
       return Math.min(subtotal, sr.maxDailyPoints || subtotal);
@@ -439,7 +450,7 @@ export function useEnhancedKidDB(kidId: string) {
 
         const totalReportPoints = report.entries.reduce((sum, entry) => {
           const activity = kid.activities?.find(a => a.id === entry.activityId);
-            return sum + computePoints(entry.value, activity);
+          return sum + computePoints(entry.value, activity);
         }, 0);
 
         await supabase
@@ -499,7 +510,11 @@ export function useEnhancedKidDB(kidId: string) {
 
   const updateReport = async (
     reportId: string,
-    updates: { date?: string; notes?: string; entries?: Array<{ activityId: string; value: number }>; }
+    updates: {
+      date?: string;
+      notes?: string;
+      entries?: Array<{ activityId: string; value: number }>;
+    }
   ) => {
     if (!kid || !user) return;
 
@@ -510,7 +525,9 @@ export function useEnhancedKidDB(kidId: string) {
       if (!activity?.scoringRule) return 0;
       const sr = activity.scoringRule;
       const base = Math.floor(value * sr.basePointsPerUnit);
-      const meetsGoal = activity.planValue ? value >= activity.planValue : false;
+      const meetsGoal = activity.planValue
+        ? value >= activity.planValue
+        : false;
       const goalBonus = meetsGoal ? sr.goalBonusPoints || 0 : 0;
       const subtotal = base + goalBonus;
       return Math.min(subtotal, sr.maxDailyPoints || subtotal);
@@ -557,29 +574,127 @@ export function useEnhancedKidDB(kidId: string) {
     }
   };
 
+  // const deleteReport = async (reportId: string) => {
+  //   console.log("Deleting report:", reportId);
+  //   if (!user) {
+  //     console.warn("deleteReport: no user, abort");
+  //     return;
+  //   }
+
+  //   try {
+  //     const { error } = await supabase
+  //       .from("daily_reports")
+  //       .delete()
+  //       .eq("id", reportId);
+
+  //     if (error) throw error;
+
+  //     await loadKidData();
+
+  //     toast({
+  //       title: "Report deleted",
+  //       description: "The daily report has been deleted.",
+  //     });
+  //   } catch (error) {
+  //     console.error("Error deleting report:", error);
+  //     toast({
+  //       variant: "destructive",
+  //       title: "Failed to delete report",
+  //       description: "Could not delete the report. Please try again.",
+  //     });
+  //   }
+  // };
+
+  // ...existing code...
   const deleteReport = async (reportId: string) => {
-    if (!kid || !user) return;
+    if (!user) {
+      console.warn("[deleteReport] no user");
+      return;
+    }
+    const normalizedId = reportId.trim();
+
+    console.log("[deleteReport] start", {
+      reportId,
+      normalizedId,
+      hasKid: !!kid,
+      userId: user.id,
+      kidId,
+    });
+
+    // PRE-CHECK: does row exist & visible?
+    const { data: preCheck, error: preErr } = await supabase
+      .from("daily_reports")
+      .select("id")
+      .eq("id", normalizedId);
+
+    console.log("[deleteReport] preCheck", { preErr, preCheck });
+
+    if (preErr) {
+      console.error("[deleteReport] preCheck error", preErr);
+    } else if (!preCheck || preCheck.length === 0) {
+      console.warn(
+        "[deleteReport] row not visible before delete (RLS or bad id)"
+      );
+    }
+
+    // Optimistic removal
+    const prevKid = kid;
+    if (kid) {
+      setKid({
+        ...kid,
+        reports: kid.reports.filter(r => r.id !== normalizedId),
+      });
+    }
 
     try {
-      const { error } = await supabase
+      const { data: delData, error: delError } = await supabase
         .from("daily_reports")
         .delete()
-        .eq("id", reportId);
+        .eq("id", normalizedId)
+        .eq("kid_id", kidId) // reinforce filter for RLS
+        .select("id"); // return deleted ids
 
-      if (error) throw error;
+      console.log("[deleteReport] delete response", {
+        delError,
+        deletedCount: delData?.length || 0,
+        delData,
+      });
 
-      await loadKidData();
+      if (delError) throw delError;
+
+      if (!delData || delData.length === 0) {
+        // Nothing deleted – revert optimistic change
+        if (prevKid) setKid(prevKid);
+        toast({
+          variant: "destructive",
+          title: "Delete failed",
+          description: "Report not deleted (no match or no permission).",
+        });
+        return;
+      }
+
+      // POST-CHECK (optional)
+      const { data: postCheck, error: postErr } = await supabase
+        .from("daily_reports")
+        .select("id")
+        .eq("id", normalizedId);
+
+      console.log("[deleteReport] postCheck", { postErr, postCheck });
 
       toast({
         title: "Report deleted",
         description: "The daily report has been deleted.",
       });
-    } catch (error) {
-      console.error("Error deleting report:", error);
+
+      // Refresh to sync other aggregates
+      await loadKidData();
+    } catch (err) {
+      console.error("[deleteReport] error", err);
+      if (prevKid) setKid(prevKid);
       toast({
         variant: "destructive",
         title: "Failed to delete report",
-        description: "Could not delete the report. Please try again.",
+        description: "Could not delete the report. See console.",
       });
     }
   };

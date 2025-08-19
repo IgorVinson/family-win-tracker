@@ -1,6 +1,11 @@
 import { useEffect, useState } from "react";
 import { useLocalStorage } from "./useLocalStorage";
-import { EnhancedKid, Gift, GiftRedemption, ScoringRule } from "@/types/scoreSystem";
+import {
+  EnhancedKid,
+  Gift,
+  GiftRedemption,
+  ScoringRule,
+} from "@/types/scoreSystem";
 import { ScoringEngine } from "@/lib/scoringEngine";
 
 // Convert legacy Kid to EnhancedKid
@@ -9,14 +14,20 @@ function migrateToEnhancedKid(legacyKid: any): EnhancedKid {
     ...legacyKid,
     totalPointsEarned: legacyKid.totalPointsEarned || legacyKid.points || 0,
     scoreHistory: legacyKid.scoreHistory || [],
-    availableGifts: legacyKid.availableGifts || legacyKid.availablePrizes || getDefaultGifts(),
-    giftRedemptions: legacyKid.giftRedemptions || legacyKid.prizeRedemptions || [],
+    availableGifts:
+      legacyKid.availableGifts ||
+      legacyKid.availablePrizes ||
+      getDefaultGifts(),
+    giftRedemptions:
+      legacyKid.giftRedemptions || legacyKid.prizeRedemptions || [],
     achievements: legacyKid.achievements || [],
     streaks: legacyKid.streaks || {},
-    activities: (legacyKid.metrics || legacyKid.activities || []).map((activity: any) => ({
-      ...activity,
-      scoringRule: activity.scoringRule || getDefaultScoringRule(activity)
-    }))
+    activities: (legacyKid.metrics || legacyKid.activities || []).map(
+      (activity: any) => ({
+        ...activity,
+        scoringRule: activity.scoringRule || getDefaultScoringRule(activity),
+      })
+    ),
   };
 }
 
@@ -29,7 +40,7 @@ function getDefaultGifts(): Gift[] {
       pointsCost: 50,
       category: "privilege",
       isActive: true,
-      createdAt: new Date().toISOString()
+      createdAt: new Date().toISOString(),
     },
     {
       id: crypto.randomUUID(),
@@ -38,7 +49,7 @@ function getDefaultGifts(): Gift[] {
       pointsCost: 75,
       category: "privilege",
       isActive: true,
-      createdAt: new Date().toISOString()
+      createdAt: new Date().toISOString(),
     },
     {
       id: crypto.randomUUID(),
@@ -47,7 +58,7 @@ function getDefaultGifts(): Gift[] {
       pointsCost: 25,
       category: "treat",
       isActive: true,
-      createdAt: new Date().toISOString()
+      createdAt: new Date().toISOString(),
     },
     {
       id: crypto.randomUUID(),
@@ -56,7 +67,7 @@ function getDefaultGifts(): Gift[] {
       pointsCost: 100,
       category: "activity",
       isActive: true,
-      createdAt: new Date().toISOString()
+      createdAt: new Date().toISOString(),
     },
     {
       id: crypto.randomUUID(),
@@ -65,8 +76,8 @@ function getDefaultGifts(): Gift[] {
       pointsCost: 200,
       category: "item",
       isActive: true,
-      createdAt: new Date().toISOString()
-    }
+      createdAt: new Date().toISOString(),
+    },
   ];
 }
 
@@ -77,7 +88,7 @@ function getDefaultScoringRule(activity: any): ScoringRule {
     basePointsPerUnit: basePoints,
     goalBonusPoints: 20,
     streakBonusPoints: 10,
-    maxDailyPoints: 100
+    maxDailyPoints: 100,
   };
 }
 
@@ -96,13 +107,13 @@ export function useEnhancedKid(kidId: string) {
 
   const updateKid = (updater: (kid: EnhancedKid) => EnhancedKid) => {
     if (!kid) return;
-    
+
     const updatedKid = updater(kid);
     setKid(updatedKid);
-    
+
     // Update in localStorage
-    setKids(currentKids => 
-      currentKids.map(k => k.id === kidId ? updatedKid : k)
+    setKids(currentKids =>
+      currentKids.map(k => (k.id === kidId ? updatedKid : k))
     );
   };
 
@@ -125,7 +136,7 @@ export function useEnhancedKid(kidId: string) {
     // Don't process scoring yet - wait for parent approval
     updateKid(currentKid => ({
       ...currentKid,
-      reports: [...(currentKid.reports || []), report]
+      reports: [...(currentKid.reports || []), report],
     }));
   };
 
@@ -136,16 +147,26 @@ export function useEnhancedKid(kidId: string) {
     if (!report || report.status !== "pending") return;
 
     // Process scoring for approved report
-    const scoreUpdates = ScoringEngine.processDailyReport(kid, report.date, report.entries);
+    const scoreUpdates = ScoringEngine.processDailyReport(
+      kid,
+      report.date,
+      report.entries
+    );
 
     updateKid(currentKid => ({
       ...currentKid,
       ...scoreUpdates,
-      reports: currentKid.reports?.map(r =>
-        r.id === reportId
-          ? { ...r, status: "approved" as const, processedAt: new Date().toISOString(), processedBy: "parent" as const }
-          : r
-      ) || []
+      reports:
+        currentKid.reports?.map(r =>
+          r.id === reportId
+            ? {
+                ...r,
+                status: "approved" as const,
+                processedAt: new Date().toISOString(),
+                processedBy: "parent" as const,
+              }
+            : r
+        ) || [],
     }));
   };
 
@@ -154,37 +175,50 @@ export function useEnhancedKid(kidId: string) {
 
     updateKid(currentKid => ({
       ...currentKid,
-      reports: currentKid.reports?.map(r =>
-        r.id === reportId
-          ? { ...r, status: "rejected" as const, processedAt: new Date().toISOString(), processedBy: "parent" as const }
-          : r
-      ) || []
+      reports:
+        currentKid.reports?.map(r =>
+          r.id === reportId
+            ? {
+                ...r,
+                status: "rejected" as const,
+                processedAt: new Date().toISOString(),
+                processedBy: "parent" as const,
+              }
+            : r
+        ) || [],
     }));
   };
 
-  const updateReport = (reportId: string, updates: {
-    date?: string;
-    notes?: string;
-    entries?: Array<{ activityId: string; value: number }>;
-  }) => {
+  const updateReport = (
+    reportId: string,
+    updates: {
+      date?: string;
+      notes?: string;
+      entries?: Array<{ activityId: string; value: number }>;
+    }
+  ) => {
     if (!kid) return;
 
     updateKid(currentKid => ({
       ...currentKid,
-      reports: currentKid.reports?.map(r =>
-        r.id === reportId
-          ? { ...r, ...updates, status: r.status === "approved" ? "pending" as const : r.status }
-          : r
-      ) || []
+      reports:
+        currentKid.reports?.map(r =>
+          r.id === reportId
+            ? {
+                ...r,
+                ...updates,
+                status:
+                  r.status === "approved" ? ("pending" as const) : r.status,
+              }
+            : r
+        ) || [],
     }));
   };
 
   const deleteReport = (reportId: string) => {
-    if (!kid) return;
-
     updateKid(currentKid => ({
       ...currentKid,
-      reports: currentKid.reports?.filter(r => r.id !== reportId) || []
+      reports: currentKid.reports?.filter(r => r.id !== reportId) || [],
     }));
   };
 
@@ -192,12 +226,12 @@ export function useEnhancedKid(kidId: string) {
     const gift: Gift = {
       ...giftData,
       id: crypto.randomUUID(),
-      createdAt: new Date().toISOString()
+      createdAt: new Date().toISOString(),
     };
 
     updateKid(currentKid => ({
       ...currentKid,
-      availableGifts: [...currentKid.availableGifts, gift]
+      availableGifts: [...currentKid.availableGifts, gift],
     }));
   };
 
@@ -206,14 +240,14 @@ export function useEnhancedKid(kidId: string) {
       ...currentKid,
       availableGifts: currentKid.availableGifts.map(p =>
         p.id === giftId ? { ...p, ...updates } : p
-      )
+      ),
     }));
   };
 
   const deleteGift = (giftId: string) => {
     updateKid(currentKid => ({
       ...currentKid,
-      availableGifts: currentKid.availableGifts.filter(p => p.id !== giftId)
+      availableGifts: currentKid.availableGifts.filter(p => p.id !== giftId),
     }));
   };
 
@@ -229,44 +263,56 @@ export function useEnhancedKid(kidId: string) {
       giftName: gift.name,
       pointsCost: gift.pointsCost,
       status: "pending",
-      requestedAt: new Date().toISOString()
+      requestedAt: new Date().toISOString(),
     };
 
     updateKid(currentKid => ({
       ...currentKid,
       points: currentKid.points - gift.pointsCost,
-      giftRedemptions: [...currentKid.giftRedemptions, redemption]
+      giftRedemptions: [...currentKid.giftRedemptions, redemption],
     }));
   };
 
-  const updateRedemption = (redemptionId: string, status: GiftRedemption["status"], notes?: string) => {
+  const updateRedemption = (
+    redemptionId: string,
+    status: GiftRedemption["status"],
+    notes?: string
+  ) => {
     updateKid(currentKid => {
-      const redemption = currentKid.giftRedemptions.find(r => r.id === redemptionId);
-      const gift = currentKid.availableGifts.find(p => p.id === redemption?.giftId);
-      
+      const redemption = currentKid.giftRedemptions.find(
+        r => r.id === redemptionId
+      );
+      const gift = currentKid.availableGifts.find(
+        p => p.id === redemption?.giftId
+      );
+
       // If rejecting a redemption, return the points to the kid
-      const pointsToReturn = status === "rejected" && redemption?.status === "pending" && gift 
-        ? gift.pointsCost 
-        : 0;
+      const pointsToReturn =
+        status === "rejected" && redemption?.status === "pending" && gift
+          ? gift.pointsCost
+          : 0;
 
       return {
         ...currentKid,
         points: currentKid.points + pointsToReturn,
         giftRedemptions: currentKid.giftRedemptions.map(r =>
-          r.id === redemptionId 
+          r.id === redemptionId
             ? { ...r, status, processedAt: new Date().toISOString(), notes }
             : r
-        )
+        ),
       };
     });
   };
 
-  const updateActivityScoringRule = (activityId: string, scoringRule: ScoringRule) => {
+  const updateActivityScoringRule = (
+    activityId: string,
+    scoringRule: ScoringRule
+  ) => {
     updateKid(currentKid => ({
       ...currentKid,
       activities: currentKid.activities?.map(a =>
         a.id === activityId ? { ...a, scoringRule } : a
-      )
+      ),
     }));
   };
 
@@ -287,6 +333,6 @@ export function useEnhancedKid(kidId: string) {
     redeemGift,
     updateRedemption,
     updateMetricScoringRule,
-    updateActivityScoringRule
+    updateActivityScoringRule,
   };
 }
