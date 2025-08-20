@@ -924,19 +924,46 @@ export function useEnhancedKidDB(kidId: string) {
 
       if (error) throw error;
 
-      // If rejecting, return points to kid
-      if (status === "rejected") {
-        const redemption = kid?.giftRedemptions.find(
-          r => r.id === redemptionId
-        );
-        if (redemption && kid) {
-          await supabase
-            .from("kids")
-            .update({
-              current_points: kid.points + redemption.pointsCost,
-              updated_at: new Date().toISOString(),
-            })
-            .eq("id", kidId);
+      // Handle point adjustments based on status
+      if (status === "approved" || status === "rejected") {
+        // Get the redemption with gift cost from database
+        const { data: redemptionData, error: redemptionError } = await supabase
+          .from("gift_redemptions")
+          .select(`
+            id,
+            gift_id,
+            gifts!inner(cost)
+          `)
+          .eq("id", redemptionId)
+          .single();
+
+        if (redemptionError) {
+          console.error("Error fetching redemption:", redemptionError);
+          throw redemptionError;
+        }
+
+        if (redemptionData && kid) {
+          const giftCost = redemptionData.gifts.cost;
+          
+          if (status === "approved") {
+            // Deduct points when approving redemption
+            await supabase
+              .from("kids")
+              .update({
+                current_points: kid.points - giftCost,
+                updated_at: new Date().toISOString(),
+              })
+              .eq("id", kidId);
+          } else if (status === "rejected") {
+            // Return points when rejecting redemption
+            await supabase
+              .from("kids")
+              .update({
+                current_points: kid.points + giftCost,
+                updated_at: new Date().toISOString(),
+              })
+              .eq("id", kidId);
+          }
         }
       }
 
