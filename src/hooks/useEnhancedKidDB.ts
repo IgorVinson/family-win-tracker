@@ -342,36 +342,42 @@ export function useEnhancedKidDB(kidId: string) {
   }) => {
     if (!kid || !user) return;
 
+    const computePoints = (
+      value: number,
+      activity?: { planValue?: number; scoringRule?: ScoringRule }
+    ) => {
+      if (!activity?.scoringRule) return 0;
+      const sr = activity.scoringRule;
+      const base = Math.floor(value * sr.basePointsPerUnit);
+      const meetsGoal = activity.planValue
+        ? value >= activity.planValue
+        : false;
+      const goalBonus = meetsGoal ? sr.goalBonusPoints || 0 : 0;
+      const subtotal = base + goalBonus;
+      return Math.min(subtotal, sr.maxDailyPoints || subtotal);
+    };
+
     try {
-      // Convert entries to activities object
       const activities: Record<string, number> = {};
       let totalPoints = 0;
 
       for (const entry of reportData.entries) {
         activities[entry.activityId] = entry.value;
-        // Calculate points based on scoring rules
         const activity = kid.activities?.find(a => a.id === entry.activityId);
-        if (activity?.scoringRule) {
-          totalPoints += entry.value * activity.scoringRule.basePointsPerUnit;
-        }
+        totalPoints += computePoints(entry.value, activity);
       }
 
-      const { data, error } = await supabase
-        .from("daily_reports")
-        .insert({
-          kid_id: kidId,
-          date: reportData.date,
-          activities,
-          total_points: totalPoints,
-          status: "pending",
-          notes: reportData.notes,
-        })
-        .select()
-        .single();
+      const { error } = await supabase.from("daily_reports").insert({
+        kid_id: kidId,
+        date: reportData.date,
+        activities,
+        total_points: totalPoints,
+        status: "pending",
+        notes: reportData.notes,
+      });
 
       if (error) throw error;
 
-      // Refresh data
       await loadKidData();
 
       toast({
@@ -380,65 +386,110 @@ export function useEnhancedKidDB(kidId: string) {
       });
     } catch (error) {
       console.error("Error adding report:", error);
-      toast({
-        variant: "destructive",
-        title: "Failed to add report",
-        description: "Could not submit your report. Please try again.",
-      });
+
+      if (error.code === "23505") {
+        toast({
+          variant: "destructive",
+          title: "Report already exists",
+          description:
+            "You have already submitted a report for this date, please edit your existing reports.",
+        });
+      } else
+        toast({
+          variant: "destructive",
+          title: "Failed to add report",
+          description: "Could not submit your report. Please try again.",
+        });
     }
   };
 
   const approveReport = async (reportId: string) => {
     if (!kid || !user || userRole !== "parent") return;
 
+    const computePoints = (
+      value: number,
+      activity?: { planValue?: number; scoringRule?: ScoringRule }
+    ) => {
+      if (!activity?.scoringRule) return 0;
+      const sr = activity.scoringRule;
+      const base = Math.floor(value * sr.basePointsPerUnit);
+      const meetsGoal = activity.planValue
+        ? value >= activity.planValue
+        : false;
+      const goalBonus = meetsGoal ? sr.goalBonusPoints || 0 : 0;
+      const subtotal = base + goalBonus;
+      return Math.min(subtotal, sr.maxDailyPoints || subtotal);
+    };
+
     try {
-      const { error } = await supabase
+      // Always fetch a fresh version of the report so we capture any parent edits
+      const { data: freshReport, error: fetchErr } = await supabase
+        .from("daily_reports")
+        .select("id, date, activities, status")
+        .eq("id", reportId)
+        .single();
+
+      if (fetchErr || !freshReport) {
+        console.error("Error fetching fresh report before approval", fetchErr);
+        toast({
+          variant: "destructive",
+          title: "Approve failed",
+          description: "Could not fetch latest report data.",
+        });
+        return;
+      }
+
+      // Build entries array from latest activities JSON
+      const activityMap = (freshReport.activities || {}) as Record<
+        string,
+        number
+      >;
+      const entries = Object.entries(activityMap).map(
+        ([activityId, value]) => ({
+          activityId,
+          value: Number(value) || 0,
+        })
+      );
+
+      // Recompute total points from fresh entries
+      let totalReportPoints = 0;
+      for (const entry of entries) {
+        const activity = kid.activities?.find(a => a.id === entry.activityId);
+        const points = computePoints(entry.value, activity);
+        totalReportPoints += points;
+
+        // Insert score entry per activity (same as before)
+        await supabase.from("score_entries").insert({
+          kid_id: kidId,
+          date: freshReport.date,
+          activity: entry.activityId,
+          points,
+          reason: "Daily report approved",
+          approved: true,
+          approved_by: user.id,
+        });
+      }
+
+      // Mark report approved (after awarding to avoid partial state if update fails first)
+      const { error: updateErr } = await supabase
         .from("daily_reports")
         .update({
           status: "approved",
+          total_points: totalReportPoints, // sync stored aggregate with recomputed value
           updated_at: new Date().toISOString(),
         })
         .eq("id", reportId);
 
-      if (error) throw error;
+      if (updateErr) throw updateErr;
 
-      // Find the report and create score entries
-      const report = kid.reports?.find(r => r.id === reportId);
-      if (report) {
-        for (const entry of report.entries) {
-          const activity = kid.activities?.find(a => a.id === entry.activityId);
-          const points = activity?.scoringRule
-            ? entry.value * activity.scoringRule.basePointsPerUnit
-            : entry.value * 10;
-
-          await supabase.from("score_entries").insert({
-            kid_id: kidId,
-            date: report.date,
-            activity: entry.activityId,
-            points,
-            reason: "Daily report approved",
-            approved: true,
-            approved_by: user.id,
-          });
-        }
-
-        // Update kid's current points
-        const totalReportPoints = report.entries.reduce((sum, entry) => {
-          const activity = kid.activities?.find(a => a.id === entry.activityId);
-          const points = activity?.scoringRule
-            ? entry.value * activity.scoringRule.basePointsPerUnit
-            : entry.value * 10;
-          return sum + points;
-        }, 0);
-
-        await supabase
-          .from("kids")
-          .update({
-            current_points: kid.points + totalReportPoints,
-            updated_at: new Date().toISOString(),
-          })
-          .eq("id", kidId);
-      }
+      // Update kid points using fresh value + newly earned points
+      await supabase
+        .from("kids")
+        .update({
+          current_points: kid.points + totalReportPoints,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", kidId);
 
       await loadKidData();
 
@@ -496,27 +547,37 @@ export function useEnhancedKidDB(kidId: string) {
   ) => {
     if (!kid || !user) return;
 
+    const computePoints = (
+      value: number,
+      activity?: { planValue?: number; scoringRule?: ScoringRule }
+    ) => {
+      if (!activity?.scoringRule) return 0;
+      const sr = activity.scoringRule;
+      const base = Math.floor(value * sr.basePointsPerUnit);
+      const meetsGoal = activity.planValue
+        ? value >= activity.planValue
+        : false;
+      const goalBonus = meetsGoal ? sr.goalBonusPoints || 0 : 0;
+      const subtotal = base + goalBonus;
+      return Math.min(subtotal, sr.maxDailyPoints || subtotal);
+    };
+
     try {
       const updateData: Record<string, unknown> = {};
-
       if (updates.date) updateData.date = updates.date;
       if (updates.notes !== undefined) updateData.notes = updates.notes;
 
       if (updates.entries) {
         const activities: Record<string, number> = {};
         let totalPoints = 0;
-
         for (const entry of updates.entries) {
           activities[entry.activityId] = entry.value;
           const activity = kid.activities?.find(a => a.id === entry.activityId);
-          if (activity?.scoringRule) {
-            totalPoints += entry.value * activity.scoringRule.basePointsPerUnit;
-          }
+          totalPoints += computePoints(entry.value, activity);
         }
-
         updateData.activities = activities;
         updateData.total_points = totalPoints;
-        updateData.status = "pending"; // Reset to pending if entries changed
+        updateData.status = "pending";
       }
 
       const { error } = await supabase
@@ -542,29 +603,127 @@ export function useEnhancedKidDB(kidId: string) {
     }
   };
 
+  // const deleteReport = async (reportId: string) => {
+  //   console.log("Deleting report:", reportId);
+  //   if (!user) {
+  //     console.warn("deleteReport: no user, abort");
+  //     return;
+  //   }
+
+  //   try {
+  //     const { error } = await supabase
+  //       .from("daily_reports")
+  //       .delete()
+  //       .eq("id", reportId);
+
+  //     if (error) throw error;
+
+  //     await loadKidData();
+
+  //     toast({
+  //       title: "Report deleted",
+  //       description: "The daily report has been deleted.",
+  //     });
+  //   } catch (error) {
+  //     console.error("Error deleting report:", error);
+  //     toast({
+  //       variant: "destructive",
+  //       title: "Failed to delete report",
+  //       description: "Could not delete the report. Please try again.",
+  //     });
+  //   }
+  // };
+
+  // ...existing code...
   const deleteReport = async (reportId: string) => {
-    if (!kid || !user) return;
+    if (!user) {
+      console.warn("[deleteReport] no user");
+      return;
+    }
+    const normalizedId = reportId.trim();
+
+    console.log("[deleteReport] start", {
+      reportId,
+      normalizedId,
+      hasKid: !!kid,
+      userId: user.id,
+      kidId,
+    });
+
+    // PRE-CHECK: does row exist & visible?
+    const { data: preCheck, error: preErr } = await supabase
+      .from("daily_reports")
+      .select("id")
+      .eq("id", normalizedId);
+
+    console.log("[deleteReport] preCheck", { preErr, preCheck });
+
+    if (preErr) {
+      console.error("[deleteReport] preCheck error", preErr);
+    } else if (!preCheck || preCheck.length === 0) {
+      console.warn(
+        "[deleteReport] row not visible before delete (RLS or bad id)"
+      );
+    }
+
+    // Optimistic removal
+    const prevKid = kid;
+    if (kid) {
+      setKid({
+        ...kid,
+        reports: kid.reports.filter(r => r.id !== normalizedId),
+      });
+    }
 
     try {
-      const { error } = await supabase
+      const { data: delData, error: delError } = await supabase
         .from("daily_reports")
         .delete()
-        .eq("id", reportId);
+        .eq("id", normalizedId)
+        .eq("kid_id", kidId) // reinforce filter for RLS
+        .select("id"); // return deleted ids
 
-      if (error) throw error;
+      console.log("[deleteReport] delete response", {
+        delError,
+        deletedCount: delData?.length || 0,
+        delData,
+      });
 
-      await loadKidData();
+      if (delError) throw delError;
+
+      if (!delData || delData.length === 0) {
+        // Nothing deleted – revert optimistic change
+        if (prevKid) setKid(prevKid);
+        toast({
+          variant: "destructive",
+          title: "Delete failed",
+          description: "Report not deleted (no match or no permission).",
+        });
+        return;
+      }
+
+      // POST-CHECK (optional)
+      const { data: postCheck, error: postErr } = await supabase
+        .from("daily_reports")
+        .select("id")
+        .eq("id", normalizedId);
+
+      console.log("[deleteReport] postCheck", { postErr, postCheck });
 
       toast({
         title: "Report deleted",
         description: "The daily report has been deleted.",
       });
-    } catch (error) {
-      console.error("Error deleting report:", error);
+
+      // Refresh to sync other aggregates
+      await loadKidData();
+    } catch (err) {
+      console.error("[deleteReport] error", err);
+      if (prevKid) setKid(prevKid);
       toast({
         variant: "destructive",
         title: "Failed to delete report",
-        description: "Could not delete the report. Please try again.",
+        description: "Could not delete the report. See console.",
       });
     }
   };
@@ -765,19 +924,56 @@ export function useEnhancedKidDB(kidId: string) {
 
       if (error) throw error;
 
-      // If rejecting, return points to kid
-      if (status === "rejected") {
-        const redemption = kid?.giftRedemptions.find(
-          r => r.id === redemptionId
-        );
-        if (redemption && kid) {
-          await supabase
-            .from("kids")
-            .update({
-              current_points: kid.points + redemption.pointsCost,
-              updated_at: new Date().toISOString(),
-            })
-            .eq("id", kidId);
+      // Handle point adjustments based on status
+      if (status === "approved" || status === "rejected") {
+        // Get the redemption with gift cost from database
+        const { data: redemptionData, error: redemptionError } = await supabase
+          .from("gift_redemptions")
+          .select(`
+            id,
+            gift_id,
+            gifts!inner(cost)
+          `)
+          .eq("id", redemptionId)
+          .single();
+
+        if (redemptionError) {
+          console.error("Error fetching redemption:", redemptionError);
+          throw redemptionError;
+        }
+
+        if (redemptionData && kid) {
+          const giftCost = redemptionData.gifts.cost;
+          
+          if (status === "approved") {
+            // Check if kid has enough points
+            if (kid.points < giftCost) {
+              toast({
+                variant: "destructive",
+                title: "Insufficient points",
+                description: `${kid.name} only has ${kid.points} points but the gift costs ${giftCost} points.`,
+              });
+              return;
+            }
+
+            // Deduct points when approving redemption
+            await supabase
+              .from("kids")
+              .update({
+                current_points: kid.points - giftCost,
+                updated_at: new Date().toISOString(),
+              })
+              .eq("id", kidId);
+          } else if (status === "rejected") {
+            // Return points when rejecting redemption
+            await supabase
+              .from("kids")
+              .update({
+                current_points: kid.points + giftCost,
+                updated_at: new Date().toISOString(),
+              })
+              .eq("id", kidId);
+          }
         }
       }
 

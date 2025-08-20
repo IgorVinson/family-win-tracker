@@ -35,7 +35,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { useEnhancedKidDB } from "@/hooks/useEnhancedKidDB";
@@ -137,9 +137,9 @@ function KidDashboardContent() {
 
   // Scoring rule states for new activities
   const [newBasePointsPerUnit, setNewBasePointsPerUnit] = useState("1");
-  const [newGoalBonusPoints, setNewGoalBonusPoints] = useState("5");
+  const [newGoalBonusPoints, setNewGoalBonusPoints] = useState("2");
   const [newStreakBonusPoints, setNewStreakBonusPoints] = useState("2");
-  const [newMaxDailyPoints, setNewMaxDailyPoints] = useState("50");
+  const [newMaxDailyPoints, setNewMaxDailyPoints] = useState("5");
   const [groupName, setGroupName] = useState("");
   const [groupType, setGroupType] = useState<"project" | "goal">("goal");
   const [showManagement, setShowManagement] = useState(false);
@@ -162,20 +162,36 @@ function KidDashboardContent() {
     Array<{ id: string; name: string; points: number; goal: number }>
   >([]);
   const [leaderboardLoading, setLeaderboardLoading] = useState(false);
+  // state for consolidated add menu (dropdown removed)
+  // const [addMenuOpen, setAddMenuOpen] = useState(false); // removed
+  // const [addSheetOpen, setAddSheetOpen] = useState(false); // replaces mobile dropdown
+  // const lastFocusedElementRef = useRef<HTMLElement | null>(null); // to restore focus after sheet closes
+  // const sheetPanelRef = useRef<HTMLDivElement | null>(null);
+  // const touchStartYRef = useRef<number | null>(null); // for swipe-to-dismiss
 
   const headerContainerCls =
     "flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4";
   const overviewGridCls =
-    "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8";
+    "grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8";
   const mainLayoutCls = "flex flex-col md:flex-row gap-6";
   const sidebarWidthCls = "md:w-48 lg:w-56 shrink-0";
-  const tabsListMobileCls = "grid w-full grid-cols-3 md:hidden";
   const scoringRulesBoxCls = "space-y-3 p-4 bg-muted/50 rounded-lg";
   const giftDialogContentCls = "max-w-4xl max-h-[80vh] overflow-y-auto";
   const addReportBtnGradient =
-    "bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white border-0 shadow-md hover:shadow-lg transition-all duration-200";
+    "bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white border-0 shadow-md hover:shadow-lg transition-all duration-200"; // desktop Add report button
+  // const addTriggerBtnCls =
+  //   "bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white border-0 shadow-md hover:shadow-lg transition-all duration-200"; // mobile add sheet trigger
   const manageGiftsBtnGradient =
     "relative bg-gradient-to-r from-yellow-400 to-yellow-600 hover:from-yellow-500 hover:to-yellow-700 text-white border-0 shadow-md hover:shadow-lg transition-all duration-200";
+  // const manageGiftsActionIconWrapCls =
+  //   "h-10 w-10 rounded-md flex items-center justify-center bg-gradient-to-br from-yellow-400 to-yellow-600 text-white shadow"; // icon wrapper for Manage Gifts mobile action
+  // const manageGiftsPendingBadgeCls =
+  //   "h-5 min-w-[1.25rem] px-1 rounded-full p-0 flex items-center justify-center text-[10px]"; // extracted to satisfy linter
+  const pageContainerCls =
+    "max-w-6xl mx-auto p-2 sm:p-4 space-y-8 pb-28 md:pb-8 overflow-x-hidden"; // updated to hide horizontal overflow
+  // removed mobileOnlyCls & desktopOnlyFlexGapCls (no longer needed)
+  const mobileActivitiesListCls = "block md:hidden space-y-3"; // utility wrapper for mobile activities cards
+  const desktopActivitiesTableWrapperCls = "hidden md:block"; // wrapper for desktop table
 
   useEffect(() => {
     document.title = kid
@@ -319,7 +335,7 @@ function KidDashboardContent() {
   const pendingRedemptions =
     kid?.giftRedemptions?.filter(r => r.status === "pending").length || 0;
 
-  if (loading) {
+  if (loading || !kid) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Card className="card-elevated">
@@ -337,32 +353,12 @@ function KidDashboardContent() {
     );
   }
 
-  if (!kid) {
-    return (
-      <div className="max-w-6xl mx-auto p-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>Kid not found</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p>The kid you are looking for doesn't exist.</p>
-            <Link to="/">
-              <Button className="mt-4">
-                <ArrowLeft className="mr-2 h-4 w-4" /> Back to Kids
-              </Button>
-            </Link>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
   return (
-    <div className="max-w-6xl mx-auto p-6 space-y-8">
+    <div className={pageContainerCls}>
       {/* Main Content with Sidebar */}
       <div className={mainLayoutCls}>
         {/* Sidebar */}
-        <aside className={sidebarWidthCls}>
+        <aside className={sidebarWidthCls + " hidden md:block"}>
           <div>
             <h1 className="text-3xl font-bold mb-4">{kid.name}</h1>
           </div>
@@ -389,6 +385,7 @@ function KidDashboardContent() {
               active={activeTab === "shop"}
               onClick={() => setActiveTab("shop")}
             />
+
             {userRole === "kid" && (
               <SidebarNavItem
                 label="Leaderboard"
@@ -404,54 +401,93 @@ function KidDashboardContent() {
         <div className="flex-1 space-y-6">
           {/* Header */}
           <div className={headerContainerCls}>
-            <div className="flex items-center gap-4">
+            {/* <div className="flex items-center gap-4">
               {userRole !== "kid" && (
-                <Link to="/">
+                // hide on mobile
+                <Link to="/" className="hidden md:block">
                   <Button variant="outline" size="sm">
                     <ArrowLeft className="mr-2 h-4 w-4" /> Back to Kids
                   </Button>
                 </Link>
               )}
-            </div>
-            <div className="flex gap-2">
-              {userRole === "parent" && (
-                <>
-                  <Button
-                    onClick={() => setOpenAddGroup(true)}
-                    variant="outline"
-                  >
-                    <Plus className="mr-2 h-4 w-4" /> Add group
-                  </Button>
-                  <Button
-                    onClick={() => setOpenAddActivity(true)}
-                    variant="outline"
-                  >
-                    <Plus className="mr-2 h-4 w-4" /> Add activity
-                  </Button>
-                </>
-              )}
+            </div> */}
+            {/* Unified inline action buttons: large, single scrollable row */}
+            <div className="flex sm:flex-wrap gap-4 w-full py-1 -mx-2 px-2 sm:mx-0 flex-nowrap overflow-x-auto md:overflow-x-visible [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
               <Button
                 onClick={() => setOpenAddReport(true)}
                 variant="outline"
-                className={addReportBtnGradient}
+                className="h-20 w-44 p-4 flex items-center justify-start gap-4 bg-white hover:bg-gray-50 border-gray-200 flex-shrink-0  md:flex-1 md:min-w-0"
+                aria-label="Add report"
               >
-                <FileText className="mr-2 h-4 w-4" /> Add report
+                <div className="h-12 w-12 rounded-2xl bg-purple-500 flex items-center justify-center flex-shrink-0">
+                  <FileText className="h-6 w-6 text-white" />
+                </div>
+                <div className="text-left min-w-0">
+                  <div className="font-semibold text-gray-900 truncate">
+                    Reporting
+                  </div>
+                </div>
               </Button>
+
+              {userRole === "parent" && (
+                <Button
+                  onClick={() => setOpenAddActivity(true)}
+                  variant="outline"
+                  className="h-20 p-4 flex items-center justify-start gap-4 bg-white hover:bg-gray-50 border-gray-200 flex-shrink-0 w-44 md:flex-1 md:min-w-0"
+                  aria-label="Add activity"
+                >
+                  <div className="h-12 w-12 rounded-2xl bg-purple-500 flex items-center justify-center flex-shrink-0">
+                    <BarChart3 className="h-6 w-6 text-white" />
+                  </div>
+                  <div className="text-left min-w-0">
+                    <div className="font-semibold text-gray-900 truncate">
+                      Activities
+                    </div>
+                  </div>
+                </Button>
+              )}
+
               {userRole === "parent" && (
                 <Button
                   onClick={() => setShowManagement(true)}
                   variant="outline"
-                  className={manageGiftsBtnGradient}
+                  className="h-20 p-4 flex items-center justify-start gap-2 bg-white hover:bg-gray-50 border-gray-200 relative flex-shrink-0 w-44 md:flex-1 md:min-w-0"
+                  aria-label="Manage gifts"
                 >
-                  <Coins className="mr-2 h-4 w-4" /> Manage Gifts
+                  <div className="h-12 w-12 rounded-2xl bg-yellow-500 flex items-center justify-center flex-shrink-0">
+                    <Coins className="h-6 w-6 text-white" />
+                  </div>
+                  <div className="text-left min-w-0">
+                    <div className="font-semibold text-gray-900 truncate">
+                      Gifts
+                    </div>
+                  </div>
                   {pendingRedemptions > 0 && (
                     <Badge
                       variant="destructive"
-                      className="absolute -top-2 -right-2 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs animate-pulse"
+                      className="absolute top-2 right-2 h-5 min-w-[1.25rem] px-1 rounded-full text-[10px] flex-shrink-0"
                     >
                       {pendingRedemptions}
                     </Badge>
                   )}
+                </Button>
+              )}
+
+              {userRole === "parent" && (
+                <Button
+                  onClick={() => setOpenAddGroup(true)}
+                  variant="outline"
+                  className="h-20 p-4 flex items-center justify-start gap-4 bg-white hover:bg-gray-50 border-gray-200 flex-shrink-0 w-44 md:flex-1 md:min-w-0"
+                  aria-label="Add group"
+                >
+                  <div className="h-12 w-12 rounded-2xl bg-purple-500 flex items-center justify-center flex-shrink-0">
+                    <Plus className="h-6 w-6 text-white" />
+                  </div>
+                  <div className="text-left min-w-0">
+                    <div className="font-semibold text-gray-900 truncate">
+                      Groups
+                    </div>
+                  </div>
                 </Button>
               )}
             </div>
@@ -461,19 +497,6 @@ function KidDashboardContent() {
             onValueChange={setActiveTab}
             className="w-full"
           >
-            <TabsList className={tabsListMobileCls}>
-              <TabsTrigger value="metrics">Activities</TabsTrigger>
-              <TabsTrigger value="reports">
-                Reports
-                {pendingReports.length > 0 && (
-                  <Badge variant="destructive" className="ml-1 text-xs">
-                    {pendingReports.length}
-                  </Badge>
-                )}
-              </TabsTrigger>
-              <TabsTrigger value="shop">Gift Shop</TabsTrigger>
-            </TabsList>
-
             <TabsContent value="shop">
               <GiftShop kid={kid} onRedeemGift={redeemGift} />
             </TabsContent>
@@ -482,7 +505,9 @@ function KidDashboardContent() {
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
-                    <BarChart3 className="h-5 w-5" /> Activities
+                    <BarChart3 className="h-5 w-5" />{" "}
+                    {userRole === "parent" ? kid.name + "'s" : "Your"}{" "}
+                    Activities
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
@@ -512,7 +537,7 @@ function KidDashboardContent() {
                                 </Badge>
                               )}
                             </div>
-                            {group && (
+                            {userRole === "parent" && group && (
                               <Button
                                 variant="outline"
                                 size="sm"
@@ -522,95 +547,170 @@ function KidDashboardContent() {
                               </Button>
                             )}
                           </div>
-                          <Table>
-                            <TableHeader>
-                              <TableRow>
-                                <TableHead>Activity</TableHead>
-                                <TableHead>Current</TableHead>
-                                <TableHead>Plan</TableHead>
-                                <TableHead>Points</TableHead>
-                                {userRole === "parent" && (
-                                  <TableHead>Actions</TableHead>
-                                )}
-                              </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                              {activities.map(activity => {
-                                const scoringRule: ScoringRule =
-                                  activity.scoringRule || {
-                                    activityId: activity.id,
-                                    basePointsPerUnit: 1,
-                                    goalBonusPoints: 5,
-                                    streakBonusPoints: 2,
-                                    maxDailyPoints: 50,
-                                  };
-                                const pointsDisplay = `${
-                                  scoringRule.basePointsPerUnit
-                                }${
-                                  activity.unit ? ` per ${activity.unit}` : ""
-                                } (+${scoringRule.goalBonusPoints} goal)`;
-                                return (
-                                  <TableRow key={activity.id}>
-                                    <TableCell className="font-medium">
-                                      {activity.name}
-                                    </TableCell>
-                                    <TableCell>
-                                      {activity.value} {activity.unit || ""}
-                                    </TableCell>
-                                    <TableCell>
-                                      {activity.planValue ? (
-                                        <Badge variant="outline">
-                                          {activity.planValue}{" "}
-                                          {activity.unit || ""}{" "}
-                                          {activity.planType}
-                                        </Badge>
-                                      ) : (
-                                        <span className="text-muted-foreground">
-                                          No plan
+                          {/* Mobile card list */}
+                          <div className={mobileActivitiesListCls}>
+                            {activities.map(activity => {
+                              return (
+                                <div
+                                  key={activity.id}
+                                  className="p-4 border rounded-lg bg-purple-50 shadow-sm hover:shadow-md transition-shadow duration-200 flex flex-col gap-2"
+                                  role="group"
+                                  aria-label={activity.name}
+                                >
+                                  <div className="flex items-start justify-between gap-3">
+                                    <div className="flex-1 min-w-0">
+                                      <h4 className="font-medium text-sm leading-tight truncate">
+                                        {activity.name}
+                                      </h4>
+                                      <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                                        <span>
+                                          Current: {activity.value}{" "}
+                                          {activity.unit || ""}
                                         </span>
-                                      )}
-                                    </TableCell>
-                                    <TableCell>
-                                      <div className="text-sm">
-                                        <div className="font-medium text-primary">
-                                          {pointsDisplay}
-                                        </div>
-                                        <div className="text-xs text-muted-foreground">
-                                          +{scoringRule.streakBonusPoints}{" "}
-                                          streak • max{" "}
-                                          {scoringRule.maxDailyPoints}
-                                        </div>
+                                        {activity.planValue ? (
+                                          <Badge
+                                            variant="outline"
+                                            className="px-1 py-0 text-xs"
+                                          >
+                                            {activity.planValue}{" "}
+                                            {activity.unit || ""}{" "}
+                                            {activity.planType}
+                                          </Badge>
+                                        ) : (
+                                          <span className="opacity-70">
+                                            No plan
+                                          </span>
+                                        )}
                                       </div>
-                                    </TableCell>
+                                    </div>
                                     {userRole === "parent" && (
+                                      <div className="flex flex-none gap-1">
+                                        <Button
+                                          variant="outline"
+                                          size="sm"
+                                          aria-label={`Edit ${activity.name}`}
+                                          onClick={() =>
+                                            setEditingActivity(activity)
+                                          }
+                                        >
+                                          <Edit className="h-3 w-3" />
+                                        </Button>
+                                        <Button
+                                          variant="outline"
+                                          size="sm"
+                                          aria-label={`Delete ${activity.name}`}
+                                          onClick={() =>
+                                            setDeletingActivity(activity)
+                                          }
+                                        >
+                                          <Trash2 className="h-3 w-3" />
+                                        </Button>
+                                      </div>
+                                    )}
+                                  </div>
+                                  {/* Points & streak info removed for mobile for cleaner view */}
+                                </div>
+                              );
+                            })}
+                          </div>
+                          {/* Desktop table */}
+                          <div className={desktopActivitiesTableWrapperCls}>
+                            <Table>
+                              <TableHeader>
+                                <TableRow>
+                                  <TableHead>Activity</TableHead>
+                                  <TableHead>Current</TableHead>
+                                  <TableHead>Plan</TableHead>
+                                  <TableHead>Points</TableHead>
+                                  {userRole === "parent" && (
+                                    <TableHead>Actions</TableHead>
+                                  )}
+                                </TableRow>
+                              </TableHeader>
+                              <TableBody>
+                                {activities.map(activity => {
+                                  const scoringRule: ScoringRule =
+                                    activity.scoringRule || {
+                                      activityId: activity.id,
+                                      basePointsPerUnit: 1,
+                                      goalBonusPoints: 5,
+                                      streakBonusPoints: 2,
+                                      maxDailyPoints: 50,
+                                    };
+                                  const pointsDisplay = `${
+                                    scoringRule.basePointsPerUnit
+                                  }${
+                                    activity.unit ? ` per ${activity.unit}` : ""
+                                  } (+${scoringRule.goalBonusPoints} goal)`;
+                                  return (
+                                    <TableRow
+                                      key={activity.id}
+                                      className="bg-purple-50 hover:bg-muted/50 transition-colors"
+                                    >
+                                      <TableCell className="font-medium">
+                                        {activity.name}
+                                      </TableCell>
                                       <TableCell>
-                                        <div className="flex gap-1">
-                                          <Button
+                                        {activity.value} {activity.unit || ""}
+                                      </TableCell>
+                                      <TableCell>
+                                        {activity.planValue ? (
+                                          <Badge
                                             variant="outline"
-                                            size="sm"
-                                            onClick={() =>
-                                              setEditingActivity(activity)
-                                            }
+                                            className="px-1 py-0 text-xs"
                                           >
-                                            <Edit className="h-3 w-3" />
-                                          </Button>
-                                          <Button
-                                            variant="outline"
-                                            size="sm"
-                                            onClick={() =>
-                                              setDeletingActivity(activity)
-                                            }
-                                          >
-                                            <Trash2 className="h-3 w-3" />
-                                          </Button>
+                                            {activity.planValue}{" "}
+                                            {activity.unit || ""}{" "}
+                                            {activity.planType}
+                                          </Badge>
+                                        ) : (
+                                          <span className="text-muted-foreground">
+                                            No plan
+                                          </span>
+                                        )}
+                                      </TableCell>
+                                      <TableCell>
+                                        <div className="text-sm">
+                                          <div className="font-medium text-primary">
+                                            {pointsDisplay}
+                                          </div>
+                                          <div className="text-xs text-muted-foreground">
+                                            +{scoringRule.streakBonusPoints}{" "}
+                                            streak • max{" "}
+                                            {scoringRule.maxDailyPoints}
+                                          </div>
                                         </div>
                                       </TableCell>
-                                    )}
-                                  </TableRow>
-                                );
-                              })}
-                            </TableBody>
-                          </Table>
+                                      {userRole === "parent" && (
+                                        <TableCell>
+                                          <div className="flex gap-1">
+                                            <Button
+                                              variant="outline"
+                                              size="sm"
+                                              onClick={() =>
+                                                setEditingActivity(activity)
+                                              }
+                                            >
+                                              <Edit className="h-3 w-3" />
+                                            </Button>
+                                            <Button
+                                              variant="outline"
+                                              size="sm"
+                                              onClick={() =>
+                                                setDeletingActivity(activity)
+                                              }
+                                            >
+                                              <Trash2 className="h-3 w-3" />
+                                            </Button>
+                                          </div>
+                                        </TableCell>
+                                      )}
+                                    </TableRow>
+                                  );
+                                })}
+                              </TableBody>
+                            </Table>
+                          </div>
                           {group !==
                             groupedActivities[groupedActivities.length - 1]
                               ?.group && <Separator className="mt-4" />}
@@ -645,6 +745,7 @@ function KidDashboardContent() {
                             const r = kid.reports?.find(rr => rr.id === rid);
                             setEditingReport(r || null);
                           }}
+                          userRole={userRole}
                         />
                       ))}
                     </div>
@@ -857,6 +958,15 @@ function KidDashboardContent() {
         </div>
       </div>
 
+      {/* Mobile Bottom Tab Bar */}
+      <MobileTabBar
+        activeTab={activeTab}
+        onChange={setActiveTab}
+        pendingReports={pendingReports.length}
+        pendingRedemptions={pendingRedemptions}
+        showLeaderboard={userRole === "kid"}
+      />
+
       {/* Modals */}
       {/* Add Metric Dialog */}
       <Dialog open={openAddActivity} onOpenChange={setOpenAddActivity}>
@@ -1060,12 +1170,16 @@ function KidDashboardContent() {
                 id: kid.id,
                 name: kid.name,
                 activities:
-                  kid.activities?.map(({ id, name, unit, groupId }) => ({
-                    id,
-                    name,
-                    unit,
-                    groupId,
-                  })) || [],
+                  kid.activities?.map(
+                    ({ id, name, unit, groupId, planValue, scoringRule }) => ({
+                      id,
+                      name,
+                      unit,
+                      groupId,
+                      planValue,
+                      scoringRule,
+                    })
+                  ) || [],
                 groups: kid.groups || [],
               }}
               onSave={report => {
@@ -1197,9 +1311,6 @@ function KidDashboardContent() {
       {/* Prize Management Dialog */}
       <Dialog open={showManagement} onOpenChange={setShowManagement}>
         <DialogContent className={giftDialogContentCls}>
-          <DialogHeader>
-            <DialogTitle>Gift Management</DialogTitle>
-          </DialogHeader>
           <GiftManagement
             kid={kid}
             onAddGift={addGift}
@@ -1248,5 +1359,81 @@ function SidebarNavItem({
         </Badge>
       )}
     </button>
+  );
+}
+
+function MobileTabBar({
+  activeTab,
+  onChange,
+  pendingReports,
+  pendingRedemptions,
+  showLeaderboard,
+}: {
+  activeTab: string;
+  onChange: (v: string) => void;
+  pendingReports: number;
+  pendingRedemptions: number;
+  showLeaderboard: boolean;
+}) {
+  const baseBtnCls =
+    "flex flex-col items-center justify-center gap-1 flex-1 py-2 text-xs font-medium transition-colors relative";
+  const iconCls = "h-5 w-5";
+  const badgeCls =
+    "absolute top-0 right-2 h-5 min-w-[1.25rem] px-1 rounded-full text-[10px] flex items-center justify-center bg-destructive text-destructive-foreground"; // adjusted to avoid negative offsets
+  const navRootCls =
+    "md:hidden fixed bottom-0 inset-x-0 z-50 border-t bg-background/95 backdrop-blur w-full overflow-hidden"; // ensure full width and hide overflow
+  // safe area spacer now uses env(safe-area-inset-bottom)
+  const items: Array<{
+    key: string;
+    label: string;
+    icon: React.ComponentType<{ className?: string }>;
+    badge?: number;
+  }> = [
+    { key: "metrics", label: "Activities", icon: BarChart3 },
+    { key: "reports", label: "Reports", icon: Calendar, badge: pendingReports },
+    { key: "shop", label: "Shop", icon: Coins, badge: pendingRedemptions },
+  ];
+  if (showLeaderboard) {
+    items.push({ key: "leaderboard", label: "Leaders", icon: Trophy });
+  }
+  return (
+    <nav
+      className={navRootCls}
+      role="tablist"
+      aria-label="Kid dashboard navigation"
+    >
+      <div className="flex">
+        {items.map(item => {
+          const active = activeTab === item.key;
+          return (
+            <button
+              key={item.key}
+              type="button"
+              onClick={() => onChange(item.key)}
+              className={
+                baseBtnCls +
+                (active
+                  ? " text-primary" // rely on icon color via text-primary
+                  : " text-muted-foreground hover:text-foreground")
+              }
+              aria-label={item.label}
+              aria-current={active ? "page" : undefined}
+            >
+              <item.icon className={iconCls} />
+              <span>{item.label}</span>
+              {item.badge > 0 && (
+                <span className="absolute top-0 right-8 h-5 min-w-[1.25rem] px-1 rounded-full text-[10px] flex items-center justify-center bg-destructive text-destructive-foreground">
+                  {item.badge}
+                </span>
+              )}
+            </button>
+          );
+        })}
+      </div>
+      <div
+        style={{ height: "env(safe-area-inset-bottom)" }}
+        aria-hidden="true"
+      />
+    </nav>
   );
 }

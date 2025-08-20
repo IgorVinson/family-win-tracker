@@ -173,7 +173,20 @@ export function GiftShop({ kid, onRedeemGift }: GiftShopProps) {
               <div className="flex items-center gap-4">
                 <div className="text-right">
                   <p className="text-2xl font-bold flex items-center gap-2">
-                    {kid.points} <Star className="h-6 w-6" />
+                    <span
+                      style={{
+                        background:
+                          "linear-gradient(90deg, #FFD700 0%, #FFB300 100%)",
+                        WebkitBackgroundClip: "text",
+                        WebkitTextFillColor: "transparent",
+                        backgroundClip: "text",
+                        color: "transparent",
+                        display: "inline-block",
+                      }}
+                    >
+                      {kid.points}
+                    </span>
+                    <Star className="h-6 w-6 text-red-400" />
                   </p>
                   <p className="text-sm text-muted-foreground">
                     Available points

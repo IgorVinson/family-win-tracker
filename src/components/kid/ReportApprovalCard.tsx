@@ -19,9 +19,16 @@ interface ReportApprovalCardProps {
   kid: EnhancedKid;
   onReview: (reportId: string) => void;
   onEdit: (reportId: string) => void;
+  userRole?: string;
 }
 
-export function ReportApprovalCard({ report, kid, onReview, onEdit }: ReportApprovalCardProps) {
+export function ReportApprovalCard({
+  report,
+  kid,
+  onReview,
+  onEdit,
+  userRole,
+}: ReportApprovalCardProps) {
   const getStatusBadge = (status: Report["status"]) => {
     switch (status) {
       case "pending":
@@ -51,8 +58,8 @@ export function ReportApprovalCard({ report, kid, onReview, onEdit }: ReportAppr
         <h4 className="font-medium">{formatDate(report.date)}</h4>
         <div className="flex gap-2">
           {getStatusBadge(report.status)}
-          
-          {report.status === "pending" && (
+
+          {userRole !== "kid" && report.status === "pending" && (
             <Button
               variant="default"
               size="sm"
@@ -63,32 +70,32 @@ export function ReportApprovalCard({ report, kid, onReview, onEdit }: ReportAppr
               Review
             </Button>
           )}
-          
-          <Button
-            onClick={() => onEdit(report.id)}
-            variant="outline"
-            size="sm"
-          >
+
+          <Button onClick={() => onEdit(report.id)} variant="outline" size="sm">
             <Edit className="h-3 w-3" />
           </Button>
         </div>
       </div>
-      
+
       {report.notes && (
         <p className="text-sm text-muted-foreground mb-2">{report.notes}</p>
       )}
-      
+
       <div className="flex flex-wrap gap-2">
-        {report.entries.filter(entry => entry.value > 0).map((entry) => (
-          <Badge key={entry.activityId} variant="secondary">
-            {getActivityName(entry.activityId)}: {entry.value} {getActivityUnit(entry.activityId)}
-          </Badge>
-        ))}
+        {report.entries
+          .filter(entry => entry.value > 0)
+          .map(entry => (
+            <Badge key={entry.activityId} variant="secondary">
+              {getActivityName(entry.activityId)}: {entry.value}{" "}
+              {getActivityUnit(entry.activityId)}
+            </Badge>
+          ))}
       </div>
 
       {report.processedAt && (
         <div className="text-xs text-muted-foreground mt-2">
-          {report.status === "approved" ? "Approved" : "Rejected"} on {formatDate(report.processedAt)}
+          {report.status === "approved" ? "Approved" : "Rejected"} on{" "}
+          {formatDate(report.processedAt)}
         </div>
       )}
     </div>
