@@ -213,7 +213,7 @@ const Auth = () => {
         )}
         <div className="text-center mb-8">
           <img
-            src="/public/logo.png"
+            src="/logo.png"
             alt="KidsRise Logo"
             className="h-16 w-auto mx-auto mb-4"
           />

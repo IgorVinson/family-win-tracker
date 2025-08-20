@@ -36,7 +36,7 @@ export function Header() {
           className="flex items-center gap-2 font-semibold"
         >
           <img
-            src="/public/logo.png"
+            src="/logo.png"
             alt="KidsRise Logo"
             className="h-8 w-auto"
           />
