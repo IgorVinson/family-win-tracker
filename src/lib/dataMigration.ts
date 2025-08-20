@@ -1,5 +1,5 @@
-import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 // Types for localStorage data structure
 type LocalStorageKid = {
@@ -11,7 +11,7 @@ type LocalStorageKid = {
   createdAt: string;
   reports?: LocalStorageReport[];
   metrics?: LocalStorageMetric[];
-  prizeRedemptions?: LocalStoragePrizeRedemption[];
+  giftRedemptions?: LocalStorageGiftRedemption[];
 };
 
 type LocalStorageReport = {
@@ -30,10 +30,10 @@ type LocalStorageMetric = {
   groupId?: string;
 };
 
-type LocalStoragePrizeRedemption = {
+type LocalStorageGiftRedemption = {
   id: string;
-  prizeId: string;
-  prizeName: string;
+  giftId: string;
+  giftName: string;
   pointsCost: number;
   status: "pending" | "approved" | "rejected" | "completed";
   requestedAt: string;
@@ -45,7 +45,7 @@ export const checkIfMigrationNeeded = (): boolean => {
   try {
     const kidsData = localStorage.getItem("family-kids");
     if (!kidsData) return false;
-    
+
     const kids = JSON.parse(kidsData) as LocalStorageKid[];
     return kids.length > 0;
   } catch (error) {
@@ -54,7 +54,10 @@ export const checkIfMigrationNeeded = (): boolean => {
   }
 };
 
-export const migrateLocalStorageToSupabase = async (userId: string, userRole: 'parent' | 'kid'): Promise<boolean> => {
+export const migrateLocalStorageToSupabase = async (
+  userId: string,
+  userRole: "parent" | "kid"
+): Promise<boolean> => {
   try {
     // Check if user already has data in database
     const { data: existingKids } = await supabase
@@ -80,16 +83,18 @@ export const migrateLocalStorageToSupabase = async (userId: string, userRole: 'p
       return true;
     }
 
-    console.log(`Starting migration of ${localKids.length} kids for user ${userId} with role ${userRole}`);
+    console.log(
+      `Starting migration of ${localKids.length} kids for user ${userId} with role ${userRole}`
+    );
 
     // Create family if user is parent
     let familyId: string;
-    if (userRole === 'parent') {
+    if (userRole === "parent") {
       const { data: family, error: familyError } = await supabase
         .from("families")
         .insert({
           name: "My Family",
-          created_by: userId
+          created_by: userId,
         })
         .select("id")
         .single();
@@ -102,7 +107,7 @@ export const migrateLocalStorageToSupabase = async (userId: string, userRole: 'p
         .from("family_members")
         .insert({
           family_id: familyId,
-          user_id: userId
+          user_id: userId,
         });
 
       if (memberError) throw memberError;
@@ -112,7 +117,7 @@ export const migrateLocalStorageToSupabase = async (userId: string, userRole: 'p
         .from("families")
         .insert({
           name: "Temporary Family",
-          created_by: userId
+          created_by: userId,
         })
         .select("id")
         .single();
@@ -125,7 +130,7 @@ export const migrateLocalStorageToSupabase = async (userId: string, userRole: 'p
         .from("family_members")
         .insert({
           family_id: familyId,
-          user_id: userId
+          user_id: userId,
         });
 
       if (memberError) throw memberError;
@@ -136,7 +141,7 @@ export const migrateLocalStorageToSupabase = async (userId: string, userRole: 'p
       // For kid role, only migrate their own data
       // For parent role, migrate all kids data
       let kidUserId = userId;
-      if (userRole === 'parent') {
+      if (userRole === "parent") {
         // Parents can have multiple kids, so we'll create kid entries linked to the parent's family
         // The kid user_id will be null initially since kids haven't signed up yet
         kidUserId = userId; // Temporarily link to parent
@@ -146,12 +151,12 @@ export const migrateLocalStorageToSupabase = async (userId: string, userRole: 'p
       const { data: kid, error: kidError } = await supabase
         .from("kids")
         .insert({
-          user_id: userRole === 'kid' ? userId : null, // Only link if it's a kid user
+          user_id: userRole === "kid" ? userId : null, // Only link if it's a kid user
           name: localKid.name,
           current_points: localKid.points,
           monthly_goal: localKid.goal,
           current_streak: 0,
-          best_streak: 0
+          best_streak: 0,
         })
         .select("id")
         .single();
@@ -160,12 +165,12 @@ export const migrateLocalStorageToSupabase = async (userId: string, userRole: 'p
       const kidId = kid.id;
 
       // Add kid to family if parent created them
-      if (userRole === 'parent') {
+      if (userRole === "parent") {
         const { error: kidFamilyError } = await supabase
           .from("family_members")
           .insert({
             family_id: familyId,
-            user_id: userId // Link to parent for now
+            user_id: userId, // Link to parent for now
           });
 
         if (kidFamilyError) {
@@ -188,7 +193,7 @@ export const migrateLocalStorageToSupabase = async (userId: string, userRole: 'p
               .from("activities")
               .insert({
                 name: metric.name,
-                category: "Custom"
+                category: "Custom",
               });
 
             if (activityError) {
@@ -201,10 +206,8 @@ export const migrateLocalStorageToSupabase = async (userId: string, userRole: 'p
             .from("scoring_rules")
             .insert({
               kid_id: kidId,
-              activity: metric.name,
-              points: 10, // Default points
-              bonus: 0,
-              streak: 0
+              activity_id: metric.id, // assuming local metric id maps or will create activity elsewhere
+              points: 10,
             });
 
           if (scoringError) {
@@ -237,7 +240,7 @@ export const migrateLocalStorageToSupabase = async (userId: string, userRole: 'p
               activities: activities,
               total_points: totalPoints,
               status: report.status || "approved", // Default to approved for migrated data
-              notes: report.notes
+              notes: report.notes,
             });
 
           if (reportError) {
@@ -257,7 +260,7 @@ export const migrateLocalStorageToSupabase = async (userId: string, userRole: 'p
                   points: entry.value * 10,
                   reason: "Migrated from daily report",
                   approved: true,
-                  approved_by: userId
+                  approved_by: userId,
                 });
 
               if (scoreError) {
@@ -268,65 +271,68 @@ export const migrateLocalStorageToSupabase = async (userId: string, userRole: 'p
         }
       }
 
-      // Migrate prize redemptions
-      if (localKid.prizeRedemptions && localKid.prizeRedemptions.length > 0) {
-        for (const redemption of localKid.prizeRedemptions) {
-          // Find or create prize
-          let prizeId: string;
-          const { data: existingPrize } = await supabase
-            .from("prizes")
+      // Migrate gift redemptions (legacy naming was prizeRedemptions)
+      if (localKid.giftRedemptions && localKid.giftRedemptions.length > 0) {
+        for (const redemption of localKid.giftRedemptions) {
+          // Find or create gift (was prize)
+          let giftId: string;
+          const { data: existingGift } = await supabase
+            .from("gifts")
             .select("id")
-            .eq("name", redemption.prizeName)
+            .eq("name", redemption.giftName)
             .single();
 
-          if (existingPrize) {
-            prizeId = existingPrize.id;
+          if (existingGift) {
+            giftId = existingGift.id;
           } else {
-            const { data: newPrize, error: prizeError } = await supabase
-              .from("prizes")
+            const { data: newGift, error: giftError } = await supabase
+              .from("gifts")
               .insert({
-                name: redemption.prizeName,
+                name: redemption.giftName,
                 cost: redemption.pointsCost,
-                description: "Migrated prize",
+                description: "Migrated gift",
                 category: "Custom",
-                requires_approval: true
+                requires_approval: true,
+                active: true,
               })
               .select("id")
               .single();
 
-            if (prizeError) {
-              console.error("Error creating prize:", prizeError);
+            if (giftError) {
+              console.error("Error creating gift:", giftError);
               continue;
             }
-            prizeId = newPrize.id;
+            giftId = newGift.id;
           }
 
           const { error: redemptionError } = await supabase
-            .from("prize_redemptions")
+            .from("gift_redemptions")
             .insert({
               kid_id: kidId,
-              prize_id: prizeId,
+              gift_id: giftId,
               status: redemption.status,
-              date_processed: redemption.processedAt ? new Date(redemption.processedAt).toISOString() : null,
+              date_processed: redemption.processedAt
+                ? new Date(redemption.processedAt).toISOString()
+                : null,
               notes: redemption.notes,
-              processed_by: redemption.status !== "pending" ? userId : null
+              processed_by: redemption.status !== "pending" ? userId : null,
             });
 
           if (redemptionError) {
-            console.error("Error inserting prize redemption:", redemptionError);
+            console.error("Error inserting gift redemption:", redemptionError);
           }
         }
       }
     }
 
     console.log("Migration completed successfully");
-    
+
     // Clear localStorage after successful migration
     localStorage.removeItem("family-kids");
-    
+
     toast({
       title: "Data migrated successfully!",
-      description: "Your existing data has been transferred to your account."
+      description: "Your existing data has been transferred to your account.",
     });
 
     return true;
@@ -335,32 +341,11 @@ export const migrateLocalStorageToSupabase = async (userId: string, userRole: 'p
     toast({
       variant: "destructive",
       title: "Migration failed",
-      description: "There was an error transferring your data. Please contact support."
+      description:
+        "There was an error transferring your data. Please contact support.",
     });
     return false;
   }
 };
 
-export const getUserRole = async (userId: string): Promise<'parent' | 'kid' | null> => {
-  try {
-    console.log("🔧 getUserRole: Fetching role for user:", userId);
-    const { data, error } = await supabase
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", userId)
-      .maybeSingle(); // Use maybeSingle instead of single to handle 0 rows gracefully
-
-    if (error) {
-      console.error("🔧 getUserRole: Error fetching user role:", error);
-      return null;
-    }
-
-    console.log("🔧 getUserRole: Raw data:", data);
-    const role = data?.role as 'parent' | 'kid' || null;
-    console.log("🔧 getUserRole: Returning role:", role);
-    return role;
-  } catch (error) {
-    console.error("🔧 getUserRole: Error in getUserRole:", error);
-    return null;
-  }
-};
+// getUserRole function removed. Use fetchUserRole()/useUserRole instead.

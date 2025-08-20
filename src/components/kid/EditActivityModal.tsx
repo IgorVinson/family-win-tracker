@@ -1,9 +1,21 @@
 import { useState, useEffect } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Save } from "lucide-react";
 import type { Activity, Group } from "@/pages/KidDashboard";
 import { useEnhancedKidDB } from "@/hooks/useEnhancedKidDB";
@@ -18,28 +30,48 @@ interface EditActivityModalProps {
   kidId: string;
 }
 
-const EditActivityModal = ({ activity, groups, isOpen, onClose, onSave, kidId }: EditActivityModalProps) => {
+const EditActivityModal = ({
+  activity,
+  groups,
+  isOpen,
+  onClose,
+  onSave,
+  kidId,
+}: EditActivityModalProps) => {
   const { kid, updateActivityScoringRule } = useEnhancedKidDB(kidId);
-  
+
   const [name, setName] = useState(activity?.name || "");
   const [unit, setUnit] = useState(activity?.unit || "");
-  const [planType, setPlanType] = useState<"" | "daily" | "weekly">(activity?.planType || "");
-  const [planValue, setPlanValue] = useState(activity?.planValue?.toString() || "");
+  const [planType, setPlanType] = useState<"" | "daily" | "weekly">(
+    activity?.planType || ""
+  );
+  const [planValue, setPlanValue] = useState(
+    activity?.planValue?.toString() || ""
+  );
   const [groupId, setGroupId] = useState(activity?.groupId || "");
-  
+
   // Get current scoring rule for this activity
-  const currentScoringRule = kid?.activities?.find(m => m.id === activity?.id)?.scoringRule || {
+  const currentScoringRule = kid?.activities?.find(m => m.id === activity?.id)
+    ?.scoringRule || {
     basePointsPerUnit: 1,
     goalBonusPoints: 5,
     streakBonusPoints: 2,
-    maxDailyPoints: 50
+    maxDailyPoints: 50,
   };
-  
+
   // Scoring rule states
-  const [basePointsPerUnit, setBasePointsPerUnit] = useState(currentScoringRule.basePointsPerUnit.toString());
-  const [goalBonusPoints, setGoalBonusPoints] = useState(currentScoringRule.goalBonusPoints.toString());
-  const [streakBonusPoints, setStreakBonusPoints] = useState(currentScoringRule.streakBonusPoints.toString());
-  const [maxDailyPoints, setMaxDailyPoints] = useState(currentScoringRule.maxDailyPoints.toString());
+  const [basePointsPerUnit, setBasePointsPerUnit] = useState(
+    currentScoringRule.basePointsPerUnit.toString()
+  );
+  const [goalBonusPoints, setGoalBonusPoints] = useState(
+    currentScoringRule.goalBonusPoints.toString()
+  );
+  const [streakBonusPoints, setStreakBonusPoints] = useState(
+    currentScoringRule.streakBonusPoints.toString()
+  );
+  const [maxDailyPoints, setMaxDailyPoints] = useState(
+    currentScoringRule.maxDailyPoints.toString()
+  );
 
   // Reset form when activity changes
   useEffect(() => {
@@ -49,14 +81,20 @@ const EditActivityModal = ({ activity, groups, isOpen, onClose, onSave, kidId }:
       setPlanType(activity.planType || "");
       setPlanValue(activity.planValue?.toString() || "");
       setGroupId(activity.groupId || "");
-      
+
       // Reset scoring rule values
-      const scoringRule = kid?.activities?.find(m => m.id === activity.id)?.scoringRule || {
-        basePointsPerUnit: 1,
-        goalBonusPoints: 5,
-        streakBonusPoints: 2,
-        maxDailyPoints: 50
-      };
+      const scoringRule = kid?.activities?.find(
+        m => m.id === activity.id
+      )?.scoringRule;
+      // || {
+      //   basePointsPerUnit: 1,
+      //   goalBonusPoints: 5,
+      //   streakBonusPoints: 2,
+      //   maxDailyPoints: 50
+      // };
+
+      console.log("Resetting scoring rule values for activity:", activity.id);
+
       setBasePointsPerUnit(scoringRule.basePointsPerUnit.toString());
       setGoalBonusPoints(scoringRule.goalBonusPoints.toString());
       setStreakBonusPoints(scoringRule.streakBonusPoints.toString());
@@ -73,7 +111,8 @@ const EditActivityModal = ({ activity, groups, isOpen, onClose, onSave, kidId }:
       name: name.trim(),
       unit: unit.trim() || undefined,
       planType: planType || undefined,
-      planValue: Number.isFinite(planValNum) && planValNum > 0 ? planValNum : undefined,
+      planValue:
+        Number.isFinite(planValNum) && planValNum > 0 ? planValNum : undefined,
       groupId: groupId || undefined,
     };
 
@@ -108,24 +147,27 @@ const EditActivityModal = ({ activity, groups, isOpen, onClose, onSave, kidId }:
             <Input
               id="edit-name"
               value={name}
-              onChange={(e) => setName(e.target.value)}
+              onChange={e => setName(e.target.value)}
               placeholder="e.g., Reading minutes"
             />
           </div>
-          
+
           <div className="grid gap-2">
             <Label htmlFor="edit-unit">Unit (optional)</Label>
             <Input
               id="edit-unit"
               value={unit}
-              onChange={(e) => setUnit(e.target.value)}
+              onChange={e => setUnit(e.target.value)}
               placeholder="e.g., min, pages"
             />
           </div>
 
           <div className="grid gap-2">
             <Label>Plan type</Label>
-            <Select value={planType || "none"} onValueChange={(v) => setPlanType(v === "none" ? "" : (v as any))}>
+            <Select
+              value={planType || "none"}
+              onValueChange={v => setPlanType(v === "none" ? "" : (v as any))}
+            >
               <SelectTrigger>
                 <SelectValue placeholder="None" />
               </SelectTrigger>
@@ -144,21 +186,26 @@ const EditActivityModal = ({ activity, groups, isOpen, onClose, onSave, kidId }:
               type="number"
               min={0}
               value={planValue}
-              onChange={(e) => setPlanValue(e.target.value)}
+              onChange={e => setPlanValue(e.target.value)}
               placeholder="e.g., 30"
             />
           </div>
 
           <div className="grid gap-2">
             <Label>Group</Label>
-            <Select value={groupId || "none"} onValueChange={(v) => setGroupId(v === "none" ? "" : v)}>
+            <Select
+              value={groupId || "none"}
+              onValueChange={v => setGroupId(v === "none" ? "" : v)}
+            >
               <SelectTrigger>
                 <SelectValue placeholder="None" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="none">None</SelectItem>
-                {groups.map((g) => (
-                  <SelectItem key={g.id} value={g.id}>{g.name}</SelectItem>
+                {groups.map(g => (
+                  <SelectItem key={g.id} value={g.id}>
+                    {g.name}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -168,53 +215,73 @@ const EditActivityModal = ({ activity, groups, isOpen, onClose, onSave, kidId }:
             <h4 className="font-medium text-sm">Scoring Rules</h4>
             <div className="grid grid-cols-2 gap-3 text-sm">
               <div>
-                <Label htmlFor="base-points" className="text-xs text-muted-foreground">Base Points per {unit || 'unit'}</Label>
+                <Label
+                  htmlFor="base-points"
+                  className="text-xs text-muted-foreground"
+                >
+                  Base Points per {unit || "unit"}
+                </Label>
                 <Input
                   id="base-points"
                   type="number"
                   min="0"
                   value={basePointsPerUnit}
-                  onChange={(e) => setBasePointsPerUnit(e.target.value)}
+                  onChange={e => setBasePointsPerUnit(e.target.value)}
                   className="h-8 text-sm"
                 />
               </div>
               <div>
-                <Label htmlFor="goal-bonus" className="text-xs text-muted-foreground">Goal Bonus Points</Label>
+                <Label
+                  htmlFor="goal-bonus"
+                  className="text-xs text-muted-foreground"
+                >
+                  Goal Bonus Points
+                </Label>
                 <Input
                   id="goal-bonus"
                   type="number"
                   min="0"
                   value={goalBonusPoints}
-                  onChange={(e) => setGoalBonusPoints(e.target.value)}
+                  onChange={e => setGoalBonusPoints(e.target.value)}
                   className="h-8 text-sm"
                 />
               </div>
               <div>
-                <Label htmlFor="streak-bonus" className="text-xs text-muted-foreground">Streak Bonus Points</Label>
+                <Label
+                  htmlFor="streak-bonus"
+                  className="text-xs text-muted-foreground"
+                >
+                  Streak Bonus Points
+                </Label>
                 <Input
                   id="streak-bonus"
                   type="number"
                   min="0"
                   value={streakBonusPoints}
-                  onChange={(e) => setStreakBonusPoints(e.target.value)}
+                  onChange={e => setStreakBonusPoints(e.target.value)}
                   className="h-8 text-sm"
                 />
               </div>
               <div>
-                <Label htmlFor="max-daily" className="text-xs text-muted-foreground">Max Daily Points</Label>
+                <Label
+                  htmlFor="max-daily"
+                  className="text-xs text-muted-foreground"
+                >
+                  Max Daily Points
+                </Label>
                 <Input
                   id="max-daily"
                   type="number"
                   min="1"
                   value={maxDailyPoints}
-                  onChange={(e) => setMaxDailyPoints(e.target.value)}
+                  onChange={e => setMaxDailyPoints(e.target.value)}
                   className="h-8 text-sm"
                 />
               </div>
             </div>
             <div className="text-xs text-muted-foreground">
-              Complete your {planType} goal of {planValue} {unit || 'units'} to earn the goal bonus. 
-              Maintain streaks for additional points!
+              Complete your {planType} goal of {planValue} {unit || "units"} to
+              earn the goal bonus. Maintain streaks for additional points!
             </div>
           </div>
 

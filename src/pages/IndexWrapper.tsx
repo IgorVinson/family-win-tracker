@@ -1,36 +1,33 @@
+import { Card, CardContent } from "@/components/ui/card";
 import { useAuth } from "@/hooks/useAuth";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Link } from "react-router-dom";
-import { UserRound, Loader2 } from "lucide-react";
+import { useFamilyKids } from "@/hooks/useFamilyKids";
+import { Loader2 } from "lucide-react";
+import { Navigate } from "react-router-dom";
 import Index from "./Index";
 import { DebugPanel } from "@/components/ui/debug-panel";
 
 export default function IndexWrapper() {
-  const { loading, isAuthenticated } = useAuth();
-  
-  console.log("🔧 IndexWrapper: Render state", { loading, isAuthenticated });
+  const { loading, isAuthenticated, userRole } = useAuth();
+  const { kids } = useFamilyKids();
 
   if (loading) {
     return (
-      <>
-        <div className="min-h-screen flex items-center justify-center">
-          <Card className="card-elevated">
-            <CardContent className="flex items-center gap-4 p-8">
-              <Loader2 className="h-6 w-6 animate-spin" />
-              <div>
-                <p className="font-medium">Loading...</p>
-                <p className="text-sm text-muted-foreground">Setting up your dashboard</p>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-        <DebugPanel />
-      </>
+      <div className="min-h-screen flex items-center justify-center">
+        <Card className="card-elevated">
+          <CardContent className="flex items-center gap-4 p-8">
+            <Loader2 className="h-6 w-6 animate-spin" />
+            <div>
+              <p className="font-medium">Loading...</p>
+              <p className="text-sm text-muted-foreground">
+                Setting up your dashboard
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     );
   }
 
-  // If not authenticated, show the existing Index page with localStorage functionality
   if (!isAuthenticated) {
     return (
       <>
@@ -40,12 +37,13 @@ export default function IndexWrapper() {
     );
   }
 
+  // Redirect authenticated kid role to their dashboard (hide main page)
+  if (isAuthenticated && userRole === "kid") {
+    if (kids.length === 0) return null; // fallback empty until kid profile loads
+    return <Navigate to={`/kid/${kids[0].id}`} replace />;
+  }
+
   // If authenticated, redirect to a database-powered dashboard
   // For now, we'll show the same Index page but it will use migrated data
-  return (
-    <>
-      <Index />
-      <DebugPanel />
-    </>
-  );
+  return <Index />;
 }

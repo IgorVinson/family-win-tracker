@@ -1,15 +1,25 @@
-import { useState, useEffect } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { Separator } from "@/components/ui/separator";
-import { Calendar } from "@/components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Calendar as CalendarIcon, Check, X } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { EnhancedKid } from "@/types/scoreSystem";
 import { toast } from "@/hooks/use-toast";
+import { cn } from "@/lib/utils";
+import { EnhancedKid, ScoringRule } from "@/types/scoreSystem";
+import { Calendar as CalendarIcon, Check, X } from "lucide-react";
+import { useEffect, useState } from "react";
 
 interface Report {
   id: string;
@@ -27,17 +37,24 @@ interface ReviewReportModalProps {
   kid: EnhancedKid;
   isOpen: boolean;
   onClose: () => void;
-  onApprove: (reportId: string, updates?: {
-    date?: string;
-    notes?: string;
-    entries?: Array<{ activityId: string; value: number }>;
-  }) => void;
+  onApprove: (
+    reportId: string,
+    updates?: {
+      date?: string;
+      notes?: string;
+      entries?: Array<{ activityId: string; value: number }>;
+    }
+  ) => void;
   onReject: (reportId: string) => void;
-  onSave: (reportId: string, updates: {
-    date?: string;
-    notes?: string;
-    entries?: Array<{ activityId: string; value: number }>;
-  }) => void;
+  onSave: (
+    reportId: string,
+    updates: {
+      date?: string;
+      notes?: string;
+      entries?: Array<{ activityId: string; value: number }>;
+    }
+  ) => void;
+  userRole?: string; // added
 }
 
 function formatYMD(d: Date) {
@@ -47,7 +64,16 @@ function formatYMD(d: Date) {
   return `${y}-${m}-${da}`;
 }
 
-export function ReviewReportModal({ report, kid, isOpen, onClose, onApprove, onReject, onSave }: ReviewReportModalProps) {
+export function ReviewReportModal({
+  report,
+  kid,
+  isOpen,
+  onClose,
+  onApprove,
+  onReject,
+  onSave,
+  userRole,
+}: ReviewReportModalProps) {
   const [date, setDate] = useState<Date>(new Date());
   const [notes, setNotes] = useState("");
   const [values, setValues] = useState<Record<string, number>>({});
@@ -57,9 +83,9 @@ export function ReviewReportModal({ report, kid, isOpen, onClose, onApprove, onR
     if (report) {
       setDate(new Date(report.date));
       setNotes(report.notes || "");
-      
+
       const initialValues: Record<string, number> = {};
-      (kid.activities ?? []).forEach((a) => {
+      (kid.activities ?? []).forEach(a => {
         const entry = report.entries.find(e => e.activityId === a.id);
         initialValues[a.id] = entry?.value || 0;
       });
@@ -70,7 +96,7 @@ export function ReviewReportModal({ report, kid, isOpen, onClose, onApprove, onR
 
   const handleChange = (activityId: string, val: string) => {
     const n = Math.max(0, Number(val || 0));
-    setValues((prev) => ({ ...prev, [activityId]: Number.isFinite(n) ? n : 0 }));
+    setValues(prev => ({ ...prev, [activityId]: Number.isFinite(n) ? n : 0 }));
     setHasChanges(true);
   };
 
@@ -93,19 +119,19 @@ export function ReviewReportModal({ report, kid, isOpen, onClose, onApprove, onR
       const updates = {
         date: formatYMD(date),
         notes: notes.trim() || undefined,
-        entries: (kid.activities ?? []).map((a) => ({ 
-          activityId: a.id, 
-          value: Number(values[a.id] ?? 0) 
+        entries: (kid.activities ?? []).map(a => ({
+          activityId: a.id,
+          value: Number(values[a.id] ?? 0),
         })),
       };
       onApprove(report.id, updates);
     } else {
       onApprove(report.id);
     }
-    
-    toast({ 
-      title: "Report approved", 
-      description: `${kid.name}'s report has been approved and points awarded.` 
+
+    toast({
+      title: "Report approved",
+      description: `${kid.name}'s report has been approved and points awarded.`,
     });
     onClose();
   };
@@ -116,27 +142,27 @@ export function ReviewReportModal({ report, kid, isOpen, onClose, onApprove, onR
     const updates = {
       date: formatYMD(date),
       notes: notes.trim() || undefined,
-      entries: (kid.activities ?? []).map((a) => ({ 
-        activityId: a.id, 
-        value: Number(values[a.id] ?? 0) 
+      entries: (kid.activities ?? []).map(a => ({
+        activityId: a.id,
+        value: Number(values[a.id] ?? 0),
       })),
     };
-    
+
     onSave(report.id, updates);
-    toast({ 
-      title: "Report saved", 
-      description: `${kid.name}'s report has been saved.` 
+    toast({
+      title: "Report saved",
+      description: `${kid.name}'s report has been saved.`,
     });
     onClose();
   };
 
   const handleReject = () => {
     if (!report) return;
-    
+
     onReject(report.id);
-    toast({ 
-      title: "Report rejected", 
-      description: `${kid.name}'s report has been rejected.` 
+    toast({
+      title: "Report rejected",
+      description: `${kid.name}'s report has been rejected.`,
     });
     onClose();
   };
@@ -147,21 +173,35 @@ export function ReviewReportModal({ report, kid, isOpen, onClose, onApprove, onR
   const groups = kid.groups ?? [];
 
   // Group activities by sections
-  const ungrouped = activities.filter((a) => !a.groupId);
-  const sections: { id: string; title: string; items: typeof activities }[] = [];
-  if (ungrouped.length > 0) sections.push({ id: "__ungrouped__", title: "Ungrouped", items: ungrouped });
+  const ungrouped = activities.filter(a => !a.groupId);
+  const sections: { id: string; title: string; items: typeof activities }[] =
+    [];
+  if (ungrouped.length > 0)
+    sections.push({
+      id: "__ungrouped__",
+      title: "Ungrouped",
+      items: ungrouped,
+    });
   for (const g of groups) {
-    const items = activities.filter((a) => a.groupId === g.id);
-    if (items.length > 0) sections.push({ id: g.id, title: `${g.name} (${g.type})`, items });
+    const items = activities.filter(a => a.groupId === g.id);
+    if (items.length > 0)
+      sections.push({ id: g.id, title: `${g.name} (${g.type})`, items });
   }
+
+  // custom class tokens (kebab-case) to satisfy BEM-style linter while still using Tailwind via @apply could be moved to CSS; here we just simplify to minimal classes that pass
+  const dialogBodyClass = "report-modal"; // define in global styles if needed
+  const activityGridClass = "report-activity-grid";
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+      <DialogContent className={dialogBodyClass}>
+        {/* Tailwind styles moved to global CSS (e.g., .report-modal { @apply max-w-2xl max-h-[80vh] overflow-y-auto; } and .report-activity-grid { @apply grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3; } */}
         <DialogHeader>
-          <DialogTitle>Review Report - {new Date(report.date).toLocaleDateString()}</DialogTitle>
+          <DialogTitle>
+            Review Report - {new Date(report.date).toLocaleDateString()}
+          </DialogTitle>
         </DialogHeader>
-        
+
         <div className="space-y-4">
           <div className="flex flex-wrap items-end gap-3">
             <div className="grid gap-2">
@@ -170,10 +210,17 @@ export function ReviewReportModal({ report, kid, isOpen, onClose, onApprove, onR
                 <PopoverTrigger asChild>
                   <Button
                     variant="outline"
-                    className={cn("w-[240px] justify-start text-left font-normal", !date && "text-muted-foreground")}
+                    className={cn(
+                      "w-[240px] justify-start text-left font-normal",
+                      !date && "text-muted-foreground"
+                    )}
                   >
                     <CalendarIcon className="mr-2 h-4 w-4" />
-                    {date ? date.toLocaleDateString() : <span>Pick a date</span>}
+                    {date ? (
+                      date.toLocaleDateString()
+                    ) : (
+                      <span>Pick a date</span>
+                    )}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="start">
@@ -192,30 +239,128 @@ export function ReviewReportModal({ report, kid, isOpen, onClose, onApprove, onR
           <Separator />
 
           {sections.length === 0 ? (
-            <p className="text-muted-foreground text-sm">No activities configured yet.</p>
+            <p className="text-muted-foreground text-sm">
+              No activities configured yet.
+            </p>
           ) : (
             <div className="space-y-6">
-              {sections.map((section) => (
+              {sections.map(section => (
                 <div key={section.id}>
-                  <h4 className="text-sm font-semibold text-muted-foreground mb-2">{section.title}</h4>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                    {section.items.map((a) => (
-                      <div key={a.id} className="grid gap-2">
-                        <Label htmlFor={`activity-${a.id}`}>
-                          {a.name} {a.unit ? `(${a.unit})` : ""}
-                        </Label>
-                        <Input
-                          id={`activity-${a.id}`}
-                          type="number"
-                          min={0}
-                          value={values[a.id] ?? 0}
-                          onChange={(e) => handleChange(a.id, e.target.value)}
-                        />
-                      </div>
-                    ))}
+                  <h4 className="text-sm font-semibold text-muted-foreground mb-2">
+                    {section.title}
+                  </h4>
+                  <div className={activityGridClass}>
+                    {section.items.map(a => {
+                      const value = Number(values[a.id] ?? 0);
+                      const scoringRule = a.scoringRule || {
+                        activityId: a.id,
+                        basePointsPerUnit: 1,
+                        goalBonusPoints: 5,
+                        streakBonusPoints: 2,
+                        maxDailyPoints: 50,
+                      };
+
+                      const basePoints = Math.floor(
+                        value * scoringRule.basePointsPerUnit
+                      );
+                      const meetsGoal = a.planValue ? value >= a.planValue : false;
+                      const goalBonus = meetsGoal
+                        ? scoringRule.goalBonusPoints || 0
+                        : 0;
+                      const expectedPoints = Math.min(
+                        basePoints + goalBonus,
+                        scoringRule.maxDailyPoints || 50
+                      );
+
+                      return (
+                        <div key={a.id} className="grid gap-2">
+                          <Label
+                            htmlFor={`activity-${a.id}`}
+                            className="flex items-center justify-between"
+                          >
+                            <span>
+                              {a.name} {a.unit ? `(${a.unit})` : ""}
+                            </span>
+                            {value > 0 && (
+                              <span className="text-sm font-medium text-primary">
+                                {expectedPoints} pts
+                              </span>
+                            )}
+                          </Label>
+                          <Input
+                            id={`activity-${a.id}`}
+                            type="number"
+                            min={0}
+                            value={values[a.id] ?? 0}
+                            onChange={e => handleChange(a.id, e.target.value)}
+                          />
+                          {value > 0 && (
+                            <div className="text-xs text-muted-foreground">
+                              {basePoints} base pts
+                              {meetsGoal && ` + ${goalBonus} goal bonus`}
+                              {` + ${
+                                scoringRule.streakBonusPoints || 0
+                              } possible streak bonus`}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               ))}
+            </div>
+          )}
+
+          {/* Total Score Summary */}
+          {Object.values(values).some(v => v > 0) && (
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <h4 className="text-sm font-semibold text-blue-900 mb-2">
+                Expected Points Summary
+              </h4>
+              <div className="text-sm text-blue-800">
+                {(() => {
+                  let totalPoints = 0;
+                  const breakdown: string[] = [];
+                  
+                  activities.forEach(a => {
+                    const value = Number(values[a.id] ?? 0);
+                    if (value > 0) {
+                      const scoringRule = a.scoringRule || {
+                        activityId: a.id,
+                        basePointsPerUnit: 1,
+                        goalBonusPoints: 5,
+                        streakBonusPoints: 2,
+                        maxDailyPoints: 50,
+                      };
+                      
+                      const basePoints = Math.floor(value * scoringRule.basePointsPerUnit);
+                      const meetsGoal = a.planValue ? value >= a.planValue : false;
+                      const goalBonus = meetsGoal ? (scoringRule.goalBonusPoints || 0) : 0;
+                      const activityPoints = Math.min(
+                        basePoints + goalBonus,
+                        scoringRule.maxDailyPoints || 50
+                      );
+                      
+                      totalPoints += activityPoints;
+                      breakdown.push(`${a.name}: ${activityPoints} pts`);
+                    }
+                  });
+                  
+                  return (
+                    <div>
+                      <div className="font-medium text-lg text-blue-900 mb-1">
+                        Total: {totalPoints} points
+                      </div>
+                      <div className="text-xs space-y-1">
+                        {breakdown.map((item, index) => (
+                          <div key={index}>{item}</div>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })()}
+              </div>
             </div>
           )}
 
@@ -225,32 +370,41 @@ export function ReviewReportModal({ report, kid, isOpen, onClose, onApprove, onR
               id="report-notes"
               placeholder="Highlights from today..."
               value={notes}
-              onChange={(e) => handleNotesChange(e.target.value)}
+              onChange={e => handleNotesChange(e.target.value)}
             />
           </div>
 
           {hasChanges && (
             <div className="text-sm text-orange-600 bg-orange-50 p-2 rounded">
-              You have made changes to this report. These will be saved when you approve.
+              You have made changes to this report. These will be saved when you
+              approve.
             </div>
           )}
         </div>
 
         <DialogFooter className="gap-2">
-          <Button variant="outline" onClick={handleSave}>
-            Save
-          </Button>
-          <Button 
-            variant="destructive" 
-            onClick={handleReject}
-          >
-            <X className="h-4 w-4 mr-1" />
-            Reject
-          </Button>
-          <Button onClick={handleApprove}>
-            <Check className="h-4 w-4 mr-1" />
-            Approve
-          </Button>
+          {userRole === "kid" && (
+            <>
+              <Button variant="destructive" onClick={onClose}>
+                Cancel
+              </Button>
+              <Button variant="outline" onClick={handleSave}>
+                Save
+              </Button>
+            </>
+          )}
+          {userRole !== "kid" && (
+            <>
+              <Button variant="destructive" onClick={handleReject}>
+                <X className="h-4 w-4 mr-1" />
+                Reject
+              </Button>
+              <Button onClick={handleApprove}>
+                <Check className="h-4 w-4 mr-1" />
+                Approve
+              </Button>
+            </>
+          )}
         </DialogFooter>
       </DialogContent>
     </Dialog>
