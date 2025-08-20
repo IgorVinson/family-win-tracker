@@ -946,6 +946,16 @@ export function useEnhancedKidDB(kidId: string) {
           const giftCost = redemptionData.gifts.cost;
           
           if (status === "approved") {
+            // Check if kid has enough points
+            if (kid.points < giftCost) {
+              toast({
+                variant: "destructive",
+                title: "Insufficient points",
+                description: `${kid.name} only has ${kid.points} points but the gift costs ${giftCost} points.`,
+              });
+              return;
+            }
+
             // Deduct points when approving redemption
             await supabase
               .from("kids")
