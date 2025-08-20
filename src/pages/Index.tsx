@@ -141,7 +141,7 @@ const Index = () => {
             <div className="flex items-center gap-4">
               {/* Logo */}
               <img
-                src="/lovable-uploads/dd5214b6-f0ae-465c-be62-f98bdadb9881.png"
+                src="/logo.png"
                 alt="KidsRise Logo"
                 className="h-12 sm:h-16 w-auto flex-shrink-0"
                 onError={e => {
