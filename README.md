@@ -1,3 +1,64 @@
+# Family Win Tracker
+
+A React-based gamified family management system where kids earn points for completing activities and can redeem prizes. The application supports both local storage (demo mode) and Supabase (authenticated mode) for data persistence.
+
+## 🚀 Development Setup
+
+### Environment Configuration
+
+This project uses different environments for development and production:
+
+- **Local Development**: `npm run dev` → Uses local Supabase (`.env.development`)
+- **Production Testing**: `npm run dev:prod` → Uses production Supabase (`.env`)
+- **Production Build**: `npm run build` → Optimized build for deployment
+
+### Quick Start
+
+1. **Clone and install dependencies:**
+   ```bash
+   git clone <YOUR_GIT_URL>
+   cd family-win-tracker
+   npm install
+   ```
+
+2. **Set up local Supabase:**
+   ```bash
+   # Install Supabase CLI if not already installed
+   npm install -g @supabase/cli
+   
+   # Start local Supabase and restore production data
+   ./clone-supabase.sh
+   
+   # Or manually start Supabase
+   npm run supabase:start
+   ```
+
+3. **Start development:**
+   ```bash
+   npm run dev  # Uses local Supabase
+   ```
+
+4. **Create your local account:**
+   - Navigate to http://localhost:8080
+   - Sign up with a new account
+   - The app will automatically create your profile and assign roles
+
+### Supabase Management Scripts
+
+```bash
+npm run supabase:start   # Start local Supabase
+npm run supabase:stop    # Stop local Supabase  
+npm run supabase:status  # Check status
+```
+
+### Branch Strategy
+
+- **`dev`** - Development branch (use `npm run dev`)
+- **`main`** - Production branch  
+- **`deploy`** - Deployment branch (auto-deployed to Netlify)
+
+---
+
 # Welcome to your Lovable project
 
 ## Project info
