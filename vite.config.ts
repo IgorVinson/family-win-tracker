@@ -3,6 +3,7 @@ import react from "@vitejs/plugin-react-swc";
 import path from "path";
 import { componentTagger } from "lovable-tagger";
 import basicSsl from '@vitejs/plugin-basic-ssl';
+import netlify from "@netlify/vite-plugin";
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
@@ -12,9 +13,9 @@ export default defineConfig(({ mode }) => ({
   },
   plugins: [
     react(),
-    mode === 'development' &&
-    componentTagger(),
-    basicSsl(),
+    netlify(),
+    mode === 'development' && componentTagger(),
+    mode === 'development' && basicSsl(),
   ].filter(Boolean),
   resolve: {
     alias: {
