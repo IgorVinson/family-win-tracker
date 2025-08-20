@@ -35,11 +35,11 @@ export function Header() {
           to={userRole === "kid" ? (user ? "/" : "/") : "/"}
           className="flex items-center gap-2 font-semibold"
         >
-          {/* <img
-            src="/lovable-uploads/dd5214b6-f0ae-465c-be62-f98bdadb9881.png"
+          <img
+            src="/public/logo.png"
             alt="KidsRise Logo"
             className="h-8 w-auto"
-          /> */}
+          />
           <span className="sm:inline-block text-lg">KidsRise</span>
         </Link>
 
