@@ -13,10 +13,8 @@ dist-ssr
 *.local
 
 # Environment variables
-.env
-.env.local
-.env.*.local
-.env.development
+.env*
+deploy-db-changes.sh
 
 # Editor directories and files
 .vscode/*

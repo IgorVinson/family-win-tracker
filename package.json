@@ -12,7 +12,11 @@
     "preview": "vite preview",
     "supabase:start": "supabase start",
     "supabase:stop": "supabase stop",
-    "supabase:status": "supabase status"
+    "supabase:status": "supabase status",
+    "db:diff": "supabase db diff --use-migra",
+    "db:push": "supabase db push",
+    "db:reset": "supabase db reset",
+    "db:deploy": "./deploy-db-changes.sh"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
