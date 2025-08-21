@@ -4,13 +4,20 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import {
   rpcClaimFamilyInvitation,
   supabase,
 } from "@/integrations/supabase/client";
-import { Lock, Mail, UserRound } from "lucide-react";
+import { Lock, Mail, UserRound, Users } from "lucide-react";
 import { useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 
@@ -31,15 +38,16 @@ export default function AcceptInvite() {
   const [signUpEmail, setSignUpEmail] = useState("");
   const [signUpPassword, setSignUpPassword] = useState("");
   const [signUpDisplayName, setSignUpDisplayName] = useState("");
+  const [signUpRole, setSignUpRole] = useState<"parent" | "kid" | "">("");
   const [signUpLoading, setSignUpLoading] = useState(false);
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!signUpEmail || !signUpPassword || !signUpDisplayName) {
+    if (!signUpEmail || !signUpPassword || !signUpDisplayName || !signUpRole) {
       toast({
         variant: "destructive",
         title: "Missing information",
-        description: "Please fill in all fields.",
+        description: "Please fill in all fields including your role.",
       });
       return;
     }
@@ -55,6 +63,7 @@ export default function AcceptInvite() {
           emailRedirectTo: redirectUrl,
           data: {
             display_name: signUpDisplayName,
+            role: signUpRole,
           },
         },
       });
@@ -141,7 +150,7 @@ export default function AcceptInvite() {
           />
           <h1 className="text-3xl font-bold">Join Your Family!</h1>
           <p className="text-muted-foreground mt-2">
-            Create your kid account to start earning points
+            Create your account to join the family
           </p>
         </div>
 
@@ -149,8 +158,8 @@ export default function AcceptInvite() {
           <Card className="card-elevated">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <UserRound className="h-5 w-5" />
-                Kid Account Setup
+                <Users className="h-5 w-5" />
+                Family Account Setup
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -207,6 +216,24 @@ export default function AcceptInvite() {
                     required
                   />
                 </div>
+                <div className="space-y-2">
+                  <Label
+                    htmlFor="signup-role"
+                    className="flex items-center gap-2"
+                  >
+                    <Users className="h-4 w-4" />
+                    Your Role
+                  </Label>
+                  <Select value={signUpRole} onValueChange={setSignUpRole}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select your role" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="parent">Parent</SelectItem>
+                      <SelectItem value="kid">Kid</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
                 <div className="text-sm text-muted-foreground bg-muted p-3 rounded">
                   <p className="font-medium mb-1">What happens next:</p>
                   <ol className="list-decimal list-inside space-y-1">
@@ -225,7 +252,7 @@ export default function AcceptInvite() {
                   className="w-full"
                   disabled={signUpLoading}
                 >
-                  {signUpLoading ? "Creating account..." : "Create Kid Account"}
+                  {signUpLoading ? "Creating account..." : "Create Account"}
                 </Button>
                 <p className="text-xs text-muted-foreground text-center">
                   After verifying your email you must sign in, then come back to
