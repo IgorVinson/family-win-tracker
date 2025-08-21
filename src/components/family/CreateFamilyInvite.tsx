@@ -1,29 +1,25 @@
-// filepath: src/components/kid/CreateKidWithInvite.tsx
+// filepath: src/components/family/CreateFamilyInvite.tsx
 import { toast } from "@/hooks/use-toast";
-import { rpcCreateKidInvitation } from "@/integrations/supabase/client";
+import { rpcCreateFamilyInvitation } from "@/integrations/supabase/client";
 import { useState } from "react";
 
-export const CreateKidWithInvite = () => {
-  const [name, setName] = useState("");
+export const CreateFamilyInvite = () => {
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [inviteLink, setInviteLink] = useState<string | null>(null);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name) return;
     setLoading(true);
-    const { data, error } = await rpcCreateKidInvitation(
-      name,
-      email || undefined,
-      50
+    const { data, error } = await rpcCreateFamilyInvitation(
+      email || undefined
     );
     setLoading(false);
     if (error) {
       console.error(error);
       toast({
         variant: "destructive",
-        title: "Create failed",
+        title: "Invite failed",
         description: error.message,
       });
       return;
@@ -33,7 +29,7 @@ export const CreateKidWithInvite = () => {
       const link = `${window.location.origin}/accept-invite?token=${token}`;
       setInviteLink(link);
       toast({
-        title: "Kid created",
+        title: "Family invitation created",
         description: "Invitation link generated.",
       });
     }
@@ -44,13 +40,7 @@ export const CreateKidWithInvite = () => {
       <form onSubmit={submit} className="space-y-2">
         <input
           className="border px-2 py-1 w-full"
-          placeholder="Kid name"
-          value={name}
-          onChange={e => setName(e.target.value)}
-        />
-        <input
-          className="border px-2 py-1 w-full"
-          placeholder="Kid email (optional)"
+          placeholder="Email (optional)"
           value={email}
           onChange={e => setEmail(e.target.value)}
         />
@@ -58,7 +48,7 @@ export const CreateKidWithInvite = () => {
           disabled={loading}
           className="px-4 py-2 bg-blue-600 text-white rounded disabled:opacity-50"
         >
-          {loading ? "Creating..." : "Create Kid & Invite"}
+          {loading ? "Creating..." : "Invite Family Member"}
         </button>
       </form>
       {inviteLink && (

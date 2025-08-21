@@ -20,17 +20,29 @@ Transform the current kid-specific invitation system into a universal family mem
 
 **Migration Applied:** `20250821000001_create_claim_family_invitation.sql`
 
-## 3. Frontend Updates
-- **Rename components**: Kid invite → Family invite
-- **Simplify invite form**: Just email field (optional) + generate token
-- **Update invite acceptance**: Let user choose role during registration
-- **Family management**: Show "Invite Family Member" instead of "Add Kid"
+## 3. Frontend Updates ✅ COMPLETED
+- **Rename components**: Kid invite → Family invite ✅
+- **Simplify invite form**: Just email field (optional) + generate token ✅
+- **Update invite acceptance**: Let user choose role during registration ✅
+- **Family management**: Show "Invite Family Member" instead of "Add Kid" ✅
 
-## 4. Registration Flow
-- **Keep role selection checkbox** in signup
-- **No pre-filled data** from invitation
-- **User decides**: Parent or Kid role during registration
-- **Invite links user** to family after signup completion
+**Changes Applied:**
+- Renamed `CreateKidWithInvite` → `CreateFamilyInvite`
+- Updated `rpcCreateKidInvitation` → `rpcCreateFamilyInvitation`
+- Updated `rpcClaimKidInvitation` → `rpcClaimFamilyInvitation`
+- Changed UI text: "Add Kid" → "Invite Family Member"
+
+## 4. Registration Flow ✅ COMPLETED
+- **Keep role selection checkbox** in signup ✅
+- **No pre-filled data** from invitation ✅
+- **User decides**: Parent or Kid role during registration ✅
+- **Invite links user** to family after signup completion ✅
+
+**Changes Applied:**
+- Removed hardcoded `role: "kid"` from AcceptInvite.tsx
+- Auth.tsx already has role selection dropdown (parent/kid)
+- Users now choose their own role during registration
+- No predetermined role from invitation token
 
 ## 5. Migration Strategy
 - **Rename existing table** and update all references

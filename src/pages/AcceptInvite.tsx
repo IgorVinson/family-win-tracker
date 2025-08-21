@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import {
-  rpcClaimKidInvitation,
+  rpcClaimFamilyInvitation,
   supabase,
 } from "@/integrations/supabase/client";
 import { Lock, Mail, UserRound } from "lucide-react";
@@ -55,7 +55,6 @@ export default function AcceptInvite() {
           emailRedirectTo: redirectUrl,
           data: {
             display_name: signUpDisplayName,
-            role: "kid",
           },
         },
       });
@@ -89,7 +88,7 @@ export default function AcceptInvite() {
   const claim = async () => {
     if (claimed || !token) return;
     setLoading(true);
-    const { data, error } = await rpcClaimKidInvitation(token);
+    const { data, error } = await rpcClaimFamilyInvitation(token);
     setLoading(false);
     if (error) {
       console.error(error);

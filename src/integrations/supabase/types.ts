@@ -230,10 +230,9 @@ export type Database = {
           }
         ];
       };
-      kid_invitations: {
+      family_invitations: {
         Row: {
           id: string;
-          kid_id: string;
           token: string;
           invited_email: string | null;
           expires_at: string;
@@ -243,7 +242,6 @@ export type Database = {
         };
         Insert: {
           id?: string;
-          kid_id: string;
           token: string;
           invited_email?: string | null;
           expires_at?: string;
@@ -253,7 +251,6 @@ export type Database = {
         };
         Update: {
           id?: string;
-          kid_id?: string;
           token?: string;
           invited_email?: string | null;
           expires_at?: string;
@@ -263,10 +260,10 @@ export type Database = {
         };
         Relationships: [
           {
-            foreignKeyName: "kid_invitations_kid_id_fkey";
-            columns: ["kid_id"];
+            foreignKeyName: "family_invitations_created_by_fkey";
+            columns: ["created_by"];
             isOneToOne: false;
-            referencedRelation: "kids";
+            referencedRelation: "profiles";
             referencedColumns: ["id"];
           }
         ];
@@ -581,12 +578,12 @@ export type Database = {
         Args: { _name: string; _invited_email: string | null };
         Returns: { kid_id: string; token: string }[];
       };
-      claim_kid_invitation: {
+      claim_family_invitation: {
         Args: { _token: string };
-        Returns: { kid_id: string }[];
+        Returns: { success: boolean }[];
       };
-      create_kid_invitation: {
-        Args: { _name: string; _invited_email: string | null; _goal?: number };
+      create_family_invitation: {
+        Args: { _invited_email: string | null };
         Returns: { token: string }[];
       };
     };
