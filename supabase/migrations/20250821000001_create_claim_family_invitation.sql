@@ -37,6 +37,15 @@ BEGIN
   -- Add current user to family
   INSERT INTO public.family_members(family_id, user_id) VALUES (fam_id, auth.uid()) ON CONFLICT DO NOTHING;
   
+  -- If user has kid role, create kid record
+  IF has_role(auth.uid(), 'kid') THEN
+    INSERT INTO public.kids(user_id, name, created_by) 
+    SELECT auth.uid(), p.display_name, parent_user
+    FROM public.profiles p 
+    WHERE p.id = auth.uid()
+    ON CONFLICT(user_id) DO NOTHING;
+  END IF;
+  
   RETURN QUERY SELECT TRUE;
 END;$$;
 

@@ -108,15 +108,15 @@ export default function AcceptInvite() {
       });
       return;
     }
-    const kidId = data?.[0]?.kid_id;
+    const success = data?.[0]?.success;
     toast({
       title: "Invitation accepted",
-      description: "Your account is now linked.",
+      description: "Your account is now linked to the family.",
     });
-    if (kidId) {
+    if (success) {
       localStorage.removeItem("pendingKidInvitation");
       setClaimed(true);
-      navigate(`/kid/${kidId}`);
+      navigate("/");
     }
   };
 
@@ -224,7 +224,7 @@ export default function AcceptInvite() {
                     <Users className="h-4 w-4" />
                     Your Role
                   </Label>
-                  <Select value={signUpRole} onValueChange={setSignUpRole}>
+                  <Select value={signUpRole} onValueChange={(value) => setSignUpRole(value as "parent" | "kid")}>
                     <SelectTrigger>
                       <SelectValue placeholder="Select your role" />
                     </SelectTrigger>
