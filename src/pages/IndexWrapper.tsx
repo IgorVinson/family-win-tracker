@@ -4,7 +4,6 @@ import { useFamilyKids } from "@/hooks/useFamilyKids";
 import { Loader2 } from "lucide-react";
 import { Navigate } from "react-router-dom";
 import Index from "./Index";
-import { DebugPanel } from "@/components/ui/debug-panel";
 
 export default function IndexWrapper() {
   const { loading, isAuthenticated, userRole } = useAuth();
@@ -29,12 +28,7 @@ export default function IndexWrapper() {
   }
 
   if (!isAuthenticated) {
-    return (
-      <>
-        <Index />
-        <DebugPanel />
-      </>
-    );
+    return <Index />;
   }
 
   // Redirect authenticated kid role to their dashboard (hide main page)
