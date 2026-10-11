@@ -37,6 +37,10 @@ All day-to-day work branches from `dev`. Every pull request targets `dev`. `main
 
 One phase lands in one PR. Unrelated tasks do not share a branch.
 
+## Device preview: Tailscale + Expo Go on the owner's PC
+
+Cloud Agents do not host a phone preview. You pull the PR branch on your PC (Tailscale already installed), run `./scripts/preview-device.sh`, and open the app in Expo Go on a phone that is on the same Tailscale account. Details: `docs/dev/DEVICE_PREVIEW.md`. Agents still attach screenshots or recordings for UI review when they can.
+
 ## Naming: KidsRise / `kids-rise`
 
 | Use | Form |

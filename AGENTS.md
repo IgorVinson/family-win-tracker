@@ -40,6 +40,19 @@ maestro test <flow.yaml>
 
 Use the Firebase emulators for Auth, Firestore, Storage, and Functions. Do not point agent tools at a production Firebase project.
 
+### Device preview (your PC + phone)
+
+Live preview is **not** hosted on the Cloud Agent. You run Metro on your PC; the phone uses Expo Go over Tailscale.
+
+```bash
+# On your PC, on the PR branch
+./scripts/preview-device.sh
+```
+
+Full steps: `docs/dev/DEVICE_PREVIEW.md`.
+
+For UI-facing PRs, agents should include the branch name, screenshots or a short recording, and a note to run `./scripts/preview-device.sh`. Do not put Tailscale keys in the repo or expect the agent VM to join the tailnet.
+
 ## Process
 
 Superpowers skills are vendored in `.cursor/skills/` (MIT, Jesse Vincent, [obra/superpowers](https://github.com/obra/superpowers) v7.0.0, commit `bb92a77741419a4ab5f06e711a283343f1ada0c3`). See `.cursor/skills/NOTICE`.
