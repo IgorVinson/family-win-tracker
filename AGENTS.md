@@ -1,5 +1,7 @@
 # KidsRise
 
+Repository: `kids-rise`. Product name: **KidsRise**. Package / folder slug: `kids-rise`.
+
 KidsRise is a from-scratch mobile rebuild of Family Win Tracker. The Vite + Supabase app in this repo is legacy. Do not extend it, and do not delete it until a phase in `docs/plan` says to remove it.
 
 `CLAUDE.md` describes that legacy app. This file governs new work.
