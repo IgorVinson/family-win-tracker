@@ -36,3 +36,13 @@ Device flows are tested with the Maestro CLI (`maestro test`, and `maestro mcp` 
 All day-to-day work branches from `dev`. Every pull request targets `dev`. `main` is production; promoting `dev` into `main` is a release step the PM owns, not the default agent PR base.
 
 One phase lands in one PR. Unrelated tasks do not share a branch.
+
+## Naming: KidsRise / `kids-rise`
+
+| Use | Form |
+| --- | --- |
+| Brand, UI, docs | **KidsRise** |
+| GitHub repo, npm package, folders | **`kids-rise`** |
+| Bundle id / Firebase project id (when created) | **`kidsrise`** (no hyphens) |
+
+The GitHub repository is renamed from `family-win-tracker` to `kids-rise`. Old GitHub URLs redirect after the rename.

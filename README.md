@@ -1,12 +1,14 @@
-# Family Win Tracker
+# KidsRise
 
 Family gamification app — track kids' goals, achievements, and rewards with a scoring system.
+
+Repository: [`kids-rise`](https://github.com/IgorVinson/kids-rise). Brand: **KidsRise**. The Vite + Supabase app below is the legacy web client; the KidsRise rebuild (Expo + Firebase) is specified in `AGENTS.md` and `docs/plan`.
 
 <!-- Add screenshot here -->
 
 ## Overview
 
-Family Win Tracker is a gamification platform designed for families to encourage positive behavior, track goals, and reward achievements. Parents can set up custom objectives for their children, who earn points for completing tasks and reaching milestones. The app includes a reward system where kids can redeem points for agreed-upon prizes, making chores and responsibilities fun and engaging.
+KidsRise (legacy web app in this tree) is a gamification platform designed for families to encourage positive behavior, track goals, and reward achievements. Parents can set up custom objectives for their children, who earn points for completing tasks and reaching milestones. The app includes a reward system where kids can redeem points for agreed-upon prizes, making chores and responsibilities fun and engaging.
 
 ## Key Features
 
@@ -41,8 +43,8 @@ Family Win Tracker is a gamification platform designed for families to encourage
 
 ```bash
 # Clone the repository
-git clone https://github.com/IgorVinson/family-win-tracker.git
-cd family-win-tracker
+git clone https://github.com/IgorVinson/kids-rise.git
+cd kids-rise
 
 # Install dependencies
 npm install
@@ -69,7 +71,7 @@ VITE_SUPABASE_ANON_KEY=your-anon-key
 ## Project Structure
 
 ```
-family-win-tracker/
+kids-rise/
 ├── src/
 │   ├── components/         # Reusable UI components
 │   │   ├── auth/          # Authentication components
