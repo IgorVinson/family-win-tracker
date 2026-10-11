@@ -1,0 +1,10 @@
+---
+description: Expo React Native constraints for the KidsRise rebuild
+alwaysApply: true
+---
+
+- New product code is Expo (React Native). Load `expo-overview` before other Expo skills.
+- Install Expo packages with `npx expo install <pkg>` so versions match the SDK.
+- Do not add Vite, Supabase, or the legacy web UI to the new app.
+- Leave `src/`, `supabase/`, and the Vite config in place until a `docs/plan` phase removes them.
+- One phase from `docs/plan` per pull request.

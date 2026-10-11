@@ -1,0 +1,9 @@
+Skills in this directory are vendored from Superpowers.
+
+Source: https://github.com/obra/superpowers
+Version: 7.0.0
+Commit: bb92a77741419a4ab5f06e711a283343f1ada0c3
+Copyright (c) 2025 Jesse Vincent
+License: MIT (see LICENSE in this directory)
+
+The skill directories are copied from that repository's `skills/` tree, including supporting scripts and references. They were not rewritten.

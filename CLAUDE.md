@@ -1,5 +1,7 @@
 # CLAUDE.md
 
+This file describes the legacy Vite + Supabase app. KidsRise work follows `AGENTS.md` and `docs/plan`. Do not extend this legacy app, and do not delete it until a plan phase says to remove it.
+
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## Project Overview

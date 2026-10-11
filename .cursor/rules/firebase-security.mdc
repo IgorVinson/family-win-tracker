@@ -1,0 +1,10 @@
+---
+description: Firestore, Auth, Storage, and Cloud Functions security for KidsRise
+alwaysApply: true
+---
+
+- Scope Firestore and Storage rules to the signed-in user's family. A user can read and write only that family's documents and files.
+- Assign parent and kid roles only in Cloud Functions with the Admin SDK. Clients never write role or membership fields.
+- The AI vision API key lives only in Cloud Functions config. The client uploads a photo; the function calls the vision API.
+- Do not put service-account keys, API secrets, or admin credentials in the client, the repo, or `EXPO_PUBLIC_*` variables.
+- Kids have no email signup. A parent creates each kid profile. Kid sessions are parent-provisioned, not email/password accounts.
