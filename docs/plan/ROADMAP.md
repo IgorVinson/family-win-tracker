@@ -1,6 +1,6 @@
 # Roadmap
 
-Phases after phase 1 are proposals. They are not approved specs. An agent starts a phase only after the PM puts an approved spec in `docs/plan` and only one phase lands in a pull request.
+Phases after phase 1 are proposals. They are not approved specs. An agent starts a phase only after the PM puts an approved spec in `docs/plan` and only one phase lands in a pull request against `dev`.
 
 ## Phase 0 — Agent tooling
 

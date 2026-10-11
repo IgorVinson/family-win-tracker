@@ -30,3 +30,9 @@ The Superpowers `sessionStart` hook was not copied into `.cursor/hooks.json`. Up
 ## Maestro for QA
 
 Device flows are tested with the Maestro CLI (`maestro test`, and `maestro mcp` once the dashboard connector is added). Java 17 and the CLI are installed by `.cursor/install.sh`. Unit tests and Firestore rules tests still come first; Maestro covers the parent and kid paths on a device or emulator.
+
+## Git: `dev` is the integration branch
+
+All day-to-day work branches from `dev`. Every pull request targets `dev`. `main` is production; promoting `dev` into `main` is a release step the PM owns, not the default agent PR base.
+
+One phase lands in one PR. Unrelated tasks do not share a branch.
