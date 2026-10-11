@@ -30,18 +30,14 @@ export async function rpcCreateKidWithInvite(
   });
 }
 
-export async function rpcCreateKidInvitation(
-  name: string,
-  invitedEmail?: string,
-  goal: number = 50
+export async function rpcCreateFamilyInvitation(
+  invitedEmail?: string
 ) {
-  return supabase.rpc("create_kid_invitation", {
-    _name: name,
+  return supabase.rpc("create_family_invitation", {
     _invited_email: invitedEmail || null,
-    _goal: goal,
   });
 }
 
-export async function rpcClaimKidInvitation(token: string) {
-  return supabase.rpc("claim_kid_invitation", { _token: token });
+export async function rpcClaimFamilyInvitation(token: string) {
+  return supabase.rpc("claim_family_invitation", { _token: token });
 }

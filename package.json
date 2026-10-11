@@ -4,11 +4,19 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
+    "dev": "vite --mode development",
+    "dev:prod": "vite --mode production", 
+    "build": "vite build --mode production",
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "supabase:start": "supabase start",
+    "supabase:stop": "supabase stop",
+    "supabase:status": "supabase status",
+    "db:diff": "supabase db diff --use-migra",
+    "db:push": "supabase db push",
+    "db:reset": "supabase db reset",
+    "db:deploy": "./deploy-db-changes.sh"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",

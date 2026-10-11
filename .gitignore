@@ -13,7 +13,8 @@ dist-ssr
 *.local
 
 # Environment variables
-.env
+.env*
+deploy-db-changes.sh
 
 # Editor directories and files
 .vscode/*
@@ -28,3 +29,5 @@ dist-ssr
 
 # Local Netlify folder
 .netlify
+dump.sql
+clone-supabase.sh

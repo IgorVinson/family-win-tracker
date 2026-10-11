@@ -18,7 +18,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { useFamilyKids } from "@/hooks/useFamilyKids";
-import { rpcCreateKidInvitation } from "@/integrations/supabase/client";
+import { rpcCreateFamilyInvitation } from "@/integrations/supabase/client";
 import {
   AlertCircle,
   BarChart3,
@@ -139,17 +139,6 @@ const Index = () => {
           {/* Title and Add Kid Section */}
           <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             <div className="flex items-center gap-4">
-              {/* Logo */}
-              <img
-                src="/lovable-uploads/dd5214b6-f0ae-465c-be62-f98bdadb9881.png"
-                alt="KidsRise Logo"
-                className="h-12 sm:h-16 w-auto flex-shrink-0"
-                onError={e => {
-                  console.error("Logo failed to load");
-                  e.currentTarget.style.display = "none";
-                }}
-                onLoad={() => console.log("Logo loaded successfully")}
-              />
               {/* Title and Subtitle */}
               <div>
                 <h1 className="text-4xl sm:text-5xl font-bold tracking-tight">
@@ -168,7 +157,7 @@ const Index = () => {
                 <Dialog open={openAddKid} onOpenChange={setOpenAddKid}>
                   <DialogTrigger asChild>
                     <Button size="lg">
-                      <Plus className="mr-2 h-5 w-5" /> Add Kid
+                      <Plus className="mr-2 h-5 w-5" /> Invite Family Member
                     </Button>
                   </DialogTrigger>
                   <AddKidDialog
@@ -517,10 +506,8 @@ function AddKidDialog({
     setInviteError(null);
     try {
       setLoading(true);
-      const { data, error } = await rpcCreateKidInvitation(
-        name.trim(),
-        email.trim() || undefined,
-        Math.max(0, goal)
+      const { data, error } = await rpcCreateFamilyInvitation(
+        email.trim() || undefined
       );
       if (error) throw error;
       const token: string | undefined = data?.[0]?.token;
@@ -618,7 +605,7 @@ function AddKidDialog({
   return (
     <DialogContent>
       <DialogHeader>
-        <DialogTitle>Add Kid</DialogTitle>
+        <DialogTitle>Invite Family Member</DialogTitle>
       </DialogHeader>
       <div className="space-y-4 py-2 max-h-[70vh] overflow-y-auto pr-1">
         <div className="grid gap-2">
