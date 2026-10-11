@@ -81,6 +81,10 @@ Typical loop: pull `dev` → branch → plan → implement with TDD → verify �
 
 There is no `.cursor/hooks.json`. The Superpowers sessionStart hook injects context only when `CURSOR_PLUGIN_ROOT` is set, and Cursor does not run project `sessionStart` hooks at the real start of a cloud agent session. `AGENTS.md` is the process source for cloud agents.
 
+## Tools
+
+Cursor and Antigravity share these files. `.cursor/rules` is the source of truth: edit those rules and run `npm run sync-agent-rules` to regenerate `.agents/rules`. The same command links each Superpowers skill from `.agents/skills/<name>` to `.cursor/skills/<name>`. Expo and Firebase skills stay only in `.agents/skills`.
+
 ## Security
 
 - Firestore and Storage rules are scoped to each family.
