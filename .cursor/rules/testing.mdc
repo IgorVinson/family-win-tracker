@@ -1,0 +1,9 @@
+---
+description: Test and Maestro requirements for KidsRise
+alwaysApply: true
+---
+
+- Follow `.cursor/skills/test-driven-development`: a failing test comes before the implementation that passes it.
+- Cover scoring, parent approval, and Firestore security rules with automated tests before calling that behavior done.
+- Cover parent and kid device paths with Maestro. Run `maestro test` and read the result before claiming a flow works.
+- Follow `.cursor/skills/verification-before-completion`: run the checks and use their output as the evidence.
